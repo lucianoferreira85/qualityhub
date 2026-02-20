@@ -3,25 +3,112 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-brand: #7C3AED;
+  --color-brand-hover: #6D28D9;
+  --color-brand-pressed: #5B21B6;
+  --color-brand-light: #EDE9FE;
+  --color-brand-muted: #F5F3FF;
+
+  --color-accent: #10B981;
+  --color-accent-hover: #059669;
+
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #fafafa;
+  --color-bg-tertiary: #F5F3FF;
+
+  --color-fg-primary: #1A1A2E;
+  --color-fg-secondary: #6B7280;
+  --color-fg-tertiary: #9CA3AF;
+
+  --color-stroke-primary: #E5E7EB;
+  --color-stroke-secondary: #F3F4F6;
+
+  --color-success: #10B981;
+  --color-success-bg: #D1FAE5;
+  --color-success-fg: #065F46;
+  --color-danger: #EF4444;
+  --color-danger-bg: #FEE2E2;
+  --color-danger-fg: #991B1B;
+  --color-warning: #F59E0B;
+  --color-warning-bg: #FEF3C7;
+  --color-warning-fg: #92400E;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.dark {
+  --color-brand: #A78BFA;
+  --color-brand-hover: #8B5CF6;
+  --color-brand-pressed: #7C3AED;
+  --color-brand-light: #2E1065;
+  --color-brand-muted: #1E1040;
+
+  --color-accent: #34D399;
+  --color-accent-hover: #10B981;
+
+  --color-bg-primary: #1A1A2E;
+  --color-bg-secondary: #16162A;
+  --color-bg-tertiary: #12121F;
+
+  --color-fg-primary: #F9FAFB;
+  --color-fg-secondary: #D1D5DB;
+  --color-fg-tertiary: #9CA3AF;
+
+  --color-stroke-primary: #374151;
+  --color-stroke-secondary: #1F2937;
+
+  --color-success: #34D399;
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+  --color-success-fg: #34D399;
+  --color-danger: #F87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-danger-fg: #F87171;
+  --color-warning: #FBBF24;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-warning-fg: #FBBF24;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  body {
+    @apply bg-surface-tertiary text-foreground-primary font-sans;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2;
+  }
+
+  .gradient-brand {
+    background: linear-gradient(135deg, #7C3AED 0%, #6366F1 50%, #3B82F6 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #059669 0%, #14B8A6 100%);
+  }
+
+  .gradient-danger {
+    background: linear-gradient(135deg, #DC2626 0%, #F97316 100%);
+  }
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-stroke-primary rounded-full;
+}
+
+::selection {
+  @apply bg-brand-light text-brand-pressed;
 }
