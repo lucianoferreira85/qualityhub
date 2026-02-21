@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,7 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "QualityHub - Sistema de Gestão da Qualidade",
   description:
-    "Plataforma completa para gestão da qualidade: auditorias, não-conformidades, ações corretivas, documentos, indicadores e riscos.",
+    "Plataforma SaaS multi-tenant para gestão da qualidade e conformidade ISO. Auditorias, não-conformidades, ações corretivas, documentos, indicadores e riscos.",
 };
 
 export default function RootLayout({
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

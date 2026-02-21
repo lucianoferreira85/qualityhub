@@ -1,101 +1,416 @@
+import type {
+  OrgRole,
+  TenantStatus,
+  ProjectStatus,
+  RequirementStatus,
+  NcStatus,
+  NcSeverity,
+  FindingClassification,
+  ActionType,
+  ActionStatus,
+  DocumentType,
+  DocumentStatus,
+  RootCauseMethod,
+  InvitationStatus,
+  SubscriptionStatus,
+} from "@prisma/client";
+
+// Re-export enums for client usage
+export type {
+  OrgRole,
+  TenantStatus,
+  ProjectStatus,
+  RequirementStatus,
+  NcStatus,
+  NcSeverity,
+  FindingClassification,
+  ActionType,
+  ActionStatus,
+  DocumentType,
+  DocumentStatus,
+  RootCauseMethod,
+  InvitationStatus,
+  SubscriptionStatus,
+};
+
+// ==================== Global Models ====================
+
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  maxUsers: number;
+  maxProjects: number;
+  maxStandards: number;
+  maxStorage: number;
+  maxClients: number;
+  features: Record<string, boolean>;
+  isActive: boolean;
+}
+
+export interface Standard {
+  id: string;
+  code: string;
+  name: string;
+  version: string;
+  year: number;
+  status: string;
+  description: string | null;
+  clauses?: StandardClause[];
+  controls?: StandardControl[];
+}
+
+export interface StandardClause {
+  id: string;
+  standardId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  parentId: string | null;
+  orderIndex: number;
+  children?: StandardClause[];
+}
+
+export interface StandardControl {
+  id: string;
+  standardId: string;
+  code: string;
+  title: string;
+  domain: string | null;
+  type: string | null;
+  attributes: Record<string, unknown>;
+}
+
+// ==================== Tenant ====================
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  cnpj: string | null;
+  settings: Record<string, unknown>;
+  status: TenantStatus;
+  trialEndsAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TenantWithSubscription extends Tenant {
+  subscription: Subscription | null;
+}
+
+// ==================== User & Membership ====================
+
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: string;
-  department: string | null;
+  avatarUrl: string | null;
+  isSuperAdmin: boolean;
+  isActive: boolean;
+  lastLoginAt: Date | null;
   createdAt: Date;
 }
 
+export interface TenantMember {
+  id: string;
+  tenantId: string;
+  userId: string;
+  role: OrgRole;
+  joinedAt: Date;
+  user?: User;
+}
+
+export interface Invitation {
+  id: string;
+  tenantId: string;
+  email: string;
+  role: OrgRole;
+  token: string;
+  status: InvitationStatus;
+  expiresAt: Date;
+  invitedBy?: User;
+}
+
+// ==================== Billing ====================
+
+export interface Subscription {
+  id: string;
+  tenantId: string;
+  planId: string;
+  status: SubscriptionStatus;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  cancelAtPeriodEnd: boolean;
+  plan?: Plan;
+}
+
+// ==================== Consulting Clients ====================
+
+export interface ConsultingClient {
+  id: string;
+  tenantId: string;
+  name: string;
+  cnpj: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  sector: string | null;
+  status: string;
+  createdAt: Date;
+}
+
+// ==================== Projects ====================
+
+export interface Project {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  clientId: string | null;
+  status: ProjectStatus;
+  startDate: Date | null;
+  endDate: Date | null;
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
+  client?: ConsultingClient;
+  standards?: ProjectStandard[];
+  members?: ProjectMember[];
+}
+
+export interface ProjectStandard {
+  id: string;
+  projectId: string;
+  standardId: string;
+  standard?: Standard;
+}
+
+export interface ProjectMember {
+  id: string;
+  projectId: string;
+  userId: string;
+  role: string;
+  user?: User;
+}
+
+// ==================== Requirements & Controls ====================
+
+export interface ProjectRequirement {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  clauseId: string;
+  status: RequirementStatus;
+  maturity: number;
+  responsibleId: string | null;
+  dueDate: Date | null;
+  notes: string | null;
+  evidence: string | null;
+  clause?: StandardClause;
+  responsible?: User;
+}
+
+export interface ProjectControl {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  controlId: string;
+  status: RequirementStatus;
+  maturity: number;
+  responsibleId: string | null;
+  implementationNotes: string | null;
+  control?: StandardControl;
+  responsible?: User;
+}
+
+export interface SoaEntry {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  controlId: string;
+  applicable: boolean;
+  justification: string | null;
+  implementationStatus: string | null;
+  control?: StandardControl;
+}
+
+// ==================== Risks ====================
+
+export interface Risk {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string;
+  category: string;
+  impactDimensions: Record<string, unknown>;
+  probability: number;
+  impact: number;
+  riskLevel: string;
+  treatment: string | null;
+  treatmentPlan: string | null;
+  responsibleId: string | null;
+  status: string;
+  residualProbability: number | null;
+  residualImpact: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+  treatments?: RiskTreatment[];
+}
+
+export interface RiskTreatment {
+  id: string;
+  riskId: string;
+  controlId: string | null;
+  description: string;
+  status: string;
+  control?: StandardControl;
+}
+
+// ==================== Nonconformities ====================
+
+export interface Nonconformity {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string;
+  origin: string;
+  type: string | null;
+  severity: NcSeverity;
+  clauseId: string | null;
+  status: NcStatus;
+  responsibleId: string | null;
+  dueDate: Date | null;
+  closedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  clause?: StandardClause;
+  responsible?: User;
+  rootCause?: NcRootCause;
+  actionPlans?: ActionPlan[];
+}
+
+export interface NcRootCause {
+  id: string;
+  nonconformityId: string;
+  method: RootCauseMethod;
+  analysis: Record<string, unknown>;
+  conclusion: string | null;
+}
+
+// ==================== Action Plans ====================
+
+export interface ActionPlan {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string;
+  type: ActionType;
+  status: ActionStatus;
+  responsibleId: string | null;
+  nonconformityId: string | null;
+  riskId: string | null;
+  dueDate: Date | null;
+  completedAt: Date | null;
+  verifiedAt: Date | null;
+  verificationNotes: string | null;
+  isEffective: boolean | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+  nonconformity?: Nonconformity;
+  risk?: Risk;
+}
+
+// ==================== Audits ====================
+
 export interface Audit {
   id: string;
-  title: string;
+  tenantId: string;
+  projectId: string;
   type: string;
-  standard: string;
-  scope: string | null;
+  title: string;
   startDate: Date;
   endDate: Date | null;
   status: string;
-  leadAuditorId: string;
+  leadAuditorId: string | null;
+  scope: string | null;
   conclusion: string | null;
   notes: string | null;
-  userId: string;
   createdAt: Date;
   updatedAt: Date;
+  leadAuditor?: User;
   findings?: AuditFinding[];
 }
 
 export interface AuditFinding {
   id: string;
+  tenantId: string;
   auditId: string;
-  clause: string;
-  type: string;
+  clauseId: string | null;
+  classification: FindingClassification;
   description: string;
   evidence: string | null;
-}
-
-export interface Nonconformity {
-  id: string;
-  code: string;
-  title: string;
-  description: string;
-  evidence: string | null;
-  severity: string;
-  source: string;
-  status: string;
-  rootCause: string | null;
-  rootCauseMethod: string | null;
-  auditId: string | null;
-  responsibleId: string;
-  userId: string;
-  dueDate: Date | null;
-  closedAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  actions?: Action[];
-}
-
-export interface Action {
-  id: string;
-  code: string;
-  title: string;
-  description: string;
-  type: string;
-  status: string;
-  responsibleId: string;
   nonconformityId: string | null;
-  dueDate: Date;
-  completedAt: Date | null;
-  verifiedAt: Date | null;
-  verificationNotes: string | null;
-  isEffective: boolean | null;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  nonconformity?: Nonconformity | null;
+  clause?: StandardClause;
+  nonconformity?: Nonconformity;
 }
+
+// ==================== Documents ====================
 
 export interface Document {
   id: string;
+  tenantId: string;
+  projectId: string | null;
   code: string;
   title: string;
-  type: string;
+  type: DocumentType;
   category: string | null;
   version: string;
-  status: string;
+  status: DocumentStatus;
   content: string | null;
   fileUrl: string | null;
   authorId: string;
   reviewerId: string | null;
   approverId: string | null;
   approvedAt: Date | null;
-  userId: string;
+  nextReviewDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  author?: User;
+  reviewer?: User;
+  approver?: User;
+  versions?: DocumentVersion[];
 }
+
+export interface DocumentVersion {
+  id: string;
+  documentId: string;
+  version: string;
+  content: string | null;
+  fileUrl: string | null;
+  changedById: string;
+  changeNotes: string | null;
+  createdAt: Date;
+  changedBy?: User;
+}
+
+// ==================== Indicators ====================
 
 export interface Indicator {
   id: string;
+  tenantId: string;
+  projectId: string | null;
   name: string;
   description: string | null;
   unit: string;
@@ -104,13 +419,13 @@ export interface Indicator {
   lowerLimit: number | null;
   upperLimit: number | null;
   processId: string | null;
-  userId: string;
   createdAt: Date;
   measurements?: IndicatorMeasurement[];
 }
 
 export interface IndicatorMeasurement {
   id: string;
+  tenantId: string;
   indicatorId: string;
   value: number;
   period: Date;
@@ -118,46 +433,73 @@ export interface IndicatorMeasurement {
   createdAt: Date;
 }
 
-export interface RiskAssessment {
+// ==================== Management Review ====================
+
+export interface ManagementReview {
   id: string;
-  title: string;
-  description: string;
-  type: string;
-  category: string;
-  probability: number;
-  impact: number;
-  riskLevel: string;
-  treatment: string | null;
-  treatmentPlan: string | null;
-  responsibleId: string;
+  tenantId: string;
+  projectId: string;
+  scheduledDate: Date;
+  actualDate: Date | null;
   status: string;
-  userId: string;
+  minutes: string | null;
+  decisions: Record<string, unknown>[];
   createdAt: Date;
-  updatedAt: Date;
 }
+
+// ==================== Audit Log & Notifications ====================
+
+export interface AuditLogEntry {
+  id: string;
+  tenantId: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata: Record<string, unknown>;
+  ipAddress: string | null;
+  createdAt: Date;
+  user?: User;
+}
+
+export interface Notification {
+  id: string;
+  tenantId: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  readAt: Date | null;
+  entityType: string | null;
+  entityId: string | null;
+  createdAt: Date;
+}
+
+// ==================== Dashboard ====================
+
+export interface DashboardData {
+  totalProjects: number;
+  totalAudits: number;
+  openNonconformities: number;
+  pendingActions: number;
+  riskDistribution: { level: string; count: number }[];
+  ncByStatus: { status: string; count: number }[];
+  actionEffectiveness: number;
+  projectProgress: { name: string; progress: number }[];
+}
+
+// ==================== API ====================
 
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+  details?: Record<string, string[]>;
 }
 
-export interface DashboardData {
-  totalAudits: number;
-  openNonconformities: number;
-  pendingActions: number;
-  riskDistribution: RiskDistribution[];
-  ncByMonth: MonthlyNcData[];
-  actionEffectiveness: number;
-}
-
-export interface RiskDistribution {
-  level: string;
-  count: number;
-}
-
-export interface MonthlyNcData {
-  month: number;
-  year: number;
-  opened: number;
-  closed: number;
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }

@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/", "/api/auth"];
-const STATIC_PREFIXES = ["/_next", "/favicon.ico", "/images", "/fonts"];
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/pricing",
+  "/api/auth",
+  "/api/webhooks",
+];
+
+const PUBLIC_PREFIXES = [
+  "/invite/",
+  "/_next",
+  "/favicon.ico",
+  "/images",
+  "/fonts",
+];
 
 function isPublicPath(pathname: string): boolean {
-  if (STATIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    return true;
-  }
-
-  return PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`)
-  );
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+  return false;
 }
 
 export async function middleware(request: NextRequest) {
@@ -24,8 +35,9 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await createMiddlewareClient(request);
 
   if (!user) {
-    const redirectUrl = new URL("/", request.url);
-    return NextResponse.redirect(redirectUrl);
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return response;
