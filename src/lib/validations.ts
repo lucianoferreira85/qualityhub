@@ -225,6 +225,14 @@ export const createFindingSchema = z.object({
   nonconformityId: z.string().uuid().nullable().optional(),
 });
 
+export const updateFindingSchema = z.object({
+  clauseId: z.string().uuid().nullable().optional(),
+  classification: z.enum(["conformity", "observation", "opportunity", "minor_nc", "major_nc"]).optional(),
+  description: z.string().min(1).optional(),
+  evidence: z.string().nullable().optional(),
+  nonconformityId: z.string().uuid().nullable().optional(),
+});
+
 // ==================== Document ====================
 
 export const createDocumentSchema = z.object({

@@ -4,7 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission }
 import { createAuditSchema } from "@/lib/validations";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -12,7 +12,18 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "audit", "read");
 
+    const url = new URL(request.url);
+    const type = url.searchParams.get("type");
+    const status = url.searchParams.get("status");
+    const projectId = url.searchParams.get("projectId");
+
+    const where: Record<string, unknown> = {};
+    if (type) where.type = type;
+    if (status) where.status = status;
+    if (projectId) where.projectId = projectId;
+
     const audits = await ctx.db.audit.findMany({
+      where,
       include: {
         project: { select: { id: true, name: true } },
         leadAuditor: { select: { id: true, name: true } },

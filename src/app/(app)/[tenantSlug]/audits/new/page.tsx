@@ -21,6 +21,10 @@ interface ProjectOption {
   name: string;
 }
 
+interface MemberOption {
+  user: { id: string; name: string };
+}
+
 export default function NewAuditPage() {
   const router = useRouter();
   const { tenant } = useTenant();
@@ -28,6 +32,7 @@ export default function NewAuditPage() {
   const [title, setTitle] = useState("");
   const [type, setType] = useState("internal");
   const [projectId, setProjectId] = useState("");
+  const [leadAuditorId, setLeadAuditorId] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [scope, setScope] = useState("");
@@ -36,14 +41,20 @@ export default function NewAuditPage() {
   const [error, setError] = useState("");
 
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/projects`)
-      .then((res) => res.json())
-      .then((res) => setProjects(res.data || []))
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/projects`).then((r) => r.json()),
+      fetch(`/api/tenants/${tenant.slug}/members`).then((r) => r.json()),
+    ])
+      .then(([projRes, membRes]) => {
+        setProjects(projRes.data || []);
+        setMembers(membRes.data || []);
+      })
       .catch(() => {})
-      .finally(() => setLoadingProjects(false));
+      .finally(() => setLoadingData(false));
   }, [tenant.slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,6 +70,7 @@ export default function NewAuditPage() {
           title,
           type,
           projectId,
+          leadAuditorId: leadAuditorId || null,
           startDate,
           endDate: endDate || null,
           scope: scope || null,
@@ -69,7 +81,8 @@ export default function NewAuditPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao criar auditoria");
       }
-      router.push(`/${tenant.slug}/audits`);
+      const data = await res.json();
+      router.push(`/${tenant.slug}/audits/${data.data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar");
     } finally {
@@ -120,7 +133,7 @@ export default function NewAuditPage() {
                   className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 >
                   <option value="">
-                    {loadingProjects ? "Carregando..." : "Selecione o projeto"}
+                    {loadingData ? "Carregando..." : "Selecione o projeto"}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -139,6 +152,24 @@ export default function NewAuditPage() {
                 >
                   {AUDIT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                  Auditor líder
+                </label>
+                <select
+                  value={leadAuditorId}
+                  onChange={(e) => setLeadAuditorId(e.target.value)}
+                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                >
+                  <option value="">
+                    {loadingData ? "Carregando..." : "Selecione o auditor"}
+                  </option>
+                  {members.map((m) => (
+                    <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
                   ))}
                 </select>
               </div>

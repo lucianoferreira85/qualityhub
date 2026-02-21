@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FolderKanban, User, Calendar, FileSearch } from "lucide-react";
+import { Plus, Search, FolderKanban, User, Calendar, FileSearch, Filter } from "lucide-react";
 import { getStatusColor, getStatusLabel, getAuditTypeLabel, formatDate } from "@/lib/utils";
 import type { Audit } from "@/types";
+
+const AUDIT_TYPES = [
+  { value: "", label: "Todos os tipos" },
+  { value: "internal", label: "Interna" },
+  { value: "external", label: "Externa" },
+  { value: "supplier", label: "Fornecedor" },
+  { value: "certification", label: "Certificação" },
+];
+
+const AUDIT_STATUSES = [
+  { value: "", label: "Todos os status" },
+  { value: "planned", label: "Planejada" },
+  { value: "in_progress", label: "Em Andamento" },
+  { value: "completed", label: "Concluída" },
+  { value: "cancelled", label: "Cancelada" },
+];
 
 const AUDIT_TYPE_COLORS: Record<string, string> = {
   internal: "bg-info-bg text-info-fg",
@@ -29,14 +45,26 @@ export default function AuditsPage() {
   const [audits, setAudits] = useState<AuditWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/audits`)
+  const fetchAudits = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filterType) params.set("type", filterType);
+    if (filterStatus) params.set("status", filterStatus);
+    const qs = params.toString();
+
+    fetch(`/api/tenants/${tenant.slug}/audits${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
       .then((res) => setAudits(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug]);
+  }, [tenant.slug, filterType, filterStatus]);
+
+  useEffect(() => {
+    fetchAudits();
+  }, [fetchAudits]);
 
   const filtered = audits.filter((a) => {
     const q = search.toLowerCase();
@@ -67,12 +95,45 @@ export default function AuditsPage() {
         )}
       </div>
 
-      <Input
-        placeholder="Buscar por título, projeto ou tipo..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Buscar por título, projeto ou tipo..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {AUDIT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {AUDIT_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          {(filterType || filterStatus) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setFilterType(""); setFilterStatus(""); }}
+              className="text-foreground-tertiary"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -93,10 +154,10 @@ export default function AuditsPage() {
           <CardContent className="flex flex-col items-center py-12">
             <Search className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhuma auditoria encontrada" : "Nenhuma auditoria registrada"}
+              {search || filterType || filterStatus ? "Nenhuma auditoria encontrada" : "Nenhuma auditoria registrada"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Agende a primeira auditoria para começar"}
+              {search || filterType || filterStatus ? "Tente ajustar os filtros ou termos de busca" : "Agende a primeira auditoria para começar"}
             </p>
           </CardContent>
         </Card>

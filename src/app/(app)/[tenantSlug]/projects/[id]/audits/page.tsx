@@ -39,12 +39,9 @@ export default function ProjectAuditsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/audits`)
+    fetch(`/api/tenants/${tenant.slug}/audits?projectId=${projectId}`)
       .then((res) => res.json())
-      .then((res) => {
-        const all = res.data || [];
-        setAudits(all.filter((a: AuditItem) => a.project?.id === projectId));
-      })
+      .then((res) => setAudits(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -84,7 +81,7 @@ export default function ProjectAuditsPage() {
       </div>
 
       <Input
-        placeholder="Buscar por titulo ou tipo..."
+        placeholder="Buscar por título ou tipo..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
