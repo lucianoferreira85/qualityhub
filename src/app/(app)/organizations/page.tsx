@@ -34,9 +34,6 @@ export default function TenantSelectorPage() {
       .then((res) => res.json())
       .then((res) => {
         setTenants(res.data || []);
-        if (res.data?.length === 1) {
-          router.push(`/${res.data[0].slug}/dashboard`);
-        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
