@@ -45,12 +45,9 @@ export default function ProjectActionPlansPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/action-plans`)
+    fetch(`/api/tenants/${tenant.slug}/action-plans?projectId=${projectId}`)
       .then((res) => res.json())
-      .then((res) => {
-        const all = res.data || [];
-        setPlans(all.filter((ap: ApItem) => ap.project?.id === projectId));
-      })
+      .then((res) => setPlans(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -75,9 +72,9 @@ export default function ProjectActionPlansPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-title-1 text-foreground-primary">Planos de Acao</h1>
+            <h1 className="text-title-1 text-foreground-primary">Planos de Ação</h1>
             <p className="text-body-1 text-foreground-secondary mt-1">
-              Acoes corretivas e preventivas deste projeto
+              Ações corretivas e preventivas deste projeto
             </p>
           </div>
         </div>
@@ -92,7 +89,7 @@ export default function ProjectActionPlansPage() {
       </div>
 
       <Input
-        placeholder="Buscar por codigo, titulo ou NC..."
+        placeholder="Buscar por código, título ou NC..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
@@ -117,10 +114,10 @@ export default function ProjectActionPlansPage() {
           <CardContent className="flex flex-col items-center py-12">
             <ClipboardCheck className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum plano encontrado" : "Nenhum plano de acao neste projeto"}
+              {search ? "Nenhum plano encontrado" : "Nenhum plano de ação neste projeto"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Crie um plano de acao vinculado a este projeto"}
+              {search ? "Tente ajustar os termos de busca" : "Crie um plano de ação vinculado a este projeto"}
             </p>
           </CardContent>
         </Card>

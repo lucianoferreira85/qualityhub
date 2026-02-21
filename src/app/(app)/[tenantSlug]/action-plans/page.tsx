@@ -1,15 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ClipboardCheck, FolderKanban, User, Calendar, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, ClipboardCheck, FolderKanban, User, Calendar, AlertTriangle, ShieldAlert, Filter } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
 import type { ActionPlan } from "@/types";
+
+const ACTION_TYPES = [
+  { value: "", label: "Todos os tipos" },
+  { value: "corrective", label: "Corretiva" },
+  { value: "preventive", label: "Preventiva" },
+  { value: "improvement", label: "Melhoria" },
+];
+
+const ACTION_STATUSES = [
+  { value: "", label: "Todos os status" },
+  { value: "planned", label: "Planejada" },
+  { value: "in_progress", label: "Em Execução" },
+  { value: "completed", label: "Concluída" },
+  { value: "verified", label: "Verificada" },
+  { value: "effective", label: "Eficaz" },
+  { value: "ineffective", label: "Ineficaz" },
+];
 
 const TYPE_LABELS: Record<string, string> = {
   corrective: "Corretiva",
@@ -35,14 +52,26 @@ export default function ActionPlansPage() {
   const [plans, setPlans] = useState<ApWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/action-plans`)
+  const fetchPlans = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filterType) params.set("type", filterType);
+    if (filterStatus) params.set("status", filterStatus);
+    const qs = params.toString();
+
+    fetch(`/api/tenants/${tenant.slug}/action-plans${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
       .then((res) => setPlans(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug]);
+  }, [tenant.slug, filterType, filterStatus]);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
   const filtered = plans.filter((ap) => {
     const q = search.toLowerCase();
@@ -76,12 +105,45 @@ export default function ActionPlansPage() {
         )}
       </div>
 
-      <Input
-        placeholder="Buscar por código, título, projeto ou NC..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Buscar por código, título, projeto ou NC..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {ACTION_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {ACTION_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          {(filterType || filterStatus) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setFilterType(""); setFilterStatus(""); }}
+              className="text-foreground-tertiary"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -102,10 +164,14 @@ export default function ActionPlansPage() {
           <CardContent className="flex flex-col items-center py-12">
             <ClipboardCheck className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum plano encontrado" : "Nenhum plano de ação registrado"}
+              {search || filterType || filterStatus
+                ? "Nenhum plano encontrado"
+                : "Nenhum plano de ação registrado"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Crie o primeiro plano de ação para começar"}
+              {search || filterType || filterStatus
+                ? "Tente ajustar os filtros ou termos de busca"
+                : "Crie o primeiro plano de ação para começar"}
             </p>
           </CardContent>
         </Card>
