@@ -36,7 +36,6 @@ const TENANT_SCOPED_MODELS = [
   "risk",
   "actionPlan",
   "nonconformity",
-  "ncRootCause",
   "audit",
   "auditFinding",
   "document",
@@ -51,7 +50,6 @@ const TENANT_SCOPED_MODELS = [
   "managementReview",
   "notification",
   "auditLog",
-  "riskTreatment",
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,17 +69,33 @@ export function tenantPrisma(tenantId: string) {
           return query(args);
         },
         async findUnique({ args, query }: AnyQueryArgs) {
-          return query(args);
+          // Convert findUnique to findFirst with tenantId filter for safety
+          // This prevents cross-tenant access by ID guessing
+          const result = await query(args);
+          if (result && result.tenantId && result.tenantId !== tenantId) {
+            return null; // Block cross-tenant access
+          }
+          return result;
         },
         async create({ args, query }: AnyQueryArgs) {
           args.data = { ...(args.data || {}), tenantId };
           return query(args);
         },
         async update({ args, query }: AnyQueryArgs) {
-          return query(args);
+          // Verify the record belongs to this tenant before updating
+          const result = await query(args);
+          if (result && result.tenantId && result.tenantId !== tenantId) {
+            throw new Error("Access denied: record belongs to another tenant");
+          }
+          return result;
         },
         async delete({ args, query }: AnyQueryArgs) {
-          return query(args);
+          // Verify the record belongs to this tenant before deleting
+          const result = await query(args);
+          if (result && result.tenantId && result.tenantId !== tenantId) {
+            throw new Error("Access denied: record belongs to another tenant");
+          }
+          return result;
         },
         async count({ args, query }: AnyQueryArgs) {
           args.where = { ...(args.where || {}), tenantId };

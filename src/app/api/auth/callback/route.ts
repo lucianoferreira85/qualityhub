@@ -6,7 +6,12 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const redirect = requestUrl.searchParams.get("redirect") || "/app";
+  const redirectParam = requestUrl.searchParams.get("redirect") || "/organizations";
+
+  // Prevent open redirect: only allow relative paths starting with /
+  const redirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+    ? redirectParam
+    : "/organizations";
 
   if (code) {
     const supabase = await createSupabaseServerClient();

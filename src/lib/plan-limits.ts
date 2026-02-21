@@ -83,7 +83,16 @@ export async function checkPlanLimit(
   });
 
   if (!subscription || !subscription.plan) {
-    return { allowed: false, current: 0, limit: 0 };
+    // No subscription = trial/free tenant - use starter limits
+    const starterLimits = DEFAULT_PLANS.starter;
+    let fallbackLimit = 0;
+    switch (resource) {
+      case "users": fallbackLimit = starterLimits.maxUsers; break;
+      case "projects": fallbackLimit = starterLimits.maxProjects; break;
+      case "standards": fallbackLimit = starterLimits.maxStandards; break;
+      case "clients": fallbackLimit = starterLimits.maxClients; break;
+    }
+    return { allowed: true, current: 0, limit: fallbackLimit };
   }
 
   const plan = subscription.plan;
@@ -101,12 +110,16 @@ export async function checkPlanLimit(
       });
       limit = plan.maxProjects;
       break;
-    case "standards":
-      current = await prisma.projectStandard.count({
+    case "standards": {
+      const distinctStandards = await prisma.projectStandard.findMany({
         where: { project: { tenantId } },
+        select: { standardId: true },
+        distinct: ["standardId"],
       });
+      current = distinctStandards.length;
       limit = plan.maxStandards;
       break;
+    }
     case "clients":
       current = await prisma.consultingClient.count({ where: { tenantId } });
       limit = plan.maxClients;

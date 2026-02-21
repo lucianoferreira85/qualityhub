@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
 
 export async function GET(
   _request: Request,
@@ -9,6 +9,7 @@ export async function GET(
   try {
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
+    requirePermission(ctx, "project", "read");
 
     const [
       totalProjects,

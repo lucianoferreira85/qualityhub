@@ -81,6 +81,7 @@ export function getStatusColor(status: string): string {
     treating: "bg-brand-light text-brand",
     monitored: "bg-success-bg text-success-fg",
     cancelled: "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
+    scheduled: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   };
   return colors[status] || "bg-gray-100 text-gray-800";
 }
@@ -113,6 +114,7 @@ export function getStatusLabel(status: string): string {
     treating: "Em Tratamento",
     monitored: "Monitorado",
     cancelled: "Cancelada",
+    scheduled: "Agendada",
   };
   return labels[status] || status;
 }

@@ -31,7 +31,12 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
 
   try {
-    event = getStripe().webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error("STRIPE_WEBHOOK_SECRET not configured");
+      return NextResponse.json({ error: "Configuração ausente" }, { status: 500 });
+    }
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Assinatura inválida" }, { status: 400 });
@@ -107,14 +112,21 @@ export async function POST(request: Request) {
             past_due: "past_due",
             canceled: "cancelled",
             unpaid: "past_due",
+            incomplete: "past_due",
+            incomplete_expired: "cancelled",
+            paused: "past_due",
           };
 
           const period = extractBillingPeriod(subscription as unknown as Record<string, unknown>);
+          const mappedStatus = statusMap[subscription.status];
+          if (!mappedStatus) {
+            console.warn(`Stripe status desconhecido: ${subscription.status}`);
+          }
 
           await prisma.subscription.update({
             where: { id: existingSub.id },
             data: {
-              status: statusMap[subscription.status] ?? "active",
+              status: mappedStatus ?? "past_due",
               cancelAtPeriodEnd: subscription.cancel_at_period_end,
               currentPeriodStart: period.currentPeriodStart,
               currentPeriodEnd: period.currentPeriodEnd,
