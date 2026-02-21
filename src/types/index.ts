@@ -405,6 +405,25 @@ export interface DocumentVersion {
   changedBy?: User;
 }
 
+// ==================== Processes ====================
+
+export interface Process {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  responsibleId: string | null;
+  status: string;
+  category: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  project?: { id: string; name: string };
+  responsible?: User;
+  indicators?: Indicator[];
+}
+
 // ==================== Indicators ====================
 
 export interface Indicator {

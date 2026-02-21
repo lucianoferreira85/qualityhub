@@ -1,29 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Mail, User } from "lucide-react";
+import { Plus, Building2, Mail, User, Filter } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { ConsultingClient } from "@/types";
+
+const CLIENT_STATUSES = [
+  { value: "", label: "Todos os status" },
+  { value: "active", label: "Ativo" },
+  { value: "inactive", label: "Inativo" },
+];
 
 export default function ClientsPage() {
   const { tenant, can } = useTenant();
   const [clients, setClients] = useState<ConsultingClient[]>([]);
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/clients`)
+  const fetchClients = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filterStatus) params.set("status", filterStatus);
+    const qs = params.toString();
+
+    fetch(`/api/tenants/${tenant.slug}/clients${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
       .then((res) => setClients(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug]);
+  }, [tenant.slug, filterStatus]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const filtered = clients.filter(
     (c) =>
@@ -51,12 +67,36 @@ export default function ClientsPage() {
         )}
       </div>
 
-      <Input
-        placeholder="Buscar por nome, contato ou setor..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Buscar por nome, contato ou setor..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {CLIENT_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          {filterStatus && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterStatus("")}
+              className="text-foreground-tertiary"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -75,11 +115,13 @@ export default function ClientsPage() {
           <CardContent className="flex flex-col items-center py-12">
             <Building2 className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              Nenhum cliente encontrado
+              {search || filterStatus
+                ? "Nenhum cliente encontrado"
+                : "Nenhum cliente cadastrado"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search
-                ? "Tente outra busca"
+              {search || filterStatus
+                ? "Tente ajustar os filtros ou termos de busca"
                 : "Cadastre seu primeiro cliente para começar"}
             </p>
           </CardContent>

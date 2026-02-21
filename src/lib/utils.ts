@@ -230,6 +230,24 @@ export function getDocumentTypeColor(type: string): string {
   return colors[type] || "bg-gray-100 text-gray-800";
 }
 
+export function getProcessStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    active: "Ativo",
+    inactive: "Inativo",
+    draft: "Rascunho",
+  };
+  return labels[status] || status;
+}
+
+export function getProcessStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    active: "bg-success-bg text-success-fg",
+    inactive: "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
+    draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+  };
+  return colors[status] || "bg-gray-100 text-gray-800";
+}
+
 export function getFrequencyLabel(frequency: string): string {
   const labels: Record<string, string> = {
     daily: "Diário",

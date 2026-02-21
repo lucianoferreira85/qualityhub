@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
-import { createManagementReviewSchema } from "@/lib/validations";
+import { createProcessSchema } from "@/lib/validations";
+import { generateCode } from "@/lib/utils";
 
 export async function GET(
   request: Request,
@@ -10,25 +11,29 @@ export async function GET(
   try {
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
-    requirePermission(ctx, "managementReview", "read");
+    requirePermission(ctx, "process", "read");
 
     const url = new URL(request.url);
     const status = url.searchParams.get("status");
     const projectId = url.searchParams.get("projectId");
+    const category = url.searchParams.get("category");
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (projectId) where.projectId = projectId;
+    if (category) where.category = category;
 
-    const reviews = await ctx.db.managementReview.findMany({
+    const processes = await ctx.db.process.findMany({
       where,
       include: {
         project: { select: { id: true, name: true } },
+        responsible: { select: { id: true, name: true } },
+        _count: { select: { indicators: true } },
       },
-      orderBy: { scheduledDate: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
-    return successResponse(reviews);
+    return successResponse(processes);
   } catch (error) {
     return handleApiError(error);
   }
@@ -41,22 +46,28 @@ export async function POST(
   try {
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
-    requirePermission(ctx, "managementReview", "create");
+    requirePermission(ctx, "process", "create");
 
     const body = await request.json();
-    const data = createManagementReviewSchema.parse(body);
+    const data = createProcessSchema.parse(body);
 
-    const review = await ctx.db.managementReview.create({
+    const count = await ctx.db.process.count();
+    const code = generateCode("PRC", count + 1);
+
+    const process = await ctx.db.process.create({
       data: {
         tenantId: ctx.tenantId,
         projectId: data.projectId,
-        scheduledDate: new Date(data.scheduledDate),
-        minutes: data.minutes,
-        decisions: data.decisions || [],
+        code,
+        name: data.name,
+        description: data.description,
+        responsibleId: data.responsibleId,
+        status: data.status || "active",
+        category: data.category,
       },
     });
 
-    return successResponse(review, 201);
+    return successResponse(process, 201);
   } catch (error) {
     return handleApiError(error);
   }

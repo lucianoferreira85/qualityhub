@@ -296,6 +296,25 @@ export const updateMeasurementSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
+// ==================== Process ====================
+
+export const createProcessSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["active", "inactive", "draft"]).optional(),
+  category: z.string().nullable().optional(),
+});
+
+export const updateProcessSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["active", "inactive", "draft"]).optional(),
+  category: z.string().nullable().optional(),
+});
+
 // ==================== Management Review ====================
 
 export const createManagementReviewSchema = z.object({
@@ -376,5 +395,7 @@ export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
 export type CreateIndicatorInput = z.infer<typeof createIndicatorSchema>;
 export type UpdateIndicatorInput = z.infer<typeof updateIndicatorSchema>;
 export type CreateMeasurementInput = z.infer<typeof createMeasurementSchema>;
+export type CreateProcessInput = z.infer<typeof createProcessSchema>;
+export type UpdateProcessInput = z.infer<typeof updateProcessSchema>;
 export type CreateManagementReviewInput = z.infer<typeof createManagementReviewSchema>;
 export type UpdateManagementReviewInput = z.infer<typeof updateManagementReviewSchema>;

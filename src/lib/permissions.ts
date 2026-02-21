@@ -14,6 +14,7 @@ type Resource =
   | "soaEntry"
   | "requirement"
   | "control"
+  | "process"
   | "client"
   | "member"
   | "invitation"
@@ -33,6 +34,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["create", "read", "update", "delete"],
     document: ["create", "read", "update", "delete"],
     indicator: ["create", "read", "update", "delete"],
+    process: ["create", "read", "update", "delete"],
     soaEntry: ["create", "read", "update", "delete"],
     requirement: ["create", "read", "update", "delete"],
     control: ["create", "read", "update", "delete"],
@@ -52,6 +54,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["create", "read", "update"],
     document: ["create", "read", "update"],
     indicator: ["create", "read", "update"],
+    process: ["create", "read", "update"],
     soaEntry: ["create", "read", "update"],
     requirement: ["create", "read", "update", "delete"],
     control: ["create", "read", "update", "delete"],
@@ -70,6 +73,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["read"],
     document: ["create", "read", "update"],
     indicator: ["create", "read", "update"],
+    process: ["create", "read", "update"],
     soaEntry: ["create", "read", "update"],
     requirement: ["create", "read", "update"],
     control: ["create", "read", "update"],
@@ -86,6 +90,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["read"],
     document: ["read", "update"],
     indicator: ["read"],
+    process: ["read"],
     soaEntry: ["read"],
     requirement: ["read", "update"],
     control: ["read", "update"],
@@ -102,6 +107,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["create", "read", "update"],
     document: ["read"],
     indicator: ["read"],
+    process: ["read"],
     soaEntry: ["read"],
     requirement: ["read"],
     control: ["read"],
@@ -118,6 +124,7 @@ const PERMISSIONS: PermissionMatrix = {
     auditFinding: ["read"],
     document: ["read"],
     indicator: ["read"],
+    process: ["read"],
     soaEntry: ["read"],
     requirement: ["read"],
     control: ["read"],
@@ -131,6 +138,7 @@ const PERMISSIONS: PermissionMatrix = {
     audit: ["read"],
     document: ["read"],
     indicator: ["read"],
+    process: ["read"],
     managementReview: ["read"],
   },
 };

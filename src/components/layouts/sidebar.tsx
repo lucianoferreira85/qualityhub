@@ -8,9 +8,11 @@ import {
   Building2,
   AlertTriangle,
   ClipboardCheck,
+  ShieldAlert,
   Search as SearchIcon,
   FileText,
   TrendingUp,
+  Cog,
   BookOpen,
   Settings,
   ChevronLeft,
@@ -38,10 +40,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Clientes", href: "/clients", icon: Building2, resource: "client" },
   { label: "Não Conformidades", href: "/nonconformities", icon: AlertTriangle, resource: "nonconformity" },
   { label: "Planos de Ação", href: "/action-plans", icon: ClipboardCheck, resource: "actionPlan" },
+  { label: "Riscos", href: "/risks", icon: ShieldAlert, resource: "risk" },
   { label: "Auditorias", href: "/audits", icon: SearchIcon, resource: "audit" },
   { label: "Documentos", href: "/documents", icon: FileText, resource: "document" },
+  { label: "Processos", href: "/processes", icon: Cog, resource: "process" },
   { label: "Indicadores", href: "/indicators", icon: TrendingUp, resource: "indicator" },
-  { label: "Analise Critica", href: "/management-reviews", icon: BookOpen, resource: "managementReview" },
+  { label: "Análise Crítica", href: "/management-reviews", icon: BookOpen, resource: "managementReview" },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {

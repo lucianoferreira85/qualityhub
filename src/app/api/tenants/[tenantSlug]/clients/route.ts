@@ -5,7 +5,7 @@ import { createClientSchema } from "@/lib/validations";
 import { checkPlanLimit } from "@/lib/plan-limits";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -13,7 +13,14 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "client", "read");
 
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status");
+
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+
     const clients = await ctx.db.consultingClient.findMany({
+      where,
       orderBy: { name: "asc" },
     });
 

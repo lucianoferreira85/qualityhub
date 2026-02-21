@@ -219,6 +219,7 @@ model Tenant {
   audits       Audit[]
   documents    Document[]
   indicators   Indicator[]
+  processes    Process[]
   reviews      ManagementReview[]
   auditLogs    AuditLog[]
   notifications Notification[]
@@ -256,6 +257,7 @@ model User {
   reviewedDocuments Document[] @relation("DocumentReviewer")
   approvedDocuments Document[] @relation("DocumentApprover")
   documentVersions DocumentVersion[]
+  assignedProcesses Process[] @relation("ProcessResponsible")
   auditLogs AuditLog[]
   notifications Notification[]
 
@@ -367,6 +369,7 @@ model Project {
   audits        Audit[]
   documents     Document[]
   indicators    Indicator[]
+  processes     Process[]
   reviews       ManagementReview[]
 
   @@index([tenantId])
@@ -699,6 +702,31 @@ model DocumentVersion {
   @@map("document_versions")
 }
 
+// ==================== PROCESSES ====================
+
+model Process {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  projectId     String      @map("project_id") @db.Uuid
+  code          String
+  name          String
+  description   String?
+  responsibleId String?     @map("responsible_id") @db.Uuid
+  status        String      @default("active")
+  category      String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible   User?       @relation("ProcessResponsible", fields: [responsibleId], references: [id])
+  indicators    Indicator[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("processes")
+}
+
 // ==================== INDICATORS ====================
 
 model Indicator {
@@ -717,6 +745,7 @@ model Indicator {
   updatedAt    DateTime               @updatedAt @map("updated_at")
   tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   project      Project?               @relation(fields: [projectId], references: [id])
+  process      Process?               @relation(fields: [processId], references: [id])
   measurements IndicatorMeasurement[]
 
   @@index([tenantId])
