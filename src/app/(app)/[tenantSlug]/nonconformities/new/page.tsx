@@ -30,6 +30,10 @@ interface ProjectOption {
   name: string;
 }
 
+interface MemberOption {
+  user: { id: string; name: string };
+}
+
 export default function NewNonconformityPage() {
   const router = useRouter();
   const { tenant } = useTenant();
@@ -39,19 +43,26 @@ export default function NewNonconformityPage() {
   const [projectId, setProjectId] = useState("");
   const [origin, setOrigin] = useState("internal");
   const [severity, setSeverity] = useState("minor");
+  const [responsibleId, setResponsibleId] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [members, setMembers] = useState<MemberOption[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/projects`)
-      .then((res) => res.json())
-      .then((res) => setProjects(res.data || []))
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/projects`).then((r) => r.json()),
+      fetch(`/api/tenants/${tenant.slug}/members`).then((r) => r.json()),
+    ])
+      .then(([projRes, membRes]) => {
+        setProjects(projRes.data || []);
+        setMembers(membRes.data || []);
+      })
       .catch(() => {})
-      .finally(() => setLoadingProjects(false));
+      .finally(() => setLoadingData(false));
   }, [tenant.slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +82,7 @@ export default function NewNonconformityPage() {
             projectId,
             origin,
             severity,
+            responsibleId: responsibleId || null,
             dueDate: dueDate || null,
           }),
         }
@@ -79,7 +91,8 @@ export default function NewNonconformityPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao criar não conformidade");
       }
-      router.push(`/${tenant.slug}/nonconformities`);
+      const data = await res.json();
+      router.push(`/${tenant.slug}/nonconformities/${data.data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar");
     } finally {
@@ -146,7 +159,7 @@ export default function NewNonconformityPage() {
                   className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 >
                   <option value="">
-                    {loadingProjects ? "Carregando..." : "Selecione o projeto"}
+                    {loadingData ? "Carregando..." : "Selecione o projeto"}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -186,6 +199,24 @@ export default function NewNonconformityPage() {
                     <option key={s.value} value={s.value}>
                       {s.label}
                     </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                  Responsável
+                </label>
+                <select
+                  value={responsibleId}
+                  onChange={(e) => setResponsibleId(e.target.value)}
+                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                >
+                  <option value="">
+                    {loadingData ? "Carregando..." : "Selecione o responsável"}
+                  </option>
+                  {members.map((m) => (
+                    <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
                   ))}
                 </select>
               </div>

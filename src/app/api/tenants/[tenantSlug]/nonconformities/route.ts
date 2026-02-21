@@ -5,7 +5,7 @@ import { createNonconformitySchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -13,7 +13,20 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "nonconformity", "read");
 
+    const url = new URL(request.url);
+    const origin = url.searchParams.get("origin");
+    const severity = url.searchParams.get("severity");
+    const status = url.searchParams.get("status");
+    const projectId = url.searchParams.get("projectId");
+
+    const where: Record<string, unknown> = {};
+    if (origin) where.origin = origin;
+    if (severity) where.severity = severity;
+    if (status) where.status = status;
+    if (projectId) where.projectId = projectId;
+
     const ncs = await ctx.db.nonconformity.findMany({
+      where,
       include: {
         project: { select: { id: true, name: true } },
         responsible: { select: { id: true, name: true } },

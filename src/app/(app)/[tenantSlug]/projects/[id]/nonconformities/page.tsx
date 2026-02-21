@@ -33,12 +33,9 @@ export default function ProjectNonconformitiesPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/nonconformities`)
+    fetch(`/api/tenants/${tenant.slug}/nonconformities?projectId=${projectId}`)
       .then((res) => res.json())
-      .then((res) => {
-        const all = res.data || [];
-        setNcs(all.filter((nc: NcItem) => nc.project?.id === projectId));
-      })
+      .then((res) => setNcs(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -61,7 +58,7 @@ export default function ProjectNonconformitiesPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-title-1 text-foreground-primary">Nao Conformidades</h1>
+            <h1 className="text-title-1 text-foreground-primary">Não Conformidades</h1>
             <p className="text-body-1 text-foreground-secondary mt-1">
               NCs vinculadas a este projeto
             </p>
@@ -78,7 +75,7 @@ export default function ProjectNonconformitiesPage() {
       </div>
 
       <Input
-        placeholder="Buscar por codigo ou titulo..."
+        placeholder="Buscar por código ou título..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
@@ -103,7 +100,7 @@ export default function ProjectNonconformitiesPage() {
           <CardContent className="flex flex-col items-center py-12">
             <AlertTriangle className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhuma NC encontrada" : "Nenhuma nao conformidade neste projeto"}
+              {search ? "Nenhuma NC encontrada" : "Nenhuma não conformidade neste projeto"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
               {search ? "Tente ajustar os termos de busca" : "Registre uma NC vinculada a este projeto"}
@@ -153,7 +150,7 @@ export default function ProjectNonconformitiesPage() {
                         </span>
                       )}
                       {nc._count && nc._count.actionPlans > 0 && (
-                        <span>{nc._count.actionPlans} acao(oes)</span>
+                        <span>{nc._count.actionPlans} ação(ões)</span>
                       )}
                     </div>
                   </div>
