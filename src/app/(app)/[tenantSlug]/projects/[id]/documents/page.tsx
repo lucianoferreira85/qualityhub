@@ -20,7 +20,6 @@ interface DocItem {
   version: string;
   category: string | null;
   nextReviewDate: string | null;
-  project?: { id: string; name: string } | null;
   author?: { id: string; name: string } | null;
 }
 
@@ -33,17 +32,15 @@ export default function ProjectDocumentsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/documents`)
+    fetch(`/api/tenants/${tenant.slug}/documents?projectId=${projectId}`)
       .then((res) => res.json())
-      .then((res) => {
-        const all = res.data || [];
-        setDocuments(all.filter((d: DocItem) => d.project?.id === projectId));
-      })
+      .then((res) => setDocuments(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
 
   const filtered = documents.filter((d) => {
+    if (!search) return true;
     const q = search.toLowerCase();
     return (
       d.code.toLowerCase().includes(q) ||
@@ -64,7 +61,7 @@ export default function ProjectDocumentsPage() {
           <div>
             <h1 className="text-title-1 text-foreground-primary">Documentos</h1>
             <p className="text-body-1 text-foreground-secondary mt-1">
-              Politicas, procedimentos e registros do projeto
+              Políticas, procedimentos e registros do projeto
             </p>
           </div>
         </div>
@@ -79,7 +76,7 @@ export default function ProjectDocumentsPage() {
       </div>
 
       <Input
-        placeholder="Buscar por codigo, titulo ou tipo..."
+        placeholder="Buscar por código, título ou tipo..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
@@ -139,7 +136,7 @@ export default function ProjectDocumentsPage() {
                     {doc.nextReviewDate && (
                       <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>Revisao: {formatDate(doc.nextReviewDate)}</span>
+                        <span>Revisão: {formatDate(doc.nextReviewDate)}</span>
                       </div>
                     )}
                   </div>

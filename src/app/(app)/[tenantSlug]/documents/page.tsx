@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, FolderKanban, User, Calendar, Tag } from "lucide-react";
+import { Plus, FileText, FolderKanban, User, Calendar, Tag, Filter } from "lucide-react";
 import { getStatusColor, getStatusLabel, getDocumentTypeLabel, getDocumentTypeColor, formatDate } from "@/lib/utils";
 import type { Document } from "@/types";
+
+const DOCUMENT_TYPES = [
+  { value: "", label: "Todos os tipos" },
+  { value: "policy", label: "Política" },
+  { value: "procedure", label: "Procedimento" },
+  { value: "work_instruction", label: "Instrução de Trabalho" },
+  { value: "form", label: "Formulário" },
+  { value: "record", label: "Registro" },
+  { value: "manual", label: "Manual" },
+];
+
+const DOCUMENT_STATUSES = [
+  { value: "", label: "Todos os status" },
+  { value: "draft", label: "Rascunho" },
+  { value: "in_review", label: "Em Revisão" },
+  { value: "approved", label: "Aprovado" },
+  { value: "obsolete", label: "Obsoleto" },
+];
 
 interface DocWithRelations extends Omit<Document, "author"> {
   project?: { id: string; name: string } | null;
@@ -21,25 +39,40 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState<DocWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/documents`)
+  const fetchDocuments = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filterType) params.set("type", filterType);
+    if (filterStatus) params.set("status", filterStatus);
+    const qs = params.toString();
+
+    fetch(`/api/tenants/${tenant.slug}/documents${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
       .then((res) => setDocuments(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug]);
+  }, [tenant.slug, filterType, filterStatus]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const filtered = documents.filter((d) => {
+    if (!search) return true;
     const q = search.toLowerCase();
     return (
       d.code.toLowerCase().includes(q) ||
       d.title.toLowerCase().includes(q) ||
       d.project?.name.toLowerCase().includes(q) ||
-      getDocumentTypeLabel(d.type).toLowerCase().includes(q) ||
+      d.category?.toLowerCase().includes(q) ||
       false
     );
   });
+
+  const hasFilters = filterType || filterStatus;
 
   return (
     <div className="space-y-6">
@@ -47,7 +80,7 @@ export default function DocumentsPage() {
         <div>
           <h1 className="text-title-1 text-foreground-primary">Documentos</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
-            Gerencie documentos do sistema de gestão
+            Gerencie políticas, procedimentos e registros do sistema de gestão
           </p>
         </div>
         {can("document", "create") && (
@@ -60,12 +93,45 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      <Input
-        placeholder="Buscar por código, título, projeto ou tipo..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Buscar por código, título, projeto ou categoria..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {DOCUMENT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {DOCUMENT_STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setFilterType(""); setFilterStatus(""); }}
+              className="text-foreground-tertiary"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,10 +152,10 @@ export default function DocumentsPage() {
           <CardContent className="flex flex-col items-center py-12">
             <FileText className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum documento encontrado" : "Nenhum documento registrado"}
+              {search || hasFilters ? "Nenhum documento encontrado" : "Nenhum documento registrado"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Adicione o primeiro documento para começar"}
+              {search || hasFilters ? "Tente ajustar os filtros ou termos de busca" : "Adicione o primeiro documento para começar"}
             </p>
           </CardContent>
         </Card>

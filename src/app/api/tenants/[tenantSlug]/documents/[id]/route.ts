@@ -46,18 +46,46 @@ export async function PATCH(
     requirePermission(ctx, "document", "update");
 
     const body = await request.json();
-    const data = updateDocumentSchema.parse(body);
+    const { changeNotes, ...data } = updateDocumentSchema.parse(body);
 
     const document = await ctx.db.document.findFirst({ where: { id } });
     if (!document) throw new NotFoundError("Documento");
 
+    // Detect meaningful changes that warrant a version snapshot
+    const contentChanged = data.content !== undefined && data.content !== document.content;
+    const versionChanged = data.version !== undefined && data.version !== document.version;
+    const statusChanged = data.status !== undefined && data.status !== document.status;
+    const shouldVersion = contentChanged || versionChanged || statusChanged;
+
+    // Auto-version: snapshot the PREVIOUS state before applying changes
+    if (shouldVersion) {
+      await ctx.db.documentVersion.create({
+        data: {
+          documentId: id,
+          version: document.version,
+          content: document.content,
+          fileUrl: document.fileUrl,
+          changedById: ctx.userId,
+          changeNotes: changeNotes || null,
+        },
+      });
+    }
+
+    // Auto-set approverId when approving
+    const updateData: Record<string, unknown> = { ...data };
+    if (data.nextReviewDate) {
+      updateData.nextReviewDate = new Date(data.nextReviewDate);
+    }
+    if (data.status === "approved") {
+      updateData.approvedAt = new Date();
+      if (!data.approverId) {
+        updateData.approverId = ctx.userId;
+      }
+    }
+
     const updated = await ctx.db.document.update({
       where: { id },
-      data: {
-        ...data,
-        nextReviewDate: data.nextReviewDate ? new Date(data.nextReviewDate) : undefined,
-        approvedAt: data.status === "approved" ? new Date() : undefined,
-      },
+      data: updateData,
     });
 
     return successResponse(updated);

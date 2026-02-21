@@ -249,6 +249,7 @@ export const updateDocumentSchema = z.object({
   reviewerId: z.string().uuid().nullable().optional(),
   approverId: z.string().uuid().nullable().optional(),
   nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  changeNotes: z.string().nullable().optional(),
 });
 
 // ==================== Indicator ====================

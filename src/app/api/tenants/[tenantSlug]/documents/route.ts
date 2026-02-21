@@ -5,7 +5,7 @@ import { createDocumentSchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -13,7 +13,18 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "document", "read");
 
+    const url = new URL(request.url);
+    const type = url.searchParams.get("type");
+    const status = url.searchParams.get("status");
+    const projectId = url.searchParams.get("projectId");
+
+    const where: Record<string, unknown> = {};
+    if (type) where.type = type;
+    if (status) where.status = status;
+    if (projectId) where.projectId = projectId;
+
     const documents = await ctx.db.document.findMany({
+      where,
       include: {
         project: { select: { id: true, name: true } },
         author: { select: { id: true, name: true } },

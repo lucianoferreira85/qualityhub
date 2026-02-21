@@ -81,7 +81,8 @@ export default function NewDocumentPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao criar documento");
       }
-      router.push(`/${tenant.slug}/documents`);
+      const data = await res.json();
+      router.push(`/${tenant.slug}/documents/${data.data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar");
     } finally {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
@@ -20,6 +20,9 @@ import {
   Clock,
   CheckCircle2,
   History,
+  Save,
+  X,
+  RefreshCw,
 } from "lucide-react";
 import {
   getStatusColor,
@@ -74,6 +77,7 @@ export default function DocumentDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
+  // Edit form states
   const [editTitle, setEditTitle] = useState("");
   const [editType, setEditType] = useState("");
   const [editStatus, setEditStatus] = useState("");
@@ -83,10 +87,17 @@ export default function DocumentDetailPage() {
   const [editReviewerId, setEditReviewerId] = useState("");
   const [editApproverId, setEditApproverId] = useState("");
   const [editNextReviewDate, setEditNextReviewDate] = useState("");
+  const [editChangeNotes, setEditChangeNotes] = useState("");
+
+  // New revision states
+  const [showNewRevision, setShowNewRevision] = useState(false);
+  const [revisionVersion, setRevisionVersion] = useState("");
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [creatingRevision, setCreatingRevision] = useState(false);
 
   const [members, setMembers] = useState<MemberOption[]>([]);
 
-  useEffect(() => {
+  const fetchDoc = useCallback(() => {
     Promise.all([
       fetch(`/api/tenants/${tenant.slug}/documents/${id}`).then((r) => r.json()),
       fetch(`/api/tenants/${tenant.slug}/members`).then((r) => r.json()),
@@ -98,6 +109,10 @@ export default function DocumentDetailPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, id]);
+
+  useEffect(() => {
+    fetchDoc();
+  }, [fetchDoc]);
 
   const startEdit = () => {
     if (!doc) return;
@@ -114,6 +129,7 @@ export default function DocumentDetailPage() {
         ? new Date(doc.nextReviewDate).toISOString().split("T")[0]
         : ""
     );
+    setEditChangeNotes("");
     setEditing(true);
     setError("");
   };
@@ -135,15 +151,16 @@ export default function DocumentDetailPage() {
           reviewerId: editReviewerId || null,
           approverId: editApproverId || null,
           nextReviewDate: editNextReviewDate || null,
+          changeNotes: editChangeNotes || null,
         }),
       });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Erro ao atualizar");
       }
-      const fresh = await fetch(`/api/tenants/${tenant.slug}/documents/${id}`).then((r) => r.json());
-      setDoc(fresh.data);
       setEditing(false);
+      setLoading(true);
+      fetchDoc();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
@@ -164,6 +181,46 @@ export default function DocumentDetailPage() {
       setDeleting(false);
       setConfirmDelete(false);
     }
+  };
+
+  const handleNewRevision = async () => {
+    if (!revisionVersion.trim() || !revisionNotes.trim()) return;
+    setCreatingRevision(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/tenants/${tenant.slug}/documents/${id}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newVersion: revisionVersion,
+          changeNotes: revisionNotes,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao criar revisão");
+      }
+      setShowNewRevision(false);
+      setRevisionVersion("");
+      setRevisionNotes("");
+      setLoading(true);
+      fetchDoc();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao criar revisão");
+    } finally {
+      setCreatingRevision(false);
+    }
+  };
+
+  // Suggest next version
+  const suggestNextVersion = () => {
+    if (!doc) return "";
+    const parts = doc.version.split(".");
+    if (parts.length >= 2) {
+      const minor = parseInt(parts[1]) || 0;
+      return `${parts[0]}.${minor + 1}`;
+    }
+    return `${doc.version}.1`;
   };
 
   const STATUS_STEPS = ["draft", "in_review", "approved"];
@@ -233,43 +290,120 @@ export default function DocumentDetailPage() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {can("document", "update") && !editing && (
-            <Button variant="outline" size="sm" onClick={startEdit}>
-              <Pencil className="h-4 w-4" />
-              Editar
-            </Button>
-          )}
-          {can("document", "delete") && !editing && (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {editing ? (
             <>
-              {confirmDelete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-body-2 text-danger-fg">Confirmar?</span>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={handleDelete}
-                    loading={deleting}
-                  >
-                    Sim, excluir
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setConfirmDelete(false)}
-                  >
-                    Não
-                  </Button>
-                </div>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => setConfirmDelete(true)}>
-                  <Trash2 className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={() => setEditing(false)}>
+                <X className="h-4 w-4" />
+                Cancelar
+              </Button>
+              <Button size="sm" onClick={handleSave} loading={saving}>
+                <Save className="h-4 w-4" />
+                Salvar
+              </Button>
+            </>
+          ) : (
+            <>
+              {can("document", "update") && doc.status === "approved" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setRevisionVersion(suggestNextVersion());
+                    setRevisionNotes("");
+                    setShowNewRevision(true);
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Nova Revisão
                 </Button>
+              )}
+              {can("document", "update") && (
+                <Button variant="outline" size="sm" onClick={startEdit}>
+                  <Pencil className="h-4 w-4" />
+                  Editar
+                </Button>
+              )}
+              {can("document", "delete") && (
+                <>
+                  {confirmDelete ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-body-2 text-danger-fg">Confirmar?</span>
+                      <Button variant="danger" size="sm" onClick={handleDelete} loading={deleting}>
+                        Sim, excluir
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
+                        Não
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => setConfirmDelete(true)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
+          {error}
+        </div>
+      )}
+
+      {/* New Revision Modal */}
+      {showNewRevision && (
+        <Card className="border-brand/30">
+          <CardHeader>
+            <h2 className="text-title-3 text-foreground-primary">Nova Revisão</h2>
+            <p className="text-body-2 text-foreground-secondary">
+              A versão atual ({doc.version}) será arquivada no histórico e o documento voltará ao status Rascunho.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                  Nova versão *
+                </label>
+                <Input
+                  value={revisionVersion}
+                  onChange={(e) => setRevisionVersion(e.target.value)}
+                  placeholder="Ex: 2.0"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                Motivo da revisão *
+              </label>
+              <textarea
+                value={revisionNotes}
+                onChange={(e) => setRevisionNotes(e.target.value)}
+                placeholder="Descreva o que motivou esta nova revisão..."
+                rows={3}
+                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowNewRevision(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleNewRevision}
+                loading={creatingRevision}
+                disabled={!revisionVersion.trim() || !revisionNotes.trim()}
+              >
+                Criar Revisão
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Timeline */}
       <Card>
@@ -453,15 +587,20 @@ export default function DocumentDetailPage() {
               />
             </div>
 
-            {error && (
-              <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
-                {error}
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
-              <Button onClick={handleSave} loading={saving}>Salvar</Button>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                Notas de alteração
+              </label>
+              <textarea
+                value={editChangeNotes}
+                onChange={(e) => setEditChangeNotes(e.target.value)}
+                placeholder="Descreva brevemente as alterações realizadas (registrado no histórico de versões)..."
+                rows={2}
+                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
+              />
+              <p className="text-caption-1 text-foreground-tertiary mt-1">
+                Alterações em conteúdo, versão ou status geram automaticamente um registro no histórico.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -562,17 +701,17 @@ export default function DocumentDetailPage() {
           )}
 
           {/* Version History */}
-          {doc.versions && doc.versions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-foreground-tertiary" />
-                  <h2 className="text-title-3 text-foreground-primary">
-                    Histórico de Versões
-                  </h2>
-                </div>
-              </CardHeader>
-              <CardContent>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-foreground-tertiary" />
+                <h2 className="text-title-3 text-foreground-primary">
+                  Histórico de Versões
+                </h2>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {doc.versions && doc.versions.length > 0 ? (
                 <div className="space-y-3">
                   {doc.versions.map((ver) => (
                     <div
@@ -600,9 +739,19 @@ export default function DocumentDetailPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <div className="text-center py-6">
+                  <History className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
+                  <p className="text-body-2 text-foreground-tertiary">
+                    Nenhuma versão anterior registrada
+                  </p>
+                  <p className="text-caption-1 text-foreground-tertiary mt-1">
+                    O histórico será preenchido automaticamente ao editar o documento
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
