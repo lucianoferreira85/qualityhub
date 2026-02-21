@@ -53,12 +53,9 @@ export default function ProjectIndicatorsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/indicators`)
+    fetch(`/api/tenants/${tenant.slug}/indicators?projectId=${projectId}`)
       .then((res) => res.json())
-      .then((res) => {
-        const all = res.data || [];
-        setIndicators(all.filter((ind: IndicatorItem) => ind.project?.id === projectId));
-      })
+      .then((res) => setIndicators(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -83,7 +80,7 @@ export default function ProjectIndicatorsPage() {
           <div>
             <h1 className="text-title-1 text-foreground-primary">Indicadores</h1>
             <p className="text-body-1 text-foreground-secondary mt-1">
-              KPIs e metricas de desempenho do projeto
+              KPIs e métricas de desempenho do projeto
             </p>
           </div>
         </div>
@@ -200,11 +197,11 @@ export default function ProjectIndicatorsPage() {
                     <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
                       {perf ? (
                         <Badge variant={PERF_COLORS[perf]}>
-                          {perf === "success" ? "Na meta" : perf === "warning" ? "Atencao" : "Fora da meta"}
+                          {perf === "success" ? "Na meta" : perf === "warning" ? "Atenção" : "Fora da meta"}
                         </Badge>
                       ) : (
                         <Badge variant="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                          Sem medicao
+                          Sem medição
                         </Badge>
                       )}
                       <div className="flex items-center gap-2 text-caption-1 text-foreground-tertiary">

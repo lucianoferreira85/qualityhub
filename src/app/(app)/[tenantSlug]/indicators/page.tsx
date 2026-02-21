@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter } from "lucide-react";
 import { getFrequencyLabel } from "@/lib/utils";
 import type { Indicator, IndicatorMeasurement } from "@/types";
 
@@ -25,6 +25,15 @@ function getPerformance(value: number, target: number, upperLimit: number | null
   return "danger";
 }
 
+const FREQUENCIES = [
+  { value: "", label: "Todas as frequências" },
+  { value: "daily", label: "Diário" },
+  { value: "weekly", label: "Semanal" },
+  { value: "monthly", label: "Mensal" },
+  { value: "quarterly", label: "Trimestral" },
+  { value: "yearly", label: "Anual" },
+];
+
 const PERF_COLORS: Record<string, string> = {
   success: "bg-success-bg text-success-fg",
   warning: "bg-warning-bg text-warning-fg",
@@ -36,14 +45,24 @@ export default function IndicatorsPage() {
   const [indicators, setIndicators] = useState<IndicatorWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterFrequency, setFilterFrequency] = useState("");
 
-  useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/indicators`)
+  const fetchIndicators = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (filterFrequency) params.set("frequency", filterFrequency);
+    const qs = params.toString();
+
+    fetch(`/api/tenants/${tenant.slug}/indicators${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
       .then((res) => setIndicators(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug]);
+  }, [tenant.slug, filterFrequency]);
+
+  useEffect(() => {
+    fetchIndicators();
+  }, [fetchIndicators]);
 
   const filtered = indicators.filter((ind) => {
     const q = search.toLowerCase();
@@ -74,12 +93,36 @@ export default function IndicatorsPage() {
         )}
       </div>
 
-      <Input
-        placeholder="Buscar por nome, projeto ou unidade..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Input
+          placeholder="Buscar por nome, projeto ou unidade..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+          <select
+            value={filterFrequency}
+            onChange={(e) => setFilterFrequency(e.target.value)}
+            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+          >
+            {FREQUENCIES.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          {filterFrequency && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilterFrequency("")}
+              className="text-foreground-tertiary"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -100,10 +143,10 @@ export default function IndicatorsPage() {
           <CardContent className="flex flex-col items-center py-12">
             <TrendingUp className="h-12 w-12 text-foreground-tertiary mb-4" />
             <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
+              {search || filterFrequency ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
             </p>
             <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Configure indicadores para monitorar o desempenho"}
+              {search || filterFrequency ? "Tente ajustar os filtros ou termos de busca" : "Configure indicadores para monitorar o desempenho"}
             </p>
           </CardContent>
         </Card>

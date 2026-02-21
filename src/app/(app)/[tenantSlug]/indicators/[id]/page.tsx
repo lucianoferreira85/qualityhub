@@ -64,6 +64,15 @@ export default function IndicatorDetailPage() {
   const [mNotes, setMNotes] = useState("");
   const [addingMeasurement, setAddingMeasurement] = useState(false);
 
+  // Edit/delete measurement
+  const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
+  const [editMValue, setEditMValue] = useState("");
+  const [editMPeriod, setEditMPeriod] = useState("");
+  const [editMNotes, setEditMNotes] = useState("");
+  const [savingMeasurement, setSavingMeasurement] = useState(false);
+  const [confirmDeleteMeasurement, setConfirmDeleteMeasurement] = useState<string | null>(null);
+  const [deletingMeasurementId, setDeletingMeasurementId] = useState<string | null>(null);
+
   const fetchIndicator = () => {
     fetch(`/api/tenants/${tenant.slug}/indicators/${id}`)
       .then((r) => r.json())
@@ -165,6 +174,63 @@ export default function IndicatorDetailPage() {
       setError(err instanceof Error ? err.message : "Erro ao registrar");
     } finally {
       setAddingMeasurement(false);
+    }
+  };
+
+  const startEditMeasurement = (m: IndicatorMeasurement) => {
+    setEditingMeasurementId(m.id);
+    setEditMValue(String(Number(m.value)));
+    setEditMPeriod(new Date(m.period).toISOString().split("T")[0]);
+    setEditMNotes(m.notes || "");
+    setError("");
+  };
+
+  const handleSaveMeasurement = async () => {
+    if (!editingMeasurementId) return;
+    setSavingMeasurement(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${editingMeasurementId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            value: parseFloat(editMValue),
+            period: editMPeriod,
+            notes: editMNotes || null,
+          }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao atualizar medição");
+      }
+      setEditingMeasurementId(null);
+      setLoading(true);
+      fetchIndicator();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar");
+    } finally {
+      setSavingMeasurement(false);
+    }
+  };
+
+  const handleDeleteMeasurement = async (measurementId: string) => {
+    setDeletingMeasurementId(measurementId);
+    try {
+      const res = await fetch(
+        `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${measurementId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Erro ao excluir");
+      setConfirmDeleteMeasurement(null);
+      setLoading(true);
+      fetchIndicator();
+    } catch {
+      setError("Erro ao excluir medição");
+    } finally {
+      setDeletingMeasurementId(null);
     }
   };
 
@@ -522,9 +588,15 @@ export default function IndicatorDetailPage() {
               {measurements.length === 0 ? (
                 <div className="text-center py-8">
                   <TrendingUp className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
-                  <p className="text-body-2 text-foreground-secondary">
+                  <p className="text-body-2 text-foreground-secondary mb-3">
                     Nenhuma medição registrada ainda
                   </p>
+                  {can("indicator", "create") && (
+                    <Button variant="outline" size="sm" onClick={() => setShowAddMeasurement(true)}>
+                      <Plus className="h-4 w-4" />
+                      Registrar primeira medição
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -546,6 +618,11 @@ export default function IndicatorDetailPage() {
                         <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
                           Observações
                         </th>
+                        {(can("indicator", "update") || can("indicator", "delete")) && (
+                          <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
+                            Ações
+                          </th>
+                        )}
                       </tr>
                     </thead>
                     <tbody>
@@ -557,6 +634,31 @@ export default function IndicatorDetailPage() {
                           (upperNum !== null && val > upperNum) ||
                           (lowerNum !== null && val < lowerNum);
                         const isOnTarget = pct >= 95;
+
+                        if (editingMeasurementId === m.id) {
+                          return (
+                            <tr key={m.id} className="border-b border-stroke-secondary bg-surface-secondary">
+                              <td className="py-2 px-3">
+                                <Input type="date" value={editMPeriod} onChange={(e) => setEditMPeriod(e.target.value)} className="h-8 text-body-2" />
+                              </td>
+                              <td className="py-2 px-3">
+                                <Input type="number" step="0.01" value={editMValue} onChange={(e) => setEditMValue(e.target.value)} className="h-8 text-body-2 text-right w-28" />
+                              </td>
+                              <td className="py-2 px-3" />
+                              <td className="py-2 px-3" />
+                              <td className="py-2 px-3">
+                                <Input value={editMNotes} onChange={(e) => setEditMNotes(e.target.value)} className="h-8 text-body-2" placeholder="Notas" />
+                              </td>
+                              <td className="py-2 px-3 text-right">
+                                <div className="flex items-center gap-1 justify-end">
+                                  <Button variant="outline" size="sm" onClick={() => setEditingMeasurementId(null)}>Cancelar</Button>
+                                  <Button size="sm" onClick={handleSaveMeasurement} loading={savingMeasurement}>Salvar</Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        }
+
                         return (
                           <tr key={m.id} className="border-b border-stroke-secondary last:border-0">
                             <td className="py-2.5 px-3 text-body-2 text-foreground-primary">
@@ -586,6 +688,38 @@ export default function IndicatorDetailPage() {
                             <td className="py-2.5 px-3 text-body-2 text-foreground-secondary truncate max-w-[200px]">
                               {m.notes || "—"}
                             </td>
+                            {(can("indicator", "update") || can("indicator", "delete")) && (
+                              <td className="py-2.5 px-3 text-right">
+                                <div className="flex items-center gap-1 justify-end">
+                                  {can("indicator", "update") && (
+                                    <Button variant="ghost" size="icon-sm" onClick={() => startEditMeasurement(m)}>
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  {can("indicator", "delete") && (
+                                    confirmDeleteMeasurement === m.id ? (
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="danger"
+                                          size="sm"
+                                          onClick={() => handleDeleteMeasurement(m.id)}
+                                          loading={deletingMeasurementId === m.id}
+                                        >
+                                          Sim
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={() => setConfirmDeleteMeasurement(null)}>
+                                          Não
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button variant="ghost" size="icon-sm" onClick={() => setConfirmDeleteMeasurement(m.id)}>
+                                        <Trash2 className="h-3.5 w-3.5 text-danger-fg" />
+                                      </Button>
+                                    )
+                                  )}
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}

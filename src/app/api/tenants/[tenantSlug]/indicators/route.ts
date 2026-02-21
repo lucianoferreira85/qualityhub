@@ -4,7 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission }
 import { createIndicatorSchema } from "@/lib/validations";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -12,7 +12,16 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "indicator", "read");
 
+    const url = new URL(request.url);
+    const frequency = url.searchParams.get("frequency");
+    const projectId = url.searchParams.get("projectId");
+
+    const where: Record<string, unknown> = {};
+    if (frequency) where.frequency = frequency;
+    if (projectId) where.projectId = projectId;
+
     const indicators = await ctx.db.indicator.findMany({
+      where,
       include: {
         project: { select: { id: true, name: true } },
         measurements: {

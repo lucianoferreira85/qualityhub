@@ -282,6 +282,12 @@ export const createMeasurementSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
+export const updateMeasurementSchema = z.object({
+  value: z.number().optional(),
+  period: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }).optional(),
+  notes: z.string().nullable().optional(),
+});
+
 // ==================== Management Review ====================
 
 export const createManagementReviewSchema = z.object({

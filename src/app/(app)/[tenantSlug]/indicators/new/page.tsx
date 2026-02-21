@@ -72,7 +72,8 @@ export default function NewIndicatorPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao criar indicador");
       }
-      router.push(`/${tenant.slug}/indicators`);
+      const data = await res.json();
+      router.push(`/${tenant.slug}/indicators/${data.data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar");
     } finally {
