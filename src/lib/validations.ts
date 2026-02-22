@@ -498,6 +498,149 @@ export const updateCompetenceSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
+// ==================== Security Objectives (ISO 6.2) ====================
+
+export const createObjectiveSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  category: z.enum(["confidentiality", "integrity", "availability", "compliance", "operational", "strategic"]).nullable().optional(),
+  targetValue: z.number().nullable().optional(),
+  targetUnit: z.string().nullable().optional(),
+  currentValue: z.number().nullable().optional(),
+  deadline: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  indicatorId: z.string().uuid().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  measurable: z.boolean().optional(),
+  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateObjectiveSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  category: z.enum(["confidentiality", "integrity", "availability", "compliance", "operational", "strategic"]).nullable().optional(),
+  targetValue: z.number().nullable().optional(),
+  targetUnit: z.string().nullable().optional(),
+  currentValue: z.number().nullable().optional(),
+  deadline: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  indicatorId: z.string().uuid().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["defined", "in_progress", "achieved", "not_achieved", "cancelled"]).optional(),
+  measurable: z.boolean().optional(),
+  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Policies (ISO 5.2) ====================
+
+export const createPolicySchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  content: z.string().nullable().optional(),
+  category: z.enum(["information_security", "access_control", "data_protection", "acceptable_use", "incident_response", "business_continuity", "other"]).nullable().optional(),
+  reviewerId: z.string().uuid().nullable().optional(),
+  nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  documentId: z.string().uuid().nullable().optional(),
+  fileUrl: z.string().url().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updatePolicySchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  content: z.string().nullable().optional(),
+  category: z.enum(["information_security", "access_control", "data_protection", "acceptable_use", "incident_response", "business_continuity", "other"]).nullable().optional(),
+  version: z.string().optional(),
+  status: z.enum(["draft", "in_review", "approved", "published", "archived"]).optional(),
+  reviewerId: z.string().uuid().nullable().optional(),
+  approverId: z.string().uuid().nullable().optional(),
+  nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  documentId: z.string().uuid().nullable().optional(),
+  fileUrl: z.string().url().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Awareness Campaigns (ISO 7.3) ====================
+
+export const createCampaignSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  type: z.enum(["training", "workshop", "e_learning", "awareness_session", "phishing_simulation", "other"]),
+  targetAudience: z.string().nullable().optional(),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
+  endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  duration: z.number().int().positive().nullable().optional(),
+  location: z.string().nullable().optional(),
+  instructor: z.string().nullable().optional(),
+  materials: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateCampaignSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  type: z.enum(["training", "workshop", "e_learning", "awareness_session", "phishing_simulation", "other"]).optional(),
+  targetAudience: z.string().nullable().optional(),
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val))).optional(),
+  endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  duration: z.number().int().positive().nullable().optional(),
+  location: z.string().nullable().optional(),
+  instructor: z.string().nullable().optional(),
+  materials: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["planned", "in_progress", "completed", "cancelled"]).optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const addParticipantSchema = z.object({
+  userId: z.string().uuid().nullable().optional(),
+  externalName: z.string().nullable().optional(),
+  externalEmail: z.string().email().nullable().optional(),
+});
+
+export const updateParticipantSchema = z.object({
+  attended: z.boolean().optional(),
+  completedAt: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  score: z.number().min(0).max(100).nullable().optional(),
+  feedback: z.string().nullable().optional(),
+  status: z.enum(["invited", "confirmed", "attended", "completed", "absent"]).optional(),
+});
+
+// ==================== Improvement Opportunities (ISO 10.3) ====================
+
+export const createImprovementSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  source: z.enum(["audit", "management_review", "incident", "feedback", "risk_assessment", "benchmarking", "other"]),
+  category: z.enum(["process", "technology", "people", "documentation", "controls", "other"]).nullable().optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  expectedImpact: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  actionPlanId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateImprovementSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  source: z.enum(["audit", "management_review", "incident", "feedback", "risk_assessment", "benchmarking", "other"]).optional(),
+  category: z.enum(["process", "technology", "people", "documentation", "controls", "other"]).nullable().optional(),
+  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  expectedImpact: z.string().nullable().optional(),
+  actualImpact: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["identified", "evaluated", "approved", "in_progress", "implemented", "verified", "rejected"]).optional(),
+  actionPlanId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
 // ==================== Risk Review ====================
 
 export const createRiskReviewSchema = z.object({
@@ -549,3 +692,13 @@ export type UpdateCommunicationPlanInput = z.infer<typeof updateCommunicationPla
 export type CreateCompetenceInput = z.infer<typeof createCompetenceSchema>;
 export type UpdateCompetenceInput = z.infer<typeof updateCompetenceSchema>;
 export type CreateRiskReviewInput = z.infer<typeof createRiskReviewSchema>;
+export type CreateObjectiveInput = z.infer<typeof createObjectiveSchema>;
+export type UpdateObjectiveInput = z.infer<typeof updateObjectiveSchema>;
+export type CreatePolicyInput = z.infer<typeof createPolicySchema>;
+export type UpdatePolicyInput = z.infer<typeof updatePolicySchema>;
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
+export type UpdateCampaignInput = z.infer<typeof updateCampaignSchema>;
+export type AddParticipantInput = z.infer<typeof addParticipantSchema>;
+export type UpdateParticipantInput = z.infer<typeof updateParticipantSchema>;
+export type CreateImprovementInput = z.infer<typeof createImprovementSchema>;
+export type UpdateImprovementInput = z.infer<typeof updateImprovementSchema>;

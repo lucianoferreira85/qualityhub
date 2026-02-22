@@ -55,6 +55,12 @@ const TENANT_SCOPED_MODELS = [
   "sgsiScope",
   "communicationPlan",
   "competence",
+  "securityObjective",
+  "policy",
+  "policyAcknowledgment",
+  "awarenessCampaign",
+  "awarenessParticipant",
+  "improvementOpportunity",
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

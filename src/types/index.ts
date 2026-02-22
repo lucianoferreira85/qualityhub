@@ -616,6 +616,144 @@ export interface Competence {
   responsible?: User;
 }
 
+// ==================== Security Objectives (ISO 6.2) ====================
+
+export interface SecurityObjective {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  targetValue: number | null;
+  targetUnit: string | null;
+  currentValue: number | null;
+  deadline: Date | null;
+  indicatorId: string | null;
+  responsibleId: string | null;
+  status: string;
+  measurable: boolean;
+  monitoringFrequency: string | null;
+  achievedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  indicator?: Indicator;
+  responsible?: User;
+}
+
+// ==================== Policies (ISO 5.2) ====================
+
+export interface Policy {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  category: string | null;
+  version: string;
+  status: string;
+  authorId: string;
+  reviewerId: string | null;
+  approverId: string | null;
+  approvedAt: Date | null;
+  publishedAt: Date | null;
+  nextReviewDate: Date | null;
+  documentId: string | null;
+  fileUrl: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  author?: User;
+  reviewer?: User;
+  approver?: User;
+  acknowledgments?: PolicyAcknowledgment[];
+  _count?: { acknowledgments: number };
+}
+
+export interface PolicyAcknowledgment {
+  id: string;
+  tenantId: string;
+  policyId: string;
+  userId: string;
+  acknowledgedAt: Date;
+  user?: User;
+}
+
+// ==================== Awareness Campaigns (ISO 7.3) ====================
+
+export interface AwarenessCampaign {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  type: string;
+  targetAudience: string | null;
+  startDate: Date;
+  endDate: Date | null;
+  duration: number | null;
+  location: string | null;
+  instructor: string | null;
+  materials: string | null;
+  status: string;
+  completionRate: number | null;
+  responsibleId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+  participants?: AwarenessParticipant[];
+  _count?: { participants: number };
+}
+
+export interface AwarenessParticipant {
+  id: string;
+  tenantId: string;
+  campaignId: string;
+  userId: string | null;
+  externalName: string | null;
+  externalEmail: string | null;
+  attended: boolean;
+  completedAt: Date | null;
+  score: number | null;
+  feedback: string | null;
+  status: string;
+  createdAt: Date;
+  user?: User;
+}
+
+// ==================== Improvement Opportunities (ISO 10.3) ====================
+
+export interface ImprovementOpportunity {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  source: string;
+  category: string | null;
+  priority: string;
+  expectedImpact: string | null;
+  actualImpact: string | null;
+  responsibleId: string | null;
+  status: string;
+  actionPlanId: string | null;
+  dueDate: Date | null;
+  implementedAt: Date | null;
+  verifiedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+  actionPlan?: ActionPlan;
+}
+
 // ==================== Dashboard ====================
 
 export interface DashboardData {

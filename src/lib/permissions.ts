@@ -25,7 +25,11 @@ type Resource =
   | "interestedParty"
   | "sgsiScope"
   | "communicationPlan"
-  | "competence";
+  | "competence"
+  | "securityObjective"
+  | "policy"
+  | "awarenessCampaign"
+  | "improvement";
 
 type PermissionMatrix = Record<OrgRole, Partial<Record<Resource, Action[]>>>;
 
@@ -54,6 +58,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["create", "read", "update", "delete"],
     communicationPlan: ["create", "read", "update", "delete"],
     competence: ["create", "read", "update", "delete"],
+    securityObjective: ["create", "read", "update", "delete"],
+    policy: ["create", "read", "update", "delete"],
+    awarenessCampaign: ["create", "read", "update", "delete"],
+    improvement: ["create", "read", "update", "delete"],
   },
   project_manager: {
     project: ["create", "read", "update"],
@@ -78,6 +86,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["create", "read", "update", "delete"],
     communicationPlan: ["create", "read", "update", "delete"],
     competence: ["create", "read", "update", "delete"],
+    securityObjective: ["create", "read", "update"],
+    policy: ["create", "read", "update"],
+    awarenessCampaign: ["create", "read", "update"],
+    improvement: ["create", "read", "update"],
   },
   senior_consultant: {
     project: ["read"],
@@ -100,6 +112,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["create", "read", "update"],
     communicationPlan: ["create", "read", "update"],
     competence: ["create", "read", "update"],
+    securityObjective: ["create", "read", "update"],
+    policy: ["create", "read", "update"],
+    awarenessCampaign: ["create", "read", "update"],
+    improvement: ["create", "read", "update"],
   },
   junior_consultant: {
     project: ["read"],
@@ -122,6 +138,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["read", "update"],
     communicationPlan: ["read", "update"],
     competence: ["read", "update"],
+    securityObjective: ["read", "update"],
+    policy: ["read"],
+    awarenessCampaign: ["read"],
+    improvement: ["read", "update"],
   },
   internal_auditor: {
     project: ["read"],
@@ -144,6 +164,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["read"],
     communicationPlan: ["read"],
     competence: ["read"],
+    securityObjective: ["read"],
+    policy: ["read"],
+    awarenessCampaign: ["read"],
+    improvement: ["read"],
   },
   external_auditor: {
     project: ["read"],
@@ -164,6 +188,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["read"],
     communicationPlan: ["read"],
     competence: ["read"],
+    securityObjective: ["read"],
+    policy: ["read"],
+    awarenessCampaign: ["read"],
+    improvement: ["read"],
   },
   client_viewer: {
     project: ["read"],
@@ -180,6 +208,10 @@ const PERMISSIONS: PermissionMatrix = {
     sgsiScope: ["read"],
     communicationPlan: ["read"],
     competence: ["read"],
+    securityObjective: ["read"],
+    policy: ["read"],
+    awarenessCampaign: ["read"],
+    improvement: ["read"],
   },
 };
 

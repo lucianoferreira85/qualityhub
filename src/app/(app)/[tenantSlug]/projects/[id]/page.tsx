@@ -32,6 +32,10 @@ import {
   Globe,
   MessageSquare,
   GraduationCap,
+  Crosshair,
+  ScrollText,
+  Megaphone,
+  Lightbulb,
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
@@ -318,6 +322,34 @@ export default function ProjectDetailPage() {
       href: `/${tenant.slug}/projects/${project.id}/competences`,
       icon: GraduationCap,
       description: "Gestão de Competências - ISO 27001 cláusula 7.2",
+    },
+    {
+      label: "Objetivos",
+      href: `/${tenant.slug}/projects/${project.id}/objectives`,
+      icon: Crosshair,
+      description: "Objetivos de Segurança - ISO 27001 cláusula 6.2",
+      count: counts.securityObjectives,
+    },
+    {
+      label: "Políticas",
+      href: `/${tenant.slug}/projects/${project.id}/policies`,
+      icon: ScrollText,
+      description: "Gestão de Políticas - ISO 27001 cláusula 5.2",
+      count: counts.policies,
+    },
+    {
+      label: "Conscientização",
+      href: `/${tenant.slug}/projects/${project.id}/awareness`,
+      icon: Megaphone,
+      description: "Programa de Conscientização - ISO 27001 cláusula 7.3",
+      count: counts.awarenessCampaigns,
+    },
+    {
+      label: "Melhoria Contínua",
+      href: `/${tenant.slug}/projects/${project.id}/improvements`,
+      icon: Lightbulb,
+      description: "Oportunidades de Melhoria - ISO 27001 cláusula 10.3",
+      count: counts.improvementOpportunities,
     },
   ];
 

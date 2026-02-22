@@ -233,6 +233,12 @@ model Tenant {
   sgsiScopes   SgsiScope[]
   communicationPlans CommunicationPlan[]
   competences  Competence[]
+  securityObjectives SecurityObjective[]
+  policies      Policy[]
+  policyAcknowledgments PolicyAcknowledgment[]
+  awarenessCampaigns AwarenessCampaign[]
+  awarenessParticipants AwarenessParticipant[]
+  improvementOpportunities ImprovementOpportunity[]
 
   @@map("tenants")
 }
@@ -269,6 +275,14 @@ model User {
   communicationResponsibilities CommunicationPlan[] @relation("CommunicationResponsible")
   competenceResponsibilities Competence[] @relation("CompetenceResponsible")
   riskReviews RiskHistory[] @relation("RiskReviewer")
+  assignedObjectives SecurityObjective[] @relation("ObjectiveResponsible")
+  authoredPolicies Policy[] @relation("PolicyAuthor")
+  reviewedPolicies Policy[] @relation("PolicyReviewer")
+  approvedPolicies Policy[] @relation("PolicyApprover")
+  policyAcknowledgments PolicyAcknowledgment[]
+  campaignResponsibilities AwarenessCampaign[] @relation("CampaignResponsible")
+  awarenessParticipations AwarenessParticipant[]
+  improvementResponsibilities ImprovementOpportunity[] @relation("ImprovementResponsible")
 
   @@map("users")
 }
@@ -386,6 +400,10 @@ model Project {
   sgsiScopes    SgsiScope[]
   communicationPlans CommunicationPlan[]
   competences   Competence[]
+  securityObjectives SecurityObjective[]
+  policies      Policy[]
+  awarenessCampaigns AwarenessCampaign[]
+  improvementOpportunities ImprovementOpportunity[]
 
   @@index([tenantId])
   @@index([clientId])
@@ -665,6 +683,7 @@ model ActionPlan {
   responsible       User?        @relation("ActionResponsible", fields: [responsibleId], references: [id])
   nonconformity     Nonconformity? @relation(fields: [nonconformityId], references: [id])
   risk              Risk?        @relation(fields: [riskId], references: [id])
+  improvements      ImprovementOpportunity[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -749,6 +768,7 @@ model Document {
   reviewer       User?            @relation("DocumentReviewer", fields: [reviewerId], references: [id])
   approver       User?            @relation("DocumentApprover", fields: [approverId], references: [id])
   versions       DocumentVersion[]
+  policies       Policy[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -819,6 +839,7 @@ model Indicator {
   project      Project?               @relation(fields: [projectId], references: [id])
   process      Process?               @relation(fields: [processId], references: [id])
   measurements IndicatorMeasurement[]
+  objectives   SecurityObjective[]
 
   @@index([tenantId])
   @@index([projectId])
@@ -1004,4 +1025,183 @@ model RiskHistory {
   @@index([riskId])
   @@index([createdAt])
   @@map("risk_history")
+}
+
+// ==================== SECURITY OBJECTIVES (ISO 6.2) ====================
+
+model SecurityObjective {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String    @map("tenant_id") @db.Uuid
+  projectId           String    @map("project_id") @db.Uuid
+  code                String
+  title               String
+  description         String?
+  category            String?
+  targetValue         Decimal?  @map("target_value") @db.Decimal(12, 2)
+  targetUnit          String?   @map("target_unit")
+  currentValue        Decimal?  @map("current_value") @db.Decimal(12, 2)
+  deadline            DateTime? @db.Date
+  indicatorId         String?   @map("indicator_id") @db.Uuid
+  responsibleId       String?   @map("responsible_id") @db.Uuid
+  status              String    @default("defined")
+  measurable          Boolean   @default(true)
+  monitoringFrequency String?   @map("monitoring_frequency")
+  achievedAt          DateTime? @map("achieved_at")
+  notes               String?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  indicator           Indicator? @relation(fields: [indicatorId], references: [id])
+  responsible         User?     @relation("ObjectiveResponsible", fields: [responsibleId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("security_objectives")
+}
+
+// ==================== POLICIES (ISO 5.2) ====================
+
+model Policy {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String              @map("tenant_id") @db.Uuid
+  projectId       String              @map("project_id") @db.Uuid
+  code            String
+  title           String
+  description     String?
+  content         String?
+  category        String?
+  version         String              @default("1.0")
+  status          String              @default("draft")
+  authorId        String              @map("author_id") @db.Uuid
+  reviewerId      String?             @map("reviewer_id") @db.Uuid
+  approverId      String?             @map("approver_id") @db.Uuid
+  approvedAt      DateTime?           @map("approved_at")
+  publishedAt     DateTime?           @map("published_at")
+  nextReviewDate  DateTime?           @map("next_review_date") @db.Date
+  documentId      String?             @map("document_id") @db.Uuid
+  fileUrl         String?             @map("file_url")
+  notes           String?
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project         Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author          User                @relation("PolicyAuthor", fields: [authorId], references: [id])
+  reviewer        User?               @relation("PolicyReviewer", fields: [reviewerId], references: [id])
+  approver        User?               @relation("PolicyApprover", fields: [approverId], references: [id])
+  document        Document?           @relation(fields: [documentId], references: [id])
+  acknowledgments PolicyAcknowledgment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("policies")
+}
+
+model PolicyAcknowledgment {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  policyId        String   @map("policy_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  acknowledgedAt  DateTime @default(now()) @map("acknowledged_at")
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  policy          Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, userId])
+  @@index([tenantId])
+  @@index([policyId])
+  @@map("policy_acknowledgments")
+}
+
+// ==================== AWARENESS CAMPAIGNS (ISO 7.3) ====================
+
+model AwarenessCampaign {
+  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String                @map("tenant_id") @db.Uuid
+  projectId       String                @map("project_id") @db.Uuid
+  code            String
+  title           String
+  description     String?
+  type            String
+  targetAudience  String?               @map("target_audience")
+  startDate       DateTime              @map("start_date") @db.Date
+  endDate         DateTime?             @map("end_date") @db.Date
+  duration        Int?
+  location        String?
+  instructor      String?
+  materials       String?
+  status          String                @default("planned")
+  completionRate  Decimal?              @map("completion_rate") @db.Decimal(5, 2)
+  responsibleId   String?               @map("responsible_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project         Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible     User?                 @relation("CampaignResponsible", fields: [responsibleId], references: [id])
+  participants    AwarenessParticipant[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("awareness_campaigns")
+}
+
+model AwarenessParticipant {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String             @map("tenant_id") @db.Uuid
+  campaignId      String             @map("campaign_id") @db.Uuid
+  userId          String?            @map("user_id") @db.Uuid
+  externalName    String?            @map("external_name")
+  externalEmail   String?            @map("external_email")
+  attended        Boolean            @default(false)
+  completedAt     DateTime?          @map("completed_at")
+  score           Decimal?           @db.Decimal(5, 2)
+  feedback        String?
+  status          String             @default("invited")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign        AwarenessCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User?              @relation(fields: [userId], references: [id])
+
+  @@unique([campaignId, userId])
+  @@index([tenantId])
+  @@index([campaignId])
+  @@map("awareness_participants")
+}
+
+// ==================== IMPROVEMENT OPPORTUNITIES (ISO 10.3) ====================
+
+model ImprovementOpportunity {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  projectId       String    @map("project_id") @db.Uuid
+  code            String
+  title           String
+  description     String?
+  source          String
+  category        String?
+  priority        String    @default("medium")
+  expectedImpact  String?   @map("expected_impact")
+  actualImpact    String?   @map("actual_impact")
+  responsibleId   String?   @map("responsible_id") @db.Uuid
+  status          String    @default("identified")
+  actionPlanId    String?   @map("action_plan_id") @db.Uuid
+  dueDate         DateTime? @map("due_date") @db.Date
+  implementedAt   DateTime? @map("implemented_at")
+  verifiedAt      DateTime? @map("verified_at")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible     User?     @relation("ImprovementResponsible", fields: [responsibleId], references: [id])
+  actionPlan      ActionPlan? @relation(fields: [actionPlanId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("improvement_opportunities")
 }
