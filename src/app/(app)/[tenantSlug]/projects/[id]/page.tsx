@@ -36,11 +36,17 @@ import {
   ScrollText,
   Megaphone,
   Lightbulb,
+  ShieldAlert,
+  Server,
+  Truck,
+  GitPullRequest,
+  Download,
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Project } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { generateProjectReport } from "@/lib/pdf-reports/project-report";
 
 interface AvailableStandard {
   id: string;
@@ -351,6 +357,34 @@ export default function ProjectDetailPage() {
       description: "Oportunidades de Melhoria - ISO 27001 cláusula 10.3",
       count: counts.improvementOpportunities,
     },
+    {
+      label: "Incidentes",
+      href: `/${tenant.slug}/projects/${project.id}/incidents`,
+      icon: ShieldAlert,
+      description: "Gestão de Incidentes - ISO 27001 A.5.24-A.5.28",
+      count: counts.securityIncidents,
+    },
+    {
+      label: "Ativos",
+      href: `/${tenant.slug}/projects/${project.id}/assets`,
+      icon: Server,
+      description: "Ativos de Informação - ISO 27001 A.5.9-A.5.11",
+      count: counts.informationAssets,
+    },
+    {
+      label: "Fornecedores",
+      href: `/${tenant.slug}/projects/${project.id}/suppliers`,
+      icon: Truck,
+      description: "Gestão de Fornecedores - ISO 27001 A.5.19-A.5.23",
+      count: counts.suppliers,
+    },
+    {
+      label: "Mudanças",
+      href: `/${tenant.slug}/projects/${project.id}/changes`,
+      icon: GitPullRequest,
+      description: "Gestão de Mudanças - ISO 27001 cláusula 6.3",
+      count: counts.changeRequests,
+    },
   ];
 
   const statusOptions = [
@@ -411,6 +445,43 @@ export default function ProjectDetailPage() {
             </>
           ) : (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  generateProjectReport(
+                    {
+                      name: project.name,
+                      description: project.description || null,
+                      status: project.status,
+                      progress: Number(project.progress),
+                      targetMaturity: project.targetMaturity || 3,
+                      startDate: project.startDate,
+                      endDate: project.endDate,
+                      createdAt: project.createdAt,
+                      client: project.client,
+                      standards: standards.map((ps) => ({
+                        standard: {
+                          code: ps.standard?.code || "",
+                          name: ps.standard?.name || "",
+                        },
+                      })),
+                      members: members.map((m) => ({
+                        role: m.role,
+                        user: {
+                          name: m.user?.name || "",
+                          email: m.user?.email || "",
+                        },
+                      })),
+                      _count: counts,
+                    },
+                    tenant.name
+                  )
+                }
+              >
+                <Download className="h-4 w-4" />
+                Relatório PDF
+              </Button>
               {can("project", "update") && (
                 <Button
                   variant="outline"

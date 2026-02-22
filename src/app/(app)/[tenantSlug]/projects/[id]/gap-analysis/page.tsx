@@ -6,7 +6,9 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { BarChart3, Target, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
+import { BarChart3, Target, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { generateGapAnalysisReport } from "@/lib/pdf-reports/gap-analysis-report";
 import { MaturityRadar } from "@/components/charts/maturity-radar";
 
 interface GapItem {
@@ -118,9 +120,35 @@ export default function GapAnalysisPage() {
           </p>
         </div>
         {data && (
-          <div className="flex items-center gap-2 text-body-2 text-foreground-secondary">
-            <Target className="h-4 w-4" />
-            Meta de maturidade: <span className="font-semibold text-foreground-primary">{data.targetMaturity}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-body-2 text-foreground-secondary">
+              <Target className="h-4 w-4" />
+              Meta: <span className="font-semibold text-foreground-primary">{data.targetMaturity}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                generateGapAnalysisReport(
+                  {
+                    projectName: projectName,
+                    targetMaturity: data.targetMaturity,
+                    overall: data.overall,
+                    byStandard: data.byStandard.map((s) => ({
+                      standardCode: s.standardCode,
+                      standardName: s.standardName,
+                      avgMaturity: s.avgMaturity,
+                      byDomain: s.byDomain,
+                    })),
+                    maturityDistribution: data.maturityDistribution,
+                    topGaps: data.topGaps,
+                  },
+                  tenant.name
+                )
+              }
+            >
+              <Download className="h-4 w-4" /> Exportar PDF
+            </Button>
           </div>
         )}
       </div>
