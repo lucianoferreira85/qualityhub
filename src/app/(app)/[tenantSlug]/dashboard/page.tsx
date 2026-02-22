@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -18,6 +18,9 @@ import {
   Plus,
   ArrowRight,
   Clock,
+  BarChart3,
+  Target,
+  Timer,
 } from "lucide-react";
 import {
   getStatusColor,
@@ -26,6 +29,9 @@ import {
   getSeverityLabel,
   formatDate,
 } from "@/lib/utils";
+import { TrendLineChart } from "@/components/charts/trend-line-chart";
+import { ProjectComparisonBar } from "@/components/charts/project-comparison-bar";
+import { CertificationReadiness } from "@/components/charts/certification-readiness";
 
 interface DashboardData {
   totalProjects: number;
@@ -87,6 +93,68 @@ interface DashboardData {
   }[];
 }
 
+interface AnalyticsData {
+  trends: {
+    month: string;
+    risks: number;
+    ncs: number;
+    actions: number;
+    incidents: number;
+  }[];
+  projectComparison: {
+    id: string;
+    name: string;
+    compliance: number;
+    avgMaturity: number;
+    openNCs: number;
+    pendingActions: number;
+  }[];
+  maturityHeatmap: {
+    domain: string;
+    projectName: string;
+    avgMaturity: number;
+  }[];
+  certificationReadiness: {
+    projectId: string;
+    projectName: string;
+    requirementCompliance: number;
+    controlCompliance: number;
+    openNCs: number;
+    pendingActions: number;
+    overdueItems: number;
+    readinessScore: number;
+  }[];
+  expirations: {
+    type: string;
+    id: string;
+    title: string;
+    dueDate: string;
+    daysUntil: number;
+    projectName?: string;
+  }[];
+}
+
+const PERIOD_OPTIONS = [
+  { value: "3m", label: "3 meses" },
+  { value: "6m", label: "6 meses" },
+  { value: "12m", label: "12 meses" },
+];
+
+const MATURITY_COLORS: Record<number, string> = {
+  0: "bg-gray-200 text-gray-600",
+  1: "bg-red-200 text-red-800",
+  2: "bg-yellow-200 text-yellow-800",
+  3: "bg-blue-200 text-blue-800",
+  4: "bg-green-200 text-green-800",
+};
+
+const EXPIRATION_TYPE_LABELS: Record<string, string> = {
+  action: "Ação",
+  audit: "Auditoria",
+  review: "Revisão Doc.",
+  risk_review: "Revisão Risco",
+};
+
 const RISK_LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   critical: { label: "Critico", color: "text-white", bg: "bg-danger" },
   high: { label: "Alto", color: "text-danger-fg", bg: "bg-danger-bg" },
@@ -99,6 +167,9 @@ export default function DashboardPage() {
   const { tenant, can } = useTenant();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [period, setPeriod] = useState("6m");
 
   useEffect(() => {
     fetch(`/api/tenants/${tenant.slug}/dashboard`)
@@ -107,6 +178,22 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug]);
+
+  const fetchAnalytics = useCallback(
+    (p: string) => {
+      setAnalyticsLoading(true);
+      fetch(`/api/tenants/${tenant.slug}/dashboard/analytics?period=${p}`)
+        .then((res) => res.json())
+        .then((res) => setAnalytics(res.data))
+        .catch(() => {})
+        .finally(() => setAnalyticsLoading(false));
+    },
+    [tenant.slug]
+  );
+
+  useEffect(() => {
+    fetchAnalytics(period);
+  }, [period, fetchAnalytics]);
 
   const stats = [
     {
@@ -174,14 +261,31 @@ export default function DashboardPage() {
             Visao geral do Sistema de Gestao da Qualidade
           </p>
         </div>
-        {can("project", "create") && (
-          <Link href={`/${tenant.slug}/projects/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Novo Projeto
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-surface-secondary rounded-button border border-stroke-secondary p-0.5">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setPeriod(opt.value)}
+                className={`px-3 py-1.5 text-caption-1 rounded-button transition-colors ${
+                  period === opt.value
+                    ? "bg-brand text-white font-medium"
+                    : "text-foreground-secondary hover:text-foreground-primary"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {can("project", "create") && (
+            <Link href={`/${tenant.slug}/projects/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Novo Projeto
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Overdue alerts */}
@@ -661,6 +765,216 @@ export default function DashboardPage() {
               </Card>
             )}
           </div>
+
+          {/* ===== ANALYTICS SECTION ===== */}
+          {analyticsLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <Card key={`analytics-skel-${i}`}>
+                  <CardContent className="p-5">
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-4 bg-surface-tertiary rounded w-1/3" />
+                      <div className="h-[280px] bg-surface-tertiary rounded" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : analytics && (
+            <>
+              {/* Trends */}
+              {analytics.trends.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-brand" />
+                      <h2 className="text-title-3 text-foreground-primary">
+                        Tendencias ({PERIOD_OPTIONS.find((o) => o.value === period)?.label})
+                      </h2>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <TrendLineChart data={analytics.trends} />
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Project Comparison */}
+                {analytics.projectComparison.length > 1 && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-brand" />
+                        <h2 className="text-title-3 text-foreground-primary">
+                          Comparativo de Projetos
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <ProjectComparisonBar data={analytics.projectComparison} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Maturity Heatmap */}
+                {analytics.maturityHeatmap.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <h2 className="text-title-3 text-foreground-primary">
+                        Heatmap de Maturidade
+                      </h2>
+                    </CardHeader>
+                    <CardContent>
+                      {(() => {
+                        const domains = Array.from(new Set(analytics.maturityHeatmap.map((h) => h.domain)));
+                        const projectNames = Array.from(new Set(analytics.maturityHeatmap.map((h) => h.projectName)));
+                        const lookup = new Map(
+                          analytics.maturityHeatmap.map((h) => [`${h.domain}|||${h.projectName}`, h.avgMaturity])
+                        );
+                        return (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-caption-1">
+                              <thead>
+                                <tr>
+                                  <th className="text-left p-2 text-foreground-secondary font-medium">Dominio</th>
+                                  {projectNames.map((pn) => (
+                                    <th key={pn} className="text-center p-2 text-foreground-secondary font-medium truncate max-w-[120px]">
+                                      {pn}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {domains.map((domain) => (
+                                  <tr key={domain} className="border-t border-stroke-secondary">
+                                    <td className="p-2 text-foreground-primary truncate max-w-[180px]" title={domain}>
+                                      {domain}
+                                    </td>
+                                    {projectNames.map((pn) => {
+                                      const val = lookup.get(`${domain}|||${pn}`);
+                                      const level = val !== undefined ? Math.round(val) : -1;
+                                      const colorClass = level >= 0
+                                        ? MATURITY_COLORS[Math.min(level, 4)]
+                                        : "bg-surface-tertiary text-foreground-tertiary";
+                                      return (
+                                        <td key={pn} className="p-1.5 text-center">
+                                          <span
+                                            className={`inline-block w-10 py-1 rounded text-caption-2 font-medium ${colorClass}`}
+                                            title={val !== undefined ? `${val.toFixed(1)}` : "N/A"}
+                                          >
+                                            {val !== undefined ? val.toFixed(1) : "-"}
+                                          </span>
+                                        </td>
+                                      );
+                                    })}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Certification Readiness */}
+              {analytics.certificationReadiness.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-brand" />
+                      <h2 className="text-title-3 text-foreground-primary">
+                        Prontidao para Certificacao
+                      </h2>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <CertificationReadiness data={analytics.certificationReadiness} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Expirations Widget */}
+              {analytics.expirations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Timer className="h-5 w-5 text-warning" />
+                      <h2 className="text-title-3 text-foreground-primary">
+                        Vencimentos Proximos (30 dias)
+                      </h2>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-1.5">
+                      {analytics.expirations.map((exp) => {
+                        const isOverdue = exp.daysUntil < 0;
+                        const isUrgent = exp.daysUntil >= 0 && exp.daysUntil <= 7;
+                        return (
+                          <div
+                            key={`${exp.type}-${exp.id}`}
+                            className={`flex items-center gap-3 p-3 rounded-button border transition-colors ${
+                              isOverdue
+                                ? "border-danger/30 bg-danger-bg/30"
+                                : isUrgent
+                                ? "border-warning/30 bg-warning-bg/30"
+                                : "border-stroke-secondary hover:bg-surface-secondary"
+                            }`}
+                          >
+                            <Badge
+                              variant={
+                                exp.type === "action"
+                                  ? "bg-brand-light text-brand"
+                                  : exp.type === "audit"
+                                  ? "bg-info-bg text-info-fg"
+                                  : exp.type === "review"
+                                  ? "bg-warning-bg text-warning-fg"
+                                  : "bg-gray-100 text-gray-800"
+                              }
+                              className="text-caption-2 w-28 justify-center flex-shrink-0"
+                            >
+                              {EXPIRATION_TYPE_LABELS[exp.type] || exp.type}
+                            </Badge>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-body-2 text-foreground-primary truncate">
+                                {exp.title}
+                              </p>
+                              {exp.projectName && (
+                                <p className="text-caption-2 text-foreground-tertiary truncate">
+                                  {exp.projectName}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <Calendar className="h-3.5 w-3.5" />
+                              <span
+                                className={`text-caption-1 font-medium ${
+                                  isOverdue
+                                    ? "text-danger-fg"
+                                    : isUrgent
+                                    ? "text-warning-fg"
+                                    : "text-foreground-tertiary"
+                                }`}
+                              >
+                                {isOverdue
+                                  ? `${Math.abs(exp.daysUntil)}d atrasado`
+                                  : exp.daysUntil === 0
+                                  ? "Hoje"
+                                  : `${exp.daysUntil}d`}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
         </>
       ) : (
         /* Empty state for new tenants */

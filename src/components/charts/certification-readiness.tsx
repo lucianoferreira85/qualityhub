@@ -1,0 +1,122 @@
+"use client";
+
+interface CertificationData {
+  projectId: string;
+  projectName: string;
+  requirementCompliance: number;
+  controlCompliance: number;
+  openNCs: number;
+  pendingActions: number;
+  overdueItems: number;
+  readinessScore: number;
+}
+
+interface CertificationReadinessProps {
+  data: CertificationData[];
+}
+
+function ScoreGauge({ score }: { score: number }) {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 100) * circumference;
+  const color =
+    score >= 80 ? "#107C10" : score >= 60 ? "#FFB900" : "#C4314B";
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          fill="none"
+          stroke="#f3f2f1"
+          strokeWidth="8"
+        />
+        <circle
+          cx="48"
+          cy="48"
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${progress} ${circumference}`}
+          transform="rotate(-90 48 48)"
+          className="transition-all duration-700"
+        />
+      </svg>
+      <span
+        className="absolute text-title-2 font-semibold"
+        style={{ color }}
+      >
+        {score}
+      </span>
+    </div>
+  );
+}
+
+export function CertificationReadiness({ data }: CertificationReadinessProps) {
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[200px] text-body-2 text-foreground-tertiary">
+        Sem projetos para avaliar prontidão
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {data.map((p) => (
+        <div
+          key={p.projectId}
+          className="flex flex-col items-center gap-3 p-4 rounded-card border border-stroke-secondary bg-surface-primary"
+        >
+          <ScoreGauge score={p.readinessScore} />
+          <p className="text-body-1 font-medium text-foreground-primary text-center truncate w-full">
+            {p.projectName}
+          </p>
+          <div className="w-full space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-caption-1 text-foreground-secondary">Requisitos</span>
+              <span className="text-caption-1 font-medium text-foreground-primary">
+                {p.requirementCompliance}%
+              </span>
+            </div>
+            <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-brand rounded-full transition-all"
+                style={{ width: `${p.requirementCompliance}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-caption-1 text-foreground-secondary">Controles</span>
+              <span className="text-caption-1 font-medium text-foreground-primary">
+                {p.controlCompliance}%
+              </span>
+            </div>
+            <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-brand rounded-full transition-all"
+                style={{ width: `${p.controlCompliance}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-stroke-secondary">
+              <span className="text-caption-1 text-foreground-tertiary">
+                NCs: {p.openNCs}
+              </span>
+              <span className="text-caption-1 text-foreground-tertiary">
+                Ações: {p.pendingActions}
+              </span>
+              {p.overdueItems > 0 && (
+                <span className="text-caption-1 text-danger-fg font-medium">
+                  {p.overdueItems} atrasada{p.overdueItems > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
