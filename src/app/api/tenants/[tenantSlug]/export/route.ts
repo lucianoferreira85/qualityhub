@@ -368,6 +368,365 @@ export async function GET(
         break;
       }
 
+      case "documents": {
+        requirePermission(ctx, "document", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const docs = await ctx.db.document.findMany({
+          where,
+          include: {
+            author: { select: { name: true } },
+            reviewer: { select: { name: true } },
+            approver: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        const headers = [
+          "Código",
+          "Título",
+          "Tipo",
+          "Categoria",
+          "Versão",
+          "Status",
+          "Autor",
+          "Revisor",
+          "Aprovador",
+          "Próxima Revisão",
+          "Criado em",
+        ];
+        const rows = docs.map((d) => [
+          d.code,
+          d.title,
+          d.type,
+          d.category || "",
+          d.version,
+          d.status,
+          d.author?.name || "",
+          d.reviewer?.name || "",
+          d.approver?.name || "",
+          fmtDate(d.nextReviewDate),
+          fmtDate(d.createdAt),
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "documentos";
+        break;
+      }
+
+      case "indicators": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const indicators = await ctx.db.indicator.findMany({
+          where,
+          include: {
+            measurements: {
+              orderBy: { period: "desc" },
+              take: 1,
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        const headers = [
+          "Nome",
+          "Unidade",
+          "Frequência",
+          "Meta",
+          "Último Valor",
+          "Status",
+        ];
+        const rows = indicators.map((ind) => {
+          const lastVal = ind.measurements[0]?.value;
+          const target = Number(ind.target);
+          const last = lastVal ? Number(lastVal) : null;
+          const status = last === null ? "Sem medição" : last >= target ? "Atingido" : "Abaixo da meta";
+          return [
+            ind.name,
+            ind.unit,
+            ind.frequency,
+            String(target),
+            last !== null ? String(last) : "",
+            status,
+          ];
+        });
+
+        csv = toCSV(headers, rows);
+        filename = "indicadores";
+        break;
+      }
+
+      case "processes": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const processes = await ctx.db.process.findMany({
+          where,
+          include: {
+            responsible: { select: { name: true } },
+          },
+          orderBy: { code: "asc" },
+        });
+
+        const headers = ["Código", "Nome", "Responsável", "Status"];
+        const rows = processes.map((p) => [
+          p.code,
+          p.name,
+          p.responsible?.name || "",
+          p.status,
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "processos";
+        break;
+      }
+
+      case "suppliers": {
+        requirePermission(ctx, "project", "read");
+        if (!projectId) {
+          return NextResponse.json(
+            { error: "projectId é obrigatório para exportação de fornecedores" },
+            { status: 400 }
+          );
+        }
+
+        const suppliers = await ctx.db.supplier.findMany({
+          where: { projectId },
+          include: {
+            responsible: { select: { name: true } },
+            assessments: {
+              orderBy: { assessmentDate: "desc" },
+              take: 1,
+            },
+          },
+          orderBy: { code: "asc" },
+        });
+
+        const headers = [
+          "Código",
+          "Nome",
+          "Contato",
+          "Email",
+          "Tipo",
+          "Status",
+          "Nível de Risco",
+          "Última Avaliação",
+        ];
+        const rows = suppliers.map((s) => [
+          s.code,
+          s.name,
+          s.contactName || "",
+          s.contactEmail || "",
+          s.type,
+          s.status,
+          s.riskLevel,
+          s.assessments[0] ? String(Number(s.assessments[0].overallScore)) : "",
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "fornecedores";
+        break;
+      }
+
+      case "incidents": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const incidents = await ctx.db.securityIncident.findMany({
+          where,
+          include: {
+            reportedBy: { select: { name: true } },
+            assignedTo: { select: { name: true } },
+          },
+          orderBy: { reportedAt: "desc" },
+        });
+
+        const headers = [
+          "Código",
+          "Título",
+          "Tipo",
+          "Severidade",
+          "Status",
+          "Reportado Por",
+          "Atribuído A",
+          "Reportado em",
+          "Resolvido em",
+        ];
+        const rows = incidents.map((i) => [
+          i.code,
+          i.title,
+          i.type,
+          i.severity,
+          i.status,
+          i.reportedBy?.name || "",
+          i.assignedTo?.name || "",
+          fmtDate(i.reportedAt),
+          fmtDate(i.resolvedAt),
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "incidentes";
+        break;
+      }
+
+      case "changes": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const changes = await ctx.db.changeRequest.findMany({
+          where,
+          include: {
+            requestedBy: { select: { name: true } },
+            assignedTo: { select: { name: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        const headers = [
+          "Código",
+          "Título",
+          "Tipo",
+          "Prioridade",
+          "Status",
+          "Solicitado Por",
+          "Atribuído A",
+          "Impacto",
+          "Solicitado em",
+        ];
+        const rows = changes.map((c) => [
+          c.code,
+          c.title,
+          c.type,
+          c.priority,
+          c.status,
+          c.requestedBy?.name || "",
+          c.assignedTo?.name || "",
+          c.impactAnalysis || "",
+          fmtDate(c.createdAt),
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "mudancas";
+        break;
+      }
+
+      case "policies": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const policies = await ctx.db.policy.findMany({
+          where,
+          include: {
+            author: { select: { name: true } },
+            _count: { select: { acknowledgments: true } },
+          },
+          orderBy: { code: "asc" },
+        });
+
+        const headers = [
+          "Código",
+          "Título",
+          "Categoria",
+          "Versão",
+          "Status",
+          "Autor",
+          "Reconhecimentos",
+          "Publicado em",
+          "Próxima Revisão",
+        ];
+        const rows = policies.map((p) => [
+          p.code,
+          p.title,
+          p.category || "",
+          p.version,
+          p.status,
+          p.author?.name || "",
+          String(p._count.acknowledgments),
+          fmtDate(p.publishedAt),
+          fmtDate(p.nextReviewDate),
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "politicas";
+        break;
+      }
+
+      case "awareness": {
+        requirePermission(ctx, "project", "read");
+        const where: Record<string, unknown> = {};
+        if (projectId) where.projectId = projectId;
+
+        const campaigns = await ctx.db.awarenessCampaign.findMany({
+          where,
+          include: {
+            _count: { select: { participants: true } },
+          },
+          orderBy: { startDate: "desc" },
+        });
+
+        const headers = [
+          "Código",
+          "Título",
+          "Tipo",
+          "Status",
+          "Data Início",
+          "Data Fim",
+          "Participantes",
+          "Taxa Conclusão",
+        ];
+        const rows = campaigns.map((c) => [
+          c.code,
+          c.title,
+          c.type,
+          c.status,
+          fmtDate(c.startDate),
+          fmtDate(c.endDate),
+          String(c._count.participants),
+          c.completionRate ? `${Number(c.completionRate)}%` : "",
+        ]);
+
+        csv = toCSV(headers, rows);
+        filename = "conscientizacao";
+        break;
+      }
+
+      case "dashboard-trends": {
+        requirePermission(ctx, "project", "read");
+        // Generate last 6 months of trend data
+        const months: string[][] = [];
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+          const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+          const monthLabel = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "numeric" }).format(start);
+
+          const dateFilter = { gte: start, lte: end };
+          const projectFilter: Record<string, unknown> = {};
+          if (projectId) projectFilter.projectId = projectId;
+
+          const [risks, ncs, actions, incidents] = await Promise.all([
+            ctx.db.risk.count({ where: { ...projectFilter, createdAt: dateFilter } }),
+            ctx.db.nonconformity.count({ where: { ...projectFilter, createdAt: dateFilter } }),
+            ctx.db.actionPlan.count({ where: { ...projectFilter, createdAt: dateFilter } }),
+            ctx.db.securityIncident.count({ where: { ...projectFilter, createdAt: dateFilter } }),
+          ]);
+
+          months.push([monthLabel, String(risks), String(ncs), String(actions), String(incidents)]);
+        }
+
+        const headers = ["Mês", "Riscos", "NCs", "Ações", "Incidentes"];
+        csv = toCSV(headers, months);
+        filename = "tendencias-dashboard";
+        break;
+      }
+
       default:
         return NextResponse.json(
           { error: `Tipo de exportação '${type}' não suportado` },

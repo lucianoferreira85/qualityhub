@@ -56,6 +56,7 @@ export default function OnboardingPage() {
     setError("");
 
     try {
+      // Step 1: Create tenant
       const res = await fetch("/api/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,12 +70,36 @@ export default function OnboardingPage() {
 
       const { data: tenant } = await res.json();
 
+      // Step 2: Create project with selected standards
       if (projectName && tenant.slug) {
+        // Resolve standard codes to IDs
+        let standardIds: string[] = [];
+        if (selectedStandards.length > 0) {
+          const stdRes = await fetch(`/api/standards?codes=${selectedStandards.map(s => s.toUpperCase()).join(",")}`);
+          if (stdRes.ok) {
+            const stdData = await stdRes.json();
+            standardIds = (stdData.data || []).map((s: { id: string }) => s.id);
+          }
+        }
+
         await fetch(`/api/tenants/${tenant.slug}/projects`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: projectName }),
+          body: JSON.stringify({
+            name: projectName,
+            standardIds: standardIds.length > 0 ? standardIds : undefined,
+          }),
         });
+      }
+
+      // Step 3: Send invitations
+      const validEmails = inviteEmails.filter((e) => e.trim() && e.includes("@"));
+      for (const email of validEmails) {
+        await fetch(`/api/tenants/${tenant.slug}/invitations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim(), role: "junior_consultant" }),
+        }).catch(() => {}); // fire-and-forget, don't block onboarding
       }
 
       router.push(`/${tenant.slug}/dashboard`);

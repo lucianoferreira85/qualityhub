@@ -4,6 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission, 
 import { createActionSchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
 import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerActionAssigned } from "@/lib/email-triggers";
 
 export async function GET(
   request: Request,
@@ -101,6 +102,18 @@ export async function POST(
       metadata: { code, title: data.title, type: data.type },
       ipAddress: getClientIp(request),
     });
+
+    if (data.responsibleId) {
+      triggerActionAssigned({
+        tenantId: ctx.tenantId,
+        tenantSlug,
+        responsibleId: data.responsibleId,
+        actionId: action.id,
+        actionCode: code,
+        actionTitle: data.title,
+        actionType: data.type,
+      });
+    }
 
     return successResponse(action, 201);
   } catch (error) {

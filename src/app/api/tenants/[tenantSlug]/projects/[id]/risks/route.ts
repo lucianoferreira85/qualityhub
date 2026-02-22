@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
 import { createRiskSchema } from "@/lib/validations";
 import { generateCode, getRiskLevel } from "@/lib/utils";
+import { triggerRiskCritical } from "@/lib/email-triggers";
 
 export async function GET(
   _request: Request,
@@ -68,6 +69,18 @@ export async function POST(
         responsibleId: data.responsibleId,
       },
     });
+
+    const riskLevel = getRiskLevel(data.probability, data.impact);
+    if (riskLevel === "critical" || riskLevel === "very_high") {
+      triggerRiskCritical({
+        tenantId: ctx.tenantId,
+        tenantSlug,
+        riskId: risk.id,
+        riskCode: code,
+        riskTitle: data.title,
+        riskLevel,
+      });
+    }
 
     return successResponse(risk, 201);
   } catch (error) {

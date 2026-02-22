@@ -161,6 +161,49 @@ export function triggerDocumentReview({
   })();
 }
 
+export function triggerActionAssigned({
+  tenantId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  tenantSlug,
+  responsibleId,
+  actionId,
+  actionCode,
+  actionTitle,
+  actionType,
+}: {
+  tenantId: string;
+  tenantSlug: string;
+  responsibleId: string;
+  actionId: string;
+  actionCode: string;
+  actionTitle: string;
+  actionType: string;
+}) {
+  void (async () => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: responsibleId },
+        select: { email: true },
+      });
+      if (!user) return;
+
+      await prisma.notification.create({
+        data: {
+          tenantId,
+          userId: responsibleId,
+          type: "action_assigned",
+          title: `Ação Atribuída: ${actionCode}`,
+          message: `Você foi designado como responsável pela ação ${actionType} "${actionTitle}".`,
+          entityType: "actionPlan",
+          entityId: actionId,
+        },
+      });
+    } catch (err) {
+      console.error("[Trigger] Action assigned failed:", err);
+    }
+  })();
+}
+
 export function triggerRiskCritical({
   tenantId,
   tenantSlug,

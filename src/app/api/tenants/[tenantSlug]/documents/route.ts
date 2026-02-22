@@ -4,6 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission, 
 import { createDocumentSchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
 import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerDocumentReview } from "@/lib/email-triggers";
 
 export async function GET(
   request: Request,
@@ -106,6 +107,17 @@ export async function POST(
       metadata: { code, title: data.title, type: data.type },
       ipAddress: getClientIp(request),
     });
+
+    if (data.reviewerId) {
+      triggerDocumentReview({
+        tenantId: ctx.tenantId,
+        tenantSlug,
+        reviewerId: data.reviewerId,
+        docId: document.id,
+        docCode: code,
+        docTitle: data.title,
+      });
+    }
 
     return successResponse(document, 201);
   } catch (error) {
