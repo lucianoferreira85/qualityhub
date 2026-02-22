@@ -213,6 +213,8 @@ model Tenant {
   subscription Subscription?
   clients      ConsultingClient[]
   projects     Project[]
+  contexts     OrganizationContext[]
+  interestedParties InterestedParty[]
   risks        Risk[]
   actionPlans  ActionPlan[]
   nonconformities Nonconformity[]
@@ -349,10 +351,11 @@ model Project {
   name          String
   description   String?
   clientId      String?              @map("client_id") @db.Uuid
-  status        ProjectStatus        @default(planning)
-  startDate     DateTime?            @map("start_date") @db.Date
-  endDate       DateTime?            @map("end_date") @db.Date
-  progress      Decimal              @default(0) @db.Decimal(5, 2)
+  status          ProjectStatus        @default(planning)
+  startDate       DateTime?            @map("start_date") @db.Date
+  endDate         DateTime?            @map("end_date") @db.Date
+  progress        Decimal              @default(0) @db.Decimal(5, 2)
+  targetMaturity  Int                  @default(3) @map("target_maturity") @db.SmallInt
   archivedAt    DateTime?            @map("archived_at")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
@@ -360,6 +363,8 @@ model Project {
   client        ConsultingClient?    @relation(fields: [clientId], references: [id])
   standards     ProjectStandard[]
   members       ProjectMember[]
+  contexts      OrganizationContext[]
+  interestedParties InterestedParty[]
   requirements  ProjectRequirement[]
   controls      ProjectControl[]
   soaEntries    SoaEntry[]
@@ -468,6 +473,54 @@ model SoaEntry {
   @@index([tenantId])
   @@index([projectId])
   @@map("soa_entries")
+}
+
+// ==================== ORGANIZATION CONTEXT (ISO 4.1) ====================
+
+model OrganizationContext {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  projectId   String?  @map("project_id") @db.Uuid
+  type        String   // "strength" | "weakness" | "opportunity" | "threat"
+  category    String?  // "financial" | "technological" | "legal" | "market" | "organizational" | "human_resources"
+  title       String
+  description String?
+  impact      String?  // "high" | "medium" | "low"
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("organization_contexts")
+}
+
+// ==================== INTERESTED PARTIES (ISO 4.2) ====================
+
+model InterestedParty {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  projectId         String?  @map("project_id") @db.Uuid
+  name              String
+  type              String   // "internal" | "external"
+  category          String?  // "employee" | "customer" | "supplier" | "regulator" | "shareholder" | "community" | "partner"
+  needsExpectations String?  @map("needs_expectations")
+  requirements      String?
+  influence         String?  // "high" | "medium" | "low"
+  interest          String?  // "high" | "medium" | "low"
+  strategy          String?  // "manage_closely" | "keep_satisfied" | "keep_informed" | "monitor"
+  monitoringMethod  String?  @map("monitoring_method")
+  status            String   @default("active")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("interested_parties")
 }
 
 // ==================== RISKS ====================

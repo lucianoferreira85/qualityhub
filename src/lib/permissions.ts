@@ -20,7 +20,9 @@ type Resource =
   | "invitation"
   | "settings"
   | "billing"
-  | "managementReview";
+  | "managementReview"
+  | "context"
+  | "interestedParty";
 
 type PermissionMatrix = Record<OrgRole, Partial<Record<Resource, Action[]>>>;
 
@@ -44,6 +46,8 @@ const PERMISSIONS: PermissionMatrix = {
     settings: ["read", "update"],
     billing: ["read", "update"],
     managementReview: ["create", "read", "update", "delete"],
+    context: ["create", "read", "update", "delete"],
+    interestedParty: ["create", "read", "update", "delete"],
   },
   project_manager: {
     project: ["create", "read", "update"],
@@ -63,6 +67,8 @@ const PERMISSIONS: PermissionMatrix = {
     invitation: ["create", "read"],
     settings: ["read"],
     managementReview: ["create", "read", "update"],
+    context: ["create", "read", "update", "delete"],
+    interestedParty: ["create", "read", "update", "delete"],
   },
   senior_consultant: {
     project: ["read"],
@@ -80,6 +86,8 @@ const PERMISSIONS: PermissionMatrix = {
     client: ["read"],
     member: ["read"],
     managementReview: ["read"],
+    context: ["create", "read", "update"],
+    interestedParty: ["create", "read", "update"],
   },
   junior_consultant: {
     project: ["read"],
@@ -97,6 +105,8 @@ const PERMISSIONS: PermissionMatrix = {
     client: ["read"],
     member: ["read"],
     managementReview: ["read"],
+    context: ["read", "update"],
+    interestedParty: ["read", "update"],
   },
   internal_auditor: {
     project: ["read"],
@@ -114,6 +124,8 @@ const PERMISSIONS: PermissionMatrix = {
     client: ["read"],
     member: ["read"],
     managementReview: ["read"],
+    context: ["read"],
+    interestedParty: ["read"],
   },
   external_auditor: {
     project: ["read"],
@@ -129,6 +141,8 @@ const PERMISSIONS: PermissionMatrix = {
     requirement: ["read"],
     control: ["read"],
     managementReview: ["read"],
+    context: ["read"],
+    interestedParty: ["read"],
   },
   client_viewer: {
     project: ["read"],
@@ -140,6 +154,8 @@ const PERMISSIONS: PermissionMatrix = {
     indicator: ["read"],
     process: ["read"],
     managementReview: ["read"],
+    context: ["read"],
+    interestedParty: ["read"],
   },
 };
 

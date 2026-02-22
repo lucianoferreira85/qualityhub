@@ -45,6 +45,7 @@ interface DashboardData {
     risks: number;
     ncs: number;
     total: number;
+    targetMaturity: number;
   }[];
   recentNcs: {
     id: string;
@@ -69,6 +70,20 @@ interface DashboardData {
     endDate: string | null;
   }[];
   overdueActions: number;
+  complianceOverview: {
+    avgRequirementMaturity: number;
+    avgControlMaturity: number;
+    totalRequirements: number;
+    totalControls: number;
+    compliancePercentage: number;
+  };
+  upcomingReviews: {
+    id: string;
+    code: string;
+    title: string;
+    nextReviewDate: string;
+    type: string;
+  }[];
 }
 
 const RISK_LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -320,6 +335,64 @@ export default function DashboardPage() {
               </Card>
             )}
 
+            {/* Compliance Overview */}
+            {data.complianceOverview && (data.complianceOverview.totalRequirements > 0 || data.complianceOverview.totalControls > 0) && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-title-3 text-foreground-primary">
+                    Compliance
+                  </h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex-shrink-0">
+                      <div className={`h-16 w-16 rounded-full flex items-center justify-center ${
+                        data.complianceOverview.compliancePercentage >= 70 ? "bg-success-bg" :
+                        data.complianceOverview.compliancePercentage >= 40 ? "bg-warning-bg" :
+                        "bg-danger-bg"
+                      }`}>
+                        <span className={`text-title-lg font-semibold ${
+                          data.complianceOverview.compliancePercentage >= 70 ? "text-success-fg" :
+                          data.complianceOverview.compliancePercentage >= 40 ? "text-warning-fg" :
+                          "text-danger-fg"
+                        }`}>
+                          {data.complianceOverview.compliancePercentage}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-body-2 text-foreground-secondary">
+                        Itens com maturidade &ge; 3
+                      </p>
+                      <p className="text-caption-1 text-foreground-tertiary mt-0.5">
+                        {data.complianceOverview.totalRequirements} requisitos + {data.complianceOverview.totalControls} controles
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-body-2 text-foreground-secondary">Requisitos</span>
+                        <span className="text-body-2 font-medium text-foreground-primary">{data.complianceOverview.avgRequirementMaturity}/4</span>
+                      </div>
+                      <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                        <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${(data.complianceOverview.avgRequirementMaturity / 4) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-body-2 text-foreground-secondary">Controles</span>
+                        <span className="text-body-2 font-medium text-foreground-primary">{data.complianceOverview.avgControlMaturity}/4</span>
+                      </div>
+                      <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                        <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${(data.complianceOverview.avgControlMaturity / 4) * 100}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Projects Overview */}
             {data.projectProgress.length > 0 && (
               <Card>
@@ -403,6 +476,52 @@ export default function DashboardPage() {
                         </div>
                       </Link>
                     ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {/* Upcoming Reviews */}
+            {data.upcomingReviews && data.upcomingReviews.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-title-3 text-foreground-primary">
+                      Revisoes Pendentes
+                    </h2>
+                    <Link href={`/${tenant.slug}/documents`}>
+                      <span className="text-caption-1 text-brand hover:underline flex items-center gap-1">
+                        Ver docs <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.upcomingReviews.map((doc) => {
+                      const daysUntil = Math.ceil((new Date(doc.nextReviewDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                      const isUrgent = daysUntil <= 7;
+                      return (
+                        <div
+                          key={doc.id}
+                          className={`flex items-center justify-between p-3 rounded-button border transition-colors ${
+                            isUrgent ? "border-danger/30 bg-danger-bg/30" : "border-stroke-secondary hover:bg-surface-secondary"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-caption-1 text-foreground-tertiary font-mono">{doc.code}</span>
+                            </div>
+                            <p className="text-body-2 text-foreground-primary truncate mt-0.5">{doc.title}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span className={`text-caption-1 ${isUrgent ? "text-danger-fg font-medium" : "text-foreground-tertiary"}`}>
+                              {daysUntil <= 0 ? "Vencido" : `${daysUntil}d`}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>

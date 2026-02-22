@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Pencil, Trash2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { getProcessStatusLabel, getProcessStatusColor } from "@/lib/utils";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const STATUSES = [
   { value: "active", label: "Ativo" },
@@ -146,6 +147,7 @@ export default function ProcessDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Processos", href: `/${tenant.slug}/processes` }, { label: process.code }]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href={`/${tenant.slug}/processes`}>

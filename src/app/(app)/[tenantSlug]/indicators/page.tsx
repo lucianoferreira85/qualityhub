@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter } from "lucide-react";
+import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getFrequencyLabel } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { Indicator, IndicatorMeasurement } from "@/types";
 
 interface IndicatorWithRelations extends Omit<Indicator, "measurements"> {
@@ -25,6 +27,21 @@ function getPerformance(value: number, target: number, upperLimit: number | null
   if (pct >= 80) return "warning";
   return "danger";
 }
+
+const CSV_COLUMNS: CsvColumn<IndicatorWithRelations>[] = [
+  { key: "name", label: "Nome" },
+  { key: "unit", label: "Unidade" },
+  { key: "frequency", label: "Frequência", formatter: (v) => getFrequencyLabel(String(v ?? "")) },
+  { key: "target", label: "Meta" },
+  {
+    key: "measurements",
+    label: "Último Valor",
+    formatter: (_v, row) => {
+      const m = row.measurements;
+      return m && m.length > 0 ? String(m[0].value) : "";
+    },
+  },
+];
 
 const FREQUENCIES = [
   { value: "", label: "Todas as frequências" },
@@ -93,14 +110,28 @@ export default function IndicatorsPage() {
             Acompanhe os indicadores de desempenho do SGQ
           </p>
         </div>
-        {can("indicator", "create") && (
-          <Link href={`/${tenant.slug}/indicators/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Novo Indicador
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "indicadores");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("indicator", "create") && (
+            <Link href={`/${tenant.slug}/indicators/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Novo Indicador
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

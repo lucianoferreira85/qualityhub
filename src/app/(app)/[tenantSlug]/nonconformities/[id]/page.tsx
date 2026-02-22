@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   Search,
   Plus,
+  Download,
 } from "lucide-react";
 import {
   getStatusColor,
@@ -32,6 +33,8 @@ import {
   formatDate,
 } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { generateNcReport } from "@/lib/pdf-reports/nc-report";
 import type { Nonconformity, ActionPlan } from "@/types";
 
 const SEVERITIES = [
@@ -292,6 +295,7 @@ export default function NonconformityDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Não Conformidades", href: `/${tenant.slug}/nonconformities` }, { label: nc.code }]} />
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/${tenant.slug}/nonconformities`}>
@@ -331,6 +335,9 @@ export default function NonconformityDetailPage() {
             </>
           ) : (
             <>
+              <Button variant="outline" size="sm" onClick={() => generateNcReport(nc, tenant.name)}>
+                <Download className="h-4 w-4" /> Exportar PDF
+              </Button>
               {can("nonconformity", "update") && (
                 <Button
                   variant="outline"

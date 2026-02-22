@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { FileUpload } from "@/components/ui/file-upload";
 
 const DOCUMENT_TYPES = [
   { value: "policy", label: "Política" },
@@ -39,6 +41,7 @@ export default function NewDocumentPage() {
   const [content, setContent] = useState("");
   const [reviewerId, setReviewerId] = useState("");
   const [nextReviewDate, setNextReviewDate] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,6 +77,7 @@ export default function NewDocumentPage() {
           projectId: projectId || null,
           category: category || null,
           content: content || null,
+          fileUrl: fileUrl || null,
           reviewerId: reviewerId || null,
           nextReviewDate: nextReviewDate || null,
         }),
@@ -96,6 +100,7 @@ export default function NewDocumentPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Documentos", href: `/${tenant.slug}/documents` }, { label: "Novo" }]} />
       <div className="flex items-center gap-3">
         <Link href={`/${tenant.slug}/documents`}>
           <Button variant="ghost" size="icon-sm">
@@ -198,6 +203,18 @@ export default function NewDocumentPage() {
                   onChange={(e) => setNextReviewDate(e.target.value)}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                Arquivo
+              </label>
+              <FileUpload
+                tenantSlug={tenant.slug}
+                folder="documents"
+                onUpload={(result) => setFileUrl(result.url)}
+                onRemove={() => setFileUrl("")}
+              />
             </div>
 
             <div>

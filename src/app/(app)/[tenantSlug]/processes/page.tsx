@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Cog, FolderKanban, User, TrendingUp, Filter } from "lucide-react";
+import { Plus, Cog, FolderKanban, User, TrendingUp, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getProcessStatusLabel, getProcessStatusColor } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 
 const PROCESS_STATUSES = [
   { value: "", label: "Todos os status" },
@@ -30,6 +32,14 @@ const CATEGORY_LABELS: Record<string, string> = {
   support: "Suporte",
   management: "Gestão",
 };
+
+const CSV_COLUMNS: CsvColumn<ProcessItem>[] = [
+  { key: "code", label: "Código" },
+  { key: "name", label: "Nome" },
+  { key: "category", label: "Categoria", formatter: (_v, row) => CATEGORY_LABELS[row.category || ""] || row.category || "" },
+  { key: "status", label: "Status", formatter: (_v, row) => getProcessStatusLabel(row.status) },
+  { key: "responsible", label: "Responsável", formatter: (_v, row) => row.responsible?.name || "" },
+];
 
 interface ProcessItem {
   id: string;
@@ -144,6 +154,18 @@ export default function ProcessesPage() {
               Limpar
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "processos");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
         </div>
       </div>
 

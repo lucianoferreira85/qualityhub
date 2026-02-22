@@ -7,15 +7,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Mail, User, Filter } from "lucide-react";
+import { Plus, Building2, Mail, User, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getInitials } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { ConsultingClient } from "@/types";
 
 const CLIENT_STATUSES = [
   { value: "", label: "Todos os status" },
   { value: "active", label: "Ativo" },
   { value: "inactive", label: "Inativo" },
+];
+
+const CSV_COLUMNS: CsvColumn<ConsultingClient>[] = [
+  { key: "name", label: "Nome" },
+  { key: "cnpj", label: "CNPJ" },
+  { key: "contactName", label: "Contato" },
+  { key: "contactEmail", label: "Email" },
+  { key: "sector", label: "Setor" },
 ];
 
 export default function ClientsPage() {
@@ -105,6 +115,18 @@ export default function ClientsPage() {
               Limpar
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "clientes");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
         </div>
       </div>
 

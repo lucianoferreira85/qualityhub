@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import type { ActionPlan } from "@/types";
 
 const TYPES = [
@@ -185,6 +186,7 @@ export default function ActionPlanDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Planos de Ação", href: `/${tenant.slug}/action-plans` }, { label: ap.code }]} />
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/${tenant.slug}/action-plans`}>

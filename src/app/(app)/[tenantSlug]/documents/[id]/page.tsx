@@ -23,6 +23,7 @@ import {
   Save,
   X,
   RefreshCw,
+  Download,
 } from "lucide-react";
 import {
   getStatusColor,
@@ -32,6 +33,8 @@ import {
   formatDate,
 } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { FileUpload } from "@/components/ui/file-upload";
 import type { Document, DocumentVersion } from "@/types";
 
 const DOCUMENT_STATUSES = [
@@ -89,6 +92,7 @@ export default function DocumentDetailPage() {
   const [editApproverId, setEditApproverId] = useState("");
   const [editNextReviewDate, setEditNextReviewDate] = useState("");
   const [editChangeNotes, setEditChangeNotes] = useState("");
+  const [editFileUrl, setEditFileUrl] = useState("");
 
   // New revision states
   const [showNewRevision, setShowNewRevision] = useState(false);
@@ -131,6 +135,7 @@ export default function DocumentDetailPage() {
         : ""
     );
     setEditChangeNotes("");
+    setEditFileUrl(doc.fileUrl || "");
     setEditing(true);
     setError("");
   };
@@ -148,6 +153,7 @@ export default function DocumentDetailPage() {
           status: editStatus,
           category: editCategory || null,
           content: editContent || null,
+          fileUrl: editFileUrl || null,
           version: editVersion,
           reviewerId: editReviewerId || null,
           approverId: editApproverId || null,
@@ -276,6 +282,7 @@ export default function DocumentDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Documentos", href: `/${tenant.slug}/documents` }, { label: doc.code }]} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
@@ -586,6 +593,20 @@ export default function DocumentDetailPage() {
 
             <div>
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
+                Arquivo
+              </label>
+              <FileUpload
+                tenantSlug={tenant.slug}
+                folder="documents"
+                existingUrl={editFileUrl || null}
+                existingFileName={editFileUrl ? "Arquivo anexado" : null}
+                onUpload={(result) => setEditFileUrl(result.url)}
+                onRemove={() => setEditFileUrl("")}
+              />
+            </div>
+
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Conteúdo
               </label>
               <textarea
@@ -694,6 +715,32 @@ export default function DocumentDetailPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Attached File */}
+          {doc.fileUrl && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-title-3 text-foreground-primary">Arquivo Anexado</h2>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3 p-3 rounded-card border border-stroke-secondary bg-surface-secondary">
+                  <FileText className="h-5 w-5 text-brand flex-shrink-0" />
+                  <span className="flex-1 text-body-2 text-foreground-primary truncate">
+                    {doc.fileUrl.split("/").pop() || "Arquivo"}
+                  </span>
+                  <a
+                    href={`/api/tenants/${tenant.slug}/files/${doc.fileUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-caption-1 text-brand hover:underline"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Content */}
           {doc.content && (

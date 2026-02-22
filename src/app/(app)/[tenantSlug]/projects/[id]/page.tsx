@@ -18,6 +18,8 @@ import {
   FileCheck,
   CheckCircle2,
   BarChart3,
+  Target,
+  Handshake,
   Pencil,
   Trash2,
   X,
@@ -31,6 +33,7 @@ import {
 import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Project } from "@/types";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface AvailableStandard {
   id: string;
@@ -277,6 +280,24 @@ export default function ProjectDetailPage() {
       icon: BarChart3,
       description: "KPIs e métricas de desempenho",
     },
+    {
+      label: "Contexto",
+      href: `/${tenant.slug}/projects/${project.id}/context`,
+      icon: Target,
+      description: "Análise SWOT - ISO 27001 cláusula 4.1",
+    },
+    {
+      label: "Partes Interessadas",
+      href: `/${tenant.slug}/projects/${project.id}/interested-parties`,
+      icon: Handshake,
+      description: "Stakeholders - ISO 27001 cláusula 4.2",
+    },
+    {
+      label: "Análise de Gaps",
+      href: `/${tenant.slug}/projects/${project.id}/gap-analysis`,
+      icon: BarChart3,
+      description: "Maturidade e conformidade do projeto",
+    },
   ];
 
   const statusOptions = [
@@ -288,6 +309,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Projetos", href: `/${tenant.slug}/projects` }, { label: project.name }]} />
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/${tenant.slug}/projects`}>

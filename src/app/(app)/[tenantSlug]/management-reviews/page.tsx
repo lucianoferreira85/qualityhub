@@ -6,9 +6,11 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, BookOpen, FolderKanban, Calendar, Filter } from "lucide-react";
+import { Plus, BookOpen, FolderKanban, Calendar, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: "bg-info-bg text-info-fg",
@@ -30,6 +32,12 @@ const REVIEW_STATUSES = [
   { value: "in_progress", label: "Em Andamento" },
   { value: "completed", label: "Concluída" },
   { value: "cancelled", label: "Cancelada" },
+];
+
+const CSV_COLUMNS: CsvColumn<ReviewItem>[] = [
+  { key: "project", label: "Projeto", formatter: (_v, row) => row.project?.name || "" },
+  { key: "scheduledDate", label: "Data Agendada", formatter: (_v, row) => row.scheduledDate ? formatDate(row.scheduledDate) : "" },
+  { key: "status", label: "Status", formatter: (_v, row) => STATUS_LABELS[row.status] || row.status },
 ];
 
 interface ReviewItem {
@@ -114,6 +122,18 @@ export default function ManagementReviewsPage() {
             Limpar
           </Button>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            exportToCSV(reviews, CSV_COLUMNS, "analises-criticas");
+            toast.success("CSV exportado com sucesso");
+          }}
+          disabled={reviews.length === 0}
+        >
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
       </div>
 
       {loading ? (

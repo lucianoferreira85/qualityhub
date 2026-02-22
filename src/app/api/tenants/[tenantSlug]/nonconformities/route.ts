@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic';
 import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createNonconformitySchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
+import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerNcAssigned } from "@/lib/email-triggers";
 
 export async function GET(
   request: Request,
@@ -93,6 +95,28 @@ export async function POST(
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       },
     });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "create",
+      entityType: "nonconformity",
+      entityId: nc.id,
+      metadata: { code, title: data.title, severity: data.severity },
+      ipAddress: getClientIp(request),
+    });
+
+    if (data.responsibleId) {
+      triggerNcAssigned({
+        tenantId: ctx.tenantId,
+        tenantSlug: ctx.tenantSlug,
+        responsibleId: data.responsibleId,
+        ncId: nc.id,
+        ncCode: code,
+        ncTitle: data.title,
+        severity: data.severity,
+      });
+    }
 
     return successResponse(nc, 201);
   } catch (error) {

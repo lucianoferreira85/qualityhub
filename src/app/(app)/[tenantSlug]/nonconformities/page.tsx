@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertTriangle, FolderKanban, User, Calendar, Filter } from "lucide-react";
+import { Plus, AlertTriangle, FolderKanban, User, Calendar, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, getSeverityColor, getSeverityLabel, getOriginLabel, formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { Nonconformity } from "@/types";
 
 const NC_ORIGINS = [
@@ -38,6 +40,16 @@ const NC_STATUSES = [
   { value: "in_execution", label: "Em Execução" },
   { value: "effectiveness_check", label: "Verificação de Eficácia" },
   { value: "closed", label: "Fechada" },
+];
+
+const CSV_COLUMNS: CsvColumn<NcWithRelations>[] = [
+  { key: "code", label: "Código" },
+  { key: "title", label: "Título" },
+  { key: "origin", label: "Origem", formatter: (v) => getOriginLabel(String(v ?? "")) },
+  { key: "severity", label: "Severidade", formatter: (v) => getSeverityLabel(String(v ?? "")) },
+  { key: "status", label: "Status", formatter: (v) => getStatusLabel(String(v ?? "")) },
+  { key: "responsible", label: "Responsável", formatter: (_v, row) => row.responsible?.name || "" },
+  { key: "dueDate", label: "Prazo", formatter: (v) => v ? formatDate(String(v)) : "" },
 ];
 
 interface NcWithRelations extends Omit<Nonconformity, "responsible"> {
@@ -104,14 +116,28 @@ export default function NonconformitiesPage() {
             Gerencie as não conformidades identificadas
           </p>
         </div>
-        {can("nonconformity", "create") && (
-          <Link href={`/${tenant.slug}/nonconformities/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Nova NC
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "nao-conformidades");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("nonconformity", "create") && (
+            <Link href={`/${tenant.slug}/nonconformities/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Nova NC
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
 import { updateNonconformitySchema } from "@/lib/validations";
+import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerNcAssigned } from "@/lib/email-triggers";
 
 export async function GET(
   _request: Request,
@@ -56,6 +58,29 @@ export async function PATCH(
       },
     });
 
+    const logAction = data.status && data.status !== nc.status ? "status_change" : "update";
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: logAction,
+      entityType: "nonconformity",
+      entityId: id,
+      metadata: { changes: data, previousStatus: nc.status },
+      ipAddress: getClientIp(request),
+    });
+
+    if (data.responsibleId && data.responsibleId !== nc.responsibleId) {
+      triggerNcAssigned({
+        tenantId: ctx.tenantId,
+        tenantSlug,
+        responsibleId: data.responsibleId,
+        ncId: id,
+        ncCode: nc.code,
+        ncTitle: nc.title,
+        severity: nc.severity,
+      });
+    }
+
     return successResponse(updated);
   } catch (error) {
     return handleApiError(error);
@@ -75,6 +100,16 @@ export async function DELETE(
     if (!nc) throw new NotFoundError("Não conformidade");
 
     await ctx.db.nonconformity.delete({ where: { id } });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "delete",
+      entityType: "nonconformity",
+      entityId: id,
+      metadata: { code: nc.code, title: nc.title },
+      ipAddress: getClientIp(_request),
+    });
 
     return successResponse({ deleted: true });
   } catch (error) {

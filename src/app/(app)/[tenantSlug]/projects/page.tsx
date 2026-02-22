@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
-import { Plus, FolderKanban, Building2, Users, Filter } from "lucide-react";
-import { getStatusColor, getStatusLabel } from "@/lib/utils";
+import { Plus, FolderKanban, Building2, Users, Filter, Download } from "lucide-react";
+import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { Project } from "@/types";
 
 const PROJECT_STATUSES = [
@@ -18,6 +20,14 @@ const PROJECT_STATUSES = [
   { value: "in_progress", label: "Em Andamento" },
   { value: "completed", label: "Concluído" },
   { value: "archived", label: "Arquivado" },
+];
+
+const CSV_COLUMNS: CsvColumn<Project>[] = [
+  { key: "name", label: "Nome" },
+  { key: "status", label: "Status", formatter: (_v, row) => getStatusLabel(row.status) },
+  { key: "client", label: "Cliente", formatter: (_v, row) => row.client?.name || "" },
+  { key: "startDate", label: "Início", formatter: (_v, row) => row.startDate ? formatDate(String(row.startDate)) : "" },
+  { key: "endDate", label: "Fim", formatter: (_v, row) => row.endDate ? formatDate(String(row.endDate)) : "" },
 ];
 
 export default function ProjectsPage() {
@@ -106,6 +116,18 @@ export default function ProjectsPage() {
               Limpar
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "projetos");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
         </div>
       </div>
 
@@ -138,8 +160,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((project) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const counts = (project as any)._count || {};
+            const counts = (project as unknown as { _count?: Record<string, number> })._count || {};
             const standards = project.standards || [];
 
             return (

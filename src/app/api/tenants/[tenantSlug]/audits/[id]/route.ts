@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
 import { updateAuditSchema } from "@/lib/validations";
+import { logActivity, getClientIp } from "@/lib/audit-log";
 
 export async function GET(
   _request: Request,
@@ -57,6 +58,16 @@ export async function PATCH(
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
       },
+    });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "update",
+      entityType: "audit",
+      entityId: id,
+      metadata: { changes: data },
+      ipAddress: getClientIp(request),
     });
 
     return successResponse(updated);

@@ -21,6 +21,7 @@ import {
 import { getInitials, getStatusColor, getStatusLabel } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ConsultingClient, Project } from "@/types";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const SECTORS = [
   "Tecnologia",
@@ -162,6 +163,7 @@ export default function ClientDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Clientes", href: `/${tenant.slug}/clients` }, { label: client.name }]} />
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/${tenant.slug}/clients`}>

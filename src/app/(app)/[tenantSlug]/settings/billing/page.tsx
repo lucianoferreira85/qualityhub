@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,10 @@ import {
   BookOpen,
   Check,
   X,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
+import { formatDate } from "@/lib/utils";
 
 const FEATURE_LABELS: Record<string, string> = {
   audits: "Auditorias",
@@ -36,10 +40,57 @@ interface UsageData {
   clients: number;
 }
 
+interface SubscriptionData {
+  id: string;
+  status: string;
+  currentPeriodStart: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId: string | null;
+  plan: { id: string; name: string; slug: string; price: number };
+}
+
+const PLAN_PRICES: Record<string, { monthly: string; label: string }> = {
+  starter: { monthly: "R$ 97", label: "Starter" },
+  professional: { monthly: "R$ 297", label: "Professional" },
+  enterprise: { monthly: "R$ 797", label: "Enterprise" },
+};
+
+const SUB_STATUS_LABELS: Record<string, string> = {
+  trialing: "Em teste",
+  active: "Ativa",
+  past_due: "Pagamento pendente",
+  canceled: "Cancelada",
+  unpaid: "Não paga",
+};
+
+const SUB_STATUS_COLORS: Record<string, string> = {
+  trialing: "bg-info-bg text-info-fg",
+  active: "bg-success-bg text-success-fg",
+  past_due: "bg-warning-bg text-warning-fg",
+  canceled: "bg-gray-200 text-gray-500",
+  unpaid: "bg-danger-bg text-danger-fg",
+};
+
 export default function BillingPage() {
   const { tenant, plan } = useTenant();
+  const searchParams = useSearchParams();
   const [usage, setUsage] = useState<UsageData>({ members: 0, projects: 0, clients: 0 });
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [loadingSub, setLoadingSub] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success") {
+      toast.success("Assinatura realizada com sucesso!");
+    } else if (status === "cancelled") {
+      toast.error("Checkout cancelado");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     Promise.all([
@@ -56,7 +107,62 @@ export default function BillingPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch(`/api/tenants/${tenant.slug}/billing`)
+      .then((r) => r.json())
+      .then((res) => setSubscription(res.data || null))
+      .catch(() => {})
+      .finally(() => setLoadingSub(false));
   }, [tenant.slug]);
+
+  const handleCheckout = async (planSlug: string) => {
+    setCheckingOut(true);
+    setSelectedPlan(planSlug);
+    try {
+      const res = await fetch(`/api/tenants/${tenant.slug}/billing/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planSlug }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao iniciar checkout");
+      }
+      const data = await res.json();
+      if (data.data?.url) {
+        window.location.href = data.data.url;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao iniciar checkout";
+      toast.error(message);
+    } finally {
+      setCheckingOut(false);
+      setSelectedPlan("");
+    }
+  };
+
+  const handlePortal = async () => {
+    setOpeningPortal(true);
+    try {
+      const res = await fetch(`/api/tenants/${tenant.slug}/billing/portal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao abrir portal");
+      }
+      const data = await res.json();
+      if (data.data?.url) {
+        window.location.href = data.data.url;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao abrir portal";
+      toast.error(message);
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
 
   const planSlug = plan?.slug || "starter";
   const features = (plan?.features || {}) as Record<string, boolean>;
@@ -86,6 +192,57 @@ export default function BillingPage() {
           </p>
         </div>
       </div>
+
+      {/* Subscription Card */}
+      {!loadingSub && subscription && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-foreground-tertiary" />
+                <h2 className="text-title-3 text-foreground-primary">Assinatura</h2>
+              </div>
+              <Badge variant={SUB_STATUS_COLORS[subscription.status] || ""}>
+                {SUB_STATUS_LABELS[subscription.status] || subscription.status}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-body-2 text-foreground-secondary">Plano</span>
+              <span className="text-body-1 font-medium text-foreground-primary">
+                {subscription.plan.name}
+              </span>
+            </div>
+            {subscription.currentPeriodStart && subscription.currentPeriodEnd && (
+              <div className="flex items-center justify-between">
+                <span className="text-body-2 text-foreground-secondary">Período</span>
+                <span className="text-body-2 text-foreground-primary">
+                  {formatDate(subscription.currentPeriodStart)} - {formatDate(subscription.currentPeriodEnd)}
+                </span>
+              </div>
+            )}
+            {subscription.cancelAtPeriodEnd && (
+              <div className="bg-warning-bg text-warning-fg text-body-2 p-3 rounded-button">
+                Sua assinatura será cancelada ao final do período atual.
+              </div>
+            )}
+            {subscription.stripeCustomerId && (
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePortal}
+                  loading={openingPortal}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Gerenciar Assinatura
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Current Plan */}
       <Card>
@@ -167,6 +324,52 @@ export default function BillingPage() {
         </CardContent>
       </Card>
 
+      {/* Upgrade Plans */}
+      {planSlug !== "enterprise" && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-title-3 text-foreground-primary">Fazer Upgrade</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {(["starter", "professional", "enterprise"] as const).map((slug) => {
+                const p = PLAN_PRICES[slug];
+                const isCurrent = slug === planSlug;
+                return (
+                  <div
+                    key={slug}
+                    className={`border rounded-card p-4 text-center space-y-3 ${
+                      isCurrent
+                        ? "border-brand bg-brand-light/30"
+                        : "border-stroke-secondary hover:border-brand/50 transition-colors"
+                    }`}
+                  >
+                    <p className="text-title-3 text-foreground-primary">{p.label}</p>
+                    <p className="text-title-1 text-foreground-primary font-bold">
+                      {p.monthly}
+                      <span className="text-body-2 font-normal text-foreground-secondary">/mês</span>
+                    </p>
+                    {isCurrent ? (
+                      <Badge variant="bg-brand-light text-brand">Plano atual</Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleCheckout(slug)}
+                        loading={checkingOut && selectedPlan === slug}
+                        disabled={checkingOut}
+                      >
+                        Selecionar
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Features */}
       <Card>
         <CardHeader>
@@ -210,13 +413,6 @@ export default function BillingPage() {
                 {limits.storage}
               </p>
             </div>
-            {planSlug !== "enterprise" && (
-              <Link href={`/${tenant.slug}/settings/billing`}>
-                <Button variant="outline" size="sm">
-                  Fazer Upgrade
-                </Button>
-              </Link>
-            )}
           </div>
         </CardContent>
       </Card>

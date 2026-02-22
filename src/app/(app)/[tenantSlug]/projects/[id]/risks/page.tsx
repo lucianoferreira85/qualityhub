@@ -17,8 +17,10 @@ import {
   ChevronUp,
   Shield,
   Trash2,
+  Download,
 } from "lucide-react";
 import { getRiskLevelLabel, getStatusLabel, getStatusColor } from "@/lib/utils";
+import { generateRiskReport } from "@/lib/pdf-reports/risk-report";
 
 interface Risk {
   id: string;
@@ -231,12 +233,19 @@ export default function RisksPage() {
             </p>
           </div>
         </div>
-        {can("risk", "create") && (
-          <Button onClick={() => { setShowAdd(!showAdd); setError(""); }}>
-            <Plus className="h-4 w-4" />
-            Novo Risco
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {risks.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => generateRiskReport({ projectName: projectId, risks }, tenant.name)}>
+              <Download className="h-4 w-4" /> Exportar PDF
+            </Button>
+          )}
+          {can("risk", "create") && (
+            <Button onClick={() => { setShowAdd(!showAdd); setError(""); }}>
+              <Plus className="h-4 w-4" />
+              Novo Risco
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}

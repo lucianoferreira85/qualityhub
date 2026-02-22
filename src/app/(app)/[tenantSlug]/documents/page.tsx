@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, FolderKanban, User, Calendar, Tag, Filter } from "lucide-react";
+import { Plus, FileText, FolderKanban, User, Calendar, Tag, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, getDocumentTypeLabel, getDocumentTypeColor, formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { Document } from "@/types";
 
 const DOCUMENT_TYPES = [
@@ -28,6 +30,14 @@ const DOCUMENT_STATUSES = [
   { value: "in_review", label: "Em Revisão" },
   { value: "approved", label: "Aprovado" },
   { value: "obsolete", label: "Obsoleto" },
+];
+
+const CSV_COLUMNS: CsvColumn<DocWithRelations>[] = [
+  { key: "code", label: "Código" },
+  { key: "title", label: "Título" },
+  { key: "type", label: "Tipo", formatter: (v) => getDocumentTypeLabel(String(v ?? "")) },
+  { key: "version", label: "Versão" },
+  { key: "status", label: "Status", formatter: (v) => getStatusLabel(String(v ?? "")) },
 ];
 
 interface DocWithRelations extends Omit<Document, "author"> {
@@ -93,14 +103,28 @@ export default function DocumentsPage() {
             Gerencie políticas, procedimentos e registros do sistema de gestão
           </p>
         </div>
-        {can("document", "create") && (
-          <Link href={`/${tenant.slug}/documents/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Novo Documento
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "documentos");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("document", "create") && (
+            <Link href={`/${tenant.slug}/documents/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Novo Documento
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

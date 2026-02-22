@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, FolderKanban, User, Calendar, FileSearch, Filter } from "lucide-react";
+import { Plus, Search, FolderKanban, User, Calendar, FileSearch, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, getAuditTypeLabel, formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { Audit } from "@/types";
 
 const AUDIT_TYPES = [
@@ -34,6 +36,16 @@ const AUDIT_TYPE_COLORS: Record<string, string> = {
   supplier: "bg-warning-bg text-warning-fg",
   certification: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
 };
+
+const CSV_COLUMNS: CsvColumn<AuditWithRelations>[] = [
+  { key: "code", label: "Código" },
+  { key: "title", label: "Título" },
+  { key: "type", label: "Tipo", formatter: (v) => getAuditTypeLabel(String(v ?? "")) },
+  { key: "status", label: "Status", formatter: (v) => getStatusLabel(String(v ?? "")) },
+  { key: "startDate", label: "Início", formatter: (v) => v ? formatDate(String(v)) : "" },
+  { key: "endDate", label: "Fim", formatter: (v) => v ? formatDate(String(v)) : "" },
+  { key: "leadAuditor", label: "Auditor Líder", formatter: (_v, row) => row.leadAuditor?.name || "" },
+];
 
 interface AuditWithRelations extends Omit<Audit, "leadAuditor"> {
   project?: { id: string; name: string };
@@ -95,14 +107,28 @@ export default function AuditsPage() {
             Gerencie as auditorias internas e externas
           </p>
         </div>
-        {can("audit", "create") && (
-          <Link href={`/${tenant.slug}/audits/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Nova Auditoria
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "auditorias");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("audit", "create") && (
+            <Link href={`/${tenant.slug}/audits/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Nova Auditoria
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

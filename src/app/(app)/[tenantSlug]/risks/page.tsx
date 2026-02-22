@@ -7,9 +7,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ShieldAlert, FolderKanban, User, Filter } from "lucide-react";
+import { ShieldAlert, FolderKanban, User, Filter, Plus, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getRiskLevelLabel, getStatusLabel, getStatusColor } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
+
+const CSV_COLUMNS: CsvColumn<RiskItem>[] = [
+  { key: "code", label: "Código" },
+  { key: "title", label: "Título" },
+  { key: "category", label: "Categoria", formatter: (v) => {
+    const labels: Record<string, string> = { strategic: "Estratégico", operational: "Operacional", compliance: "Conformidade", financial: "Financeiro", technology: "Tecnologia", legal: "Legal" };
+    return labels[String(v)] || String(v);
+  }},
+  { key: "riskLevel", label: "Nível", formatter: (v) => getRiskLevelLabel(String(v)) },
+  { key: "status", label: "Status", formatter: (v) => getStatusLabel(String(v)) },
+  { key: "project", label: "Projeto", formatter: (_v, row) => row.project?.name || "" },
+];
 
 const RISK_LEVELS = [
   { value: "", label: "Todos os níveis" },
@@ -69,7 +83,7 @@ interface RiskItem {
 }
 
 export default function RisksPage() {
-  const { tenant } = useTenant();
+  const { tenant, can } = useTenant();
   const [risks, setRisks] = useState<RiskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -117,11 +131,35 @@ export default function RisksPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-title-1 text-foreground-primary">Riscos</h1>
-        <p className="text-body-1 text-foreground-secondary mt-1">
-          Visão consolidada dos riscos de todos os projetos
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Riscos</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Visão consolidada dos riscos de todos os projetos
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "riscos");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("risk", "create") && (
+            <Link href={`/${tenant.slug}/risks/new`}>
+              <Button size="sm">
+                <Plus className="h-4 w-4" />
+                Novo Risco
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
@@ -208,7 +246,7 @@ export default function RisksPage() {
           {filtered.map((risk) => (
             <Link
               key={risk.id}
-              href={`/${tenant.slug}/projects/${risk.project?.id}/risks`}
+              href={`/${tenant.slug}/risks/${risk.id}`}
             >
               <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
                 <CardContent className="p-5">

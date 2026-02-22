@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const AUDIT_TYPES = [
   { value: "internal", label: "Interna" },
@@ -96,6 +97,7 @@ export default function NewAuditPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Auditorias", href: `/${tenant.slug}/audits` }, { label: "Nova" }]} />
       <div className="flex items-center gap-3">
         <Link href={`/${tenant.slug}/audits`}>
           <Button variant="ghost" size="icon-sm">

@@ -7,7 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, CreditCard, Pencil, Building2 } from "lucide-react";
+import { Users, CreditCard, Pencil, Building2, Activity, Bell, Target, Handshake } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
@@ -84,6 +84,30 @@ export default function SettingsPage() {
           <Button variant="outline" size="sm">
             <Building2 className="h-4 w-4" />
             Clientes
+          </Button>
+        </Link>
+        <Link href={`/${tenant.slug}/settings/activity`}>
+          <Button variant="outline" size="sm">
+            <Activity className="h-4 w-4" />
+            Log de Atividades
+          </Button>
+        </Link>
+        <Link href={`/${tenant.slug}/settings/notifications`}>
+          <Button variant="outline" size="sm">
+            <Bell className="h-4 w-4" />
+            Notificações
+          </Button>
+        </Link>
+        <Link href={`/${tenant.slug}/settings/context`}>
+          <Button variant="outline" size="sm">
+            <Target className="h-4 w-4" />
+            Contexto
+          </Button>
+        </Link>
+        <Link href={`/${tenant.slug}/settings/interested-parties`}>
+          <Button variant="outline" size="sm">
+            <Handshake className="h-4 w-4" />
+            Partes Interessadas
           </Button>
         </Link>
       </div>

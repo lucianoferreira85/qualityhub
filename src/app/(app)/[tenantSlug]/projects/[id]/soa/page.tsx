@@ -13,7 +13,9 @@ import {
   Check,
   X,
   Minus,
+  Download,
 } from "lucide-react";
+import { generateSoaReport } from "@/lib/pdf-reports/soa-report";
 
 interface StandardControl {
   id: string;
@@ -202,12 +204,25 @@ export default function SoaPage() {
             </p>
           </div>
         </div>
-        {can("soaEntry", "create") && hasMissing && allControls.length > 0 && (
-          <Button onClick={handleGenerateAll} loading={generating}>
-            <FileSpreadsheet className="h-4 w-4" />
-            Gerar SoA Completa
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {entries.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => {
+              const std = projectStandards.find((s) => s.id === selectedStandardId);
+              generateSoaReport({
+                standardName: std ? `${std.code} - ${std.name}` : "Norma",
+                entries,
+              }, tenant.name);
+            }}>
+              <Download className="h-4 w-4" /> Exportar PDF
+            </Button>
+          )}
+          {can("soaEntry", "create") && hasMissing && allControls.length > 0 && (
+            <Button onClick={handleGenerateAll} loading={generating}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Gerar SoA Completa
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Standard selector */}

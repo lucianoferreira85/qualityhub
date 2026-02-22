@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { getFrequencyLabel, formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import type { Indicator, IndicatorMeasurement } from "@/types";
 
 const FREQUENCIES = [
@@ -299,6 +300,7 @@ export default function IndicatorDetailPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Indicadores", href: `/${tenant.slug}/indicators` }, { label: indicator.name }]} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">

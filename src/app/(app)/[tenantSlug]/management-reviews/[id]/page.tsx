@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Trash2, Save, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const STATUS_COLORS: Record<string, string> = {
   scheduled: "bg-info-bg text-info-fg",
@@ -157,6 +158,7 @@ export default function ManagementReviewDetailPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <Breadcrumb items={[{ label: "Análises Críticas", href: `/${tenant.slug}/management-reviews` }, { label: review.scheduledDate ? formatDate(review.scheduledDate) : review.id }]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href={`/${tenant.slug}/management-reviews`}>

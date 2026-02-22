@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const FREQUENCIES = [
   { value: "daily", label: "Diário" },
@@ -87,6 +88,7 @@ export default function NewIndicatorPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Indicadores", href: `/${tenant.slug}/indicators` }, { label: "Novo" }]} />
       <div className="flex items-center gap-3">
         <Link href={`/${tenant.slug}/indicators`}>
           <Button variant="ghost" size="icon-sm">

@@ -11,6 +11,8 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "project", "read");
 
+    const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
     const [
       totalProjects,
       totalAudits,
@@ -26,6 +28,11 @@ export async function GET(
       recentActions,
       upcomingAudits,
       overdueActions,
+      reqMaturityAgg,
+      ctrlMaturityAgg,
+      compliantReqs,
+      compliantCtrls,
+      upcomingReviews,
     ] = await Promise.all([
       ctx.db.project.count({ where: { status: { not: "archived" } } }),
       ctx.db.audit.count(),
@@ -48,6 +55,7 @@ export async function GET(
           id: true,
           name: true,
           status: true,
+          targetMaturity: true,
           _count: {
             select: {
               controls: true,
@@ -105,6 +113,38 @@ export async function GET(
           dueDate: { lt: new Date() },
         },
       }),
+      // Compliance: avg maturity of requirements
+      ctx.db.projectRequirement.aggregate({
+        _avg: { maturity: true },
+        _count: { id: true },
+      }),
+      // Compliance: avg maturity of controls
+      ctx.db.projectControl.aggregate({
+        _avg: { maturity: true },
+        _count: { id: true },
+      }),
+      // Compliant requirements (maturity >= 3)
+      ctx.db.projectRequirement.count({ where: { maturity: { gte: 3 } } }),
+      // Compliant controls (maturity >= 3)
+      ctx.db.projectControl.count({ where: { maturity: { gte: 3 } } }),
+      // Documents with upcoming review dates
+      ctx.db.document.findMany({
+        where: {
+          nextReviewDate: {
+            gte: new Date(),
+            lte: thirtyDaysFromNow,
+          },
+        },
+        select: {
+          id: true,
+          code: true,
+          title: true,
+          nextReviewDate: true,
+          type: true,
+        },
+        orderBy: { nextReviewDate: "asc" },
+        take: 5,
+      }),
     ]);
 
     const riskDistribution = risksByLevel.map((r) => ({
@@ -117,19 +157,32 @@ export async function GET(
       count: n._count.id,
     }));
 
-    const projectProgress = projectsWithProgress.map((p) => {
-      const total = p._count.controls + p._count.requirements;
-      return {
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        controls: p._count.controls,
-        requirements: p._count.requirements,
-        risks: p._count.risks,
-        ncs: p._count.nonconformities,
-        total,
-      };
-    });
+    const projectProgress = projectsWithProgress.map((p) => ({
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      controls: p._count.controls,
+      requirements: p._count.requirements,
+      risks: p._count.risks,
+      ncs: p._count.nonconformities,
+      total: p._count.controls + p._count.requirements,
+      targetMaturity: p.targetMaturity,
+    }));
+
+    const totalReqs = reqMaturityAgg._count.id;
+    const totalCtrls = ctrlMaturityAgg._count.id;
+    const totalComplianceItems = totalReqs + totalCtrls;
+    const totalCompliant = compliantReqs + compliantCtrls;
+
+    const complianceOverview = {
+      avgRequirementMaturity: Math.round((reqMaturityAgg._avg.maturity || 0) * 100) / 100,
+      avgControlMaturity: Math.round((ctrlMaturityAgg._avg.maturity || 0) * 100) / 100,
+      totalRequirements: totalReqs,
+      totalControls: totalCtrls,
+      compliancePercentage: totalComplianceItems > 0
+        ? Math.round((totalCompliant / totalComplianceItems) * 100)
+        : 0,
+    };
 
     const actionEffectiveness =
       totalVerifiedActions > 0
@@ -150,6 +203,8 @@ export async function GET(
       recentActions,
       upcomingAudits,
       overdueActions,
+      complianceOverview,
+      upcomingReviews,
     });
   } catch (error) {
     return handleApiError(error);

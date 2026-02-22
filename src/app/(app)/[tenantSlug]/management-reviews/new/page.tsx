@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface ProjectOption {
   id: string;
@@ -71,6 +72,7 @@ export default function NewManagementReviewPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      <Breadcrumb items={[{ label: "Análises Críticas", href: `/${tenant.slug}/management-reviews` }, { label: "Nova" }]} />
       <div className="flex items-center gap-3">
         <Link href={`/${tenant.slug}/management-reviews`}>
           <Button variant="ghost" size="icon-sm">

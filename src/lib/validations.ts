@@ -81,6 +81,7 @@ export const updateProjectSchema = z.object({
   startDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   progress: z.number().min(0).max(100).optional(),
+  targetMaturity: z.number().int().min(0).max(4).optional(),
 });
 
 // ==================== Requirement ====================
@@ -370,6 +371,54 @@ export const onboardingStep5Schema = z.object({
   ).optional(),
 });
 
+// ==================== Organization Context (ISO 4.1) ====================
+
+export const createContextSchema = z.object({
+  type: z.enum(["strength", "weakness", "opportunity", "threat"]),
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  category: z.enum(["financial", "technological", "legal", "market", "organizational", "human_resources"]).nullable().optional(),
+  description: z.string().nullable().optional(),
+  impact: z.enum(["high", "medium", "low"]).nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+});
+
+export const updateContextSchema = z.object({
+  type: z.enum(["strength", "weakness", "opportunity", "threat"]).optional(),
+  title: z.string().min(1).max(255).optional(),
+  category: z.enum(["financial", "technological", "legal", "market", "organizational", "human_resources"]).nullable().optional(),
+  description: z.string().nullable().optional(),
+  impact: z.enum(["high", "medium", "low"]).nullable().optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
+// ==================== Interested Parties (ISO 4.2) ====================
+
+export const createInterestedPartySchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(255),
+  type: z.enum(["internal", "external"]),
+  category: z.enum(["employee", "customer", "supplier", "regulator", "shareholder", "community", "partner"]).nullable().optional(),
+  needsExpectations: z.string().nullable().optional(),
+  requirements: z.string().nullable().optional(),
+  influence: z.enum(["high", "medium", "low"]).nullable().optional(),
+  interest: z.enum(["high", "medium", "low"]).nullable().optional(),
+  strategy: z.enum(["manage_closely", "keep_satisfied", "keep_informed", "monitor"]).nullable().optional(),
+  monitoringMethod: z.string().nullable().optional(),
+  projectId: z.string().uuid().nullable().optional(),
+});
+
+export const updateInterestedPartySchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  type: z.enum(["internal", "external"]).optional(),
+  category: z.enum(["employee", "customer", "supplier", "regulator", "shareholder", "community", "partner"]).nullable().optional(),
+  needsExpectations: z.string().nullable().optional(),
+  requirements: z.string().nullable().optional(),
+  influence: z.enum(["high", "medium", "low"]).nullable().optional(),
+  interest: z.enum(["high", "medium", "low"]).nullable().optional(),
+  strategy: z.enum(["manage_closely", "keep_satisfied", "keep_informed", "monitor"]).nullable().optional(),
+  monitoringMethod: z.string().nullable().optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
 // ==================== Inferred Types ====================
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
@@ -399,3 +448,7 @@ export type CreateProcessInput = z.infer<typeof createProcessSchema>;
 export type UpdateProcessInput = z.infer<typeof updateProcessSchema>;
 export type CreateManagementReviewInput = z.infer<typeof createManagementReviewSchema>;
 export type UpdateManagementReviewInput = z.infer<typeof updateManagementReviewSchema>;
+export type CreateContextInput = z.infer<typeof createContextSchema>;
+export type UpdateContextInput = z.infer<typeof updateContextSchema>;
+export type CreateInterestedPartyInput = z.infer<typeof createInterestedPartySchema>;
+export type UpdateInterestedPartyInput = z.infer<typeof updateInterestedPartySchema>;

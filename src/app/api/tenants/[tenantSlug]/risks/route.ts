@@ -1,6 +1,10 @@
 export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
+import { createRiskSchema } from "@/lib/validations";
+import { generateCode, getRiskLevel } from "@/lib/utils";
+import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerRiskCritical } from "@/lib/email-triggers";
 
 export async function GET(
   request: Request,
@@ -54,6 +58,62 @@ export async function GET(
     });
 
     return successResponse(risks);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ tenantSlug: string }> }
+) {
+  try {
+    const { tenantSlug } = await params;
+    const ctx = await getRequestContext(tenantSlug);
+    requirePermission(ctx, "risk", "create");
+
+    const body = await request.json();
+    const data = createRiskSchema.parse(body);
+
+    const count = await ctx.db.risk.count();
+    const code = generateCode("RSK", count + 1);
+    const riskLevel = getRiskLevel(data.probability, data.impact);
+
+    const risk = await ctx.db.risk.create({
+      data: {
+        ...data,
+        code,
+        riskLevel,
+        tenantId: ctx.tenantId,
+      },
+      include: {
+        project: { select: { id: true, name: true } },
+        responsible: { select: { id: true, name: true } },
+      },
+    });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "create",
+      entityType: "risk",
+      entityId: risk.id,
+      metadata: { code, title: data.title, riskLevel },
+      ipAddress: getClientIp(request),
+    });
+
+    if (riskLevel === "critical") {
+      triggerRiskCritical({
+        tenantId: ctx.tenantId,
+        tenantSlug: ctx.tenantSlug,
+        riskId: risk.id,
+        riskCode: code,
+        riskTitle: data.title,
+        riskLevel,
+      });
+    }
+
+    return successResponse(risk, 201);
   } catch (error) {
     return handleApiError(error);
   }

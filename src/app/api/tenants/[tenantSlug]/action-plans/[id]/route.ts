@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
 import { updateActionSchema } from "@/lib/validations";
+import { logActivity, getClientIp } from "@/lib/audit-log";
 
 export async function GET(
   _request: Request,
@@ -54,6 +55,16 @@ export async function PATCH(
       },
     });
 
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "update",
+      entityType: "actionPlan",
+      entityId: id,
+      metadata: { changes: data },
+      ipAddress: getClientIp(request),
+    });
+
     return successResponse(updated);
   } catch (error) {
     return handleApiError(error);
@@ -73,6 +84,16 @@ export async function DELETE(
     if (!action) throw new NotFoundError("Plano de ação");
 
     await ctx.db.actionPlan.delete({ where: { id } });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "delete",
+      entityType: "actionPlan",
+      entityId: id,
+      metadata: { code: action.code, title: action.title },
+      ipAddress: getClientIp(_request),
+    });
 
     return successResponse({ deleted: true });
   } catch (error) {

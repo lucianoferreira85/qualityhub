@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
 import { updateDocumentSchema } from "@/lib/validations";
+import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerDocumentReview } from "@/lib/email-triggers";
 
 export async function GET(
   _request: Request,
@@ -88,6 +90,28 @@ export async function PATCH(
       data: updateData,
     });
 
+    const logAction = statusChanged ? "status_change" : "update";
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: logAction,
+      entityType: "document",
+      entityId: id,
+      metadata: { changes: data, previousStatus: document.status },
+      ipAddress: getClientIp(request),
+    });
+
+    if (data.status === "in_review" && document.reviewerId) {
+      triggerDocumentReview({
+        tenantId: ctx.tenantId,
+        tenantSlug,
+        reviewerId: document.reviewerId,
+        docId: id,
+        docCode: document.code,
+        docTitle: document.title,
+      });
+    }
+
     return successResponse(updated);
   } catch (error) {
     return handleApiError(error);
@@ -107,6 +131,16 @@ export async function DELETE(
     if (!document) throw new NotFoundError("Documento");
 
     await ctx.db.document.delete({ where: { id } });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "delete",
+      entityType: "document",
+      entityId: id,
+      metadata: { code: document.code, title: document.title },
+      ipAddress: getClientIp(_request),
+    });
 
     return successResponse({ deleted: true });
   } catch (error) {

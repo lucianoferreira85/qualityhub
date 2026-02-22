@@ -20,6 +20,7 @@ import {
   FileSearch,
   Plus,
   AlertTriangle,
+  Download,
 } from "lucide-react";
 import {
   getStatusColor,
@@ -32,6 +33,8 @@ import {
   formatDate,
 } from "@/lib/utils";
 import { toast } from "sonner";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { generateAuditReport } from "@/lib/pdf-reports/audit-report";
 import type { Audit, AuditFinding } from "@/types";
 
 const AUDIT_TYPES = [
@@ -265,6 +268,7 @@ export default function AuditDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[{ label: "Auditorias", href: `/${tenant.slug}/audits` }, { label: audit.title }]} />
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link href={`/${tenant.slug}/audits`}>
@@ -288,6 +292,9 @@ export default function AuditDetailPage() {
             </>
           ) : (
             <>
+              <Button variant="outline" size="sm" onClick={() => generateAuditReport(audit, tenant.name)}>
+                <Download className="h-4 w-4" /> Exportar PDF
+              </Button>
               {can("audit", "update") && (
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}><Pencil className="h-4 w-4" /> Editar</Button>
               )}

@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createAuditSchema } from "@/lib/validations";
+import { logActivity, getClientIp } from "@/lib/audit-log";
+import { triggerAuditScheduled } from "@/lib/email-triggers";
 
 export async function GET(
   request: Request,
@@ -83,6 +85,28 @@ export async function POST(
         notes: data.notes,
       },
     });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "create",
+      entityType: "audit",
+      entityId: audit.id,
+      metadata: { title: data.title, type: data.type },
+      ipAddress: getClientIp(request),
+    });
+
+    if (data.leadAuditorId) {
+      triggerAuditScheduled({
+        tenantId: ctx.tenantId,
+        tenantSlug: ctx.tenantSlug,
+        leadAuditorId: data.leadAuditorId,
+        auditId: audit.id,
+        auditTitle: data.title,
+        auditType: data.type,
+        startDate: data.startDate,
+      });
+    }
 
     return successResponse(audit, 201);
   } catch (error) {

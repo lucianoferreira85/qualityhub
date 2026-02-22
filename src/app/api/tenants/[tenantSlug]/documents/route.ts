@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createDocumentSchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
+import { logActivity, getClientIp } from "@/lib/audit-log";
 
 export async function GET(
   request: Request,
@@ -94,6 +95,16 @@ export async function POST(
         reviewerId: data.reviewerId,
         nextReviewDate: data.nextReviewDate ? new Date(data.nextReviewDate) : undefined,
       },
+    });
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "create",
+      entityType: "document",
+      entityId: document.id,
+      metadata: { code, title: data.title, type: data.type },
+      ipAddress: getClientIp(request),
     });
 
     return successResponse(document, 201);

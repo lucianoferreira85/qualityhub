@@ -7,9 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ClipboardCheck, FolderKanban, User, Calendar, AlertTriangle, ShieldAlert, Filter } from "lucide-react";
+import { Plus, ClipboardCheck, FolderKanban, User, Calendar, AlertTriangle, ShieldAlert, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
+import { exportToCSV, type CsvColumn } from "@/lib/export";
+import { toast } from "sonner";
 import type { ActionPlan } from "@/types";
 
 const ACTION_TYPES = [
@@ -40,6 +42,15 @@ const TYPE_COLORS: Record<string, string> = {
   preventive: "bg-info-bg text-info-fg",
   improvement: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
 };
+
+const CSV_COLUMNS: CsvColumn<ApWithRelations>[] = [
+  { key: "code", label: "Código" },
+  { key: "title", label: "Título" },
+  { key: "type", label: "Tipo", formatter: (v) => TYPE_LABELS[String(v ?? "")] || String(v ?? "") },
+  { key: "status", label: "Status", formatter: (v) => getStatusLabel(String(v ?? "")) },
+  { key: "responsible", label: "Responsável", formatter: (_v, row) => row.responsible?.name || "" },
+  { key: "dueDate", label: "Prazo", formatter: (v) => v ? formatDate(String(v)) : "" },
+];
 
 interface ApWithRelations extends Omit<ActionPlan, "responsible" | "nonconformity" | "risk"> {
   project?: { id: string; name: string };
@@ -105,14 +116,28 @@ export default function ActionPlansPage() {
             Acompanhe os planos de ação corretiva e preventiva
           </p>
         </div>
-        {can("actionPlan", "create") && (
-          <Link href={`/${tenant.slug}/action-plans/new`}>
-            <Button>
-              <Plus className="h-4 w-4" />
-              Novo Plano
-            </Button>
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              exportToCSV(filtered, CSV_COLUMNS, "planos-de-acao");
+              toast.success("CSV exportado com sucesso");
+            }}
+            disabled={filtered.length === 0}
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
+          </Button>
+          {can("actionPlan", "create") && (
+            <Link href={`/${tenant.slug}/action-plans/new`}>
+              <Button>
+                <Plus className="h-4 w-4" />
+                Novo Plano
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">

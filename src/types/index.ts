@@ -175,6 +175,7 @@ export interface Project {
   startDate: Date | null;
   endDate: Date | null;
   progress: number;
+  targetMaturity: number;
   createdAt: Date;
   updatedAt: Date;
   client?: ConsultingClient;
@@ -236,6 +237,42 @@ export interface SoaEntry {
   justification: string | null;
   implementationStatus: string | null;
   control?: StandardControl;
+}
+
+// ==================== Organization Context (ISO 4.1) ====================
+
+export interface OrganizationContext {
+  id: string;
+  tenantId: string;
+  projectId: string | null;
+  type: string;
+  category: string | null;
+  title: string;
+  description: string | null;
+  impact: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ==================== Interested Parties (ISO 4.2) ====================
+
+export interface InterestedParty {
+  id: string;
+  tenantId: string;
+  projectId: string | null;
+  name: string;
+  type: string;
+  category: string | null;
+  needsExpectations: string | null;
+  requirements: string | null;
+  influence: string | null;
+  interest: string | null;
+  strategy: string | null;
+  monitoringMethod: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // ==================== Risks ====================

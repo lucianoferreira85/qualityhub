@@ -4,6 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission, 
 import { createProjectSchema } from "@/lib/validations";
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
+import { logActivity, getClientIp } from "@/lib/audit-log";
 
 export async function GET(
   request: Request,
@@ -135,6 +136,16 @@ export async function POST(
           : Promise.resolve(),
       ]);
     }
+
+    void logActivity({
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+      action: "create",
+      entityType: "project",
+      entityId: project.id,
+      metadata: { name: data.name },
+      ipAddress: getClientIp(request),
+    });
 
     return successResponse(project, 201);
   } catch (error) {
