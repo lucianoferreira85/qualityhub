@@ -10,7 +10,6 @@ import {
   ClipboardCheck,
   ShieldAlert,
   Search as SearchIcon,
-  FileText,
   TrendingUp,
   Cog,
   BookOpen,
@@ -18,125 +17,215 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTenant } from "@/hooks/use-tenant";
-
-interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
   resource?: string;
+  badge?: number;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Projetos", href: "/projects", icon: FolderKanban, resource: "project" },
-  { label: "Clientes", href: "/clients", icon: Building2, resource: "client" },
-  { label: "Não Conformidades", href: "/nonconformities", icon: AlertTriangle, resource: "nonconformity" },
-  { label: "Planos de Ação", href: "/action-plans", icon: ClipboardCheck, resource: "actionPlan" },
-  { label: "Riscos", href: "/risks", icon: ShieldAlert, resource: "risk" },
-  { label: "Auditorias", href: "/audits", icon: SearchIcon, resource: "audit" },
-  { label: "Documentos", href: "/documents", icon: FileText, resource: "document" },
-  { label: "Processos", href: "/processes", icon: Cog, resource: "process" },
-  { label: "Indicadores", href: "/indicators", icon: TrendingUp, resource: "indicator" },
-  { label: "Análise Crítica", href: "/management-reviews", icon: BookOpen, resource: "managementReview" },
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: "Visao Geral",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: "Gestao",
+    items: [
+      { label: "Projetos", href: "/projects", icon: FolderKanban, resource: "project" },
+      { label: "Clientes", href: "/clients", icon: Building2, resource: "client" },
+    ],
+  },
+  {
+    title: "Conformidade",
+    items: [
+      { label: "Nao Conformidades", href: "/nonconformities", icon: AlertTriangle, resource: "nonconformity" },
+      { label: "Planos de Acao", href: "/action-plans", icon: ClipboardCheck, resource: "actionPlan" },
+      { label: "Riscos", href: "/risks", icon: ShieldAlert, resource: "risk" },
+    ],
+  },
+  {
+    title: "Monitoramento",
+    items: [
+      { label: "Auditorias", href: "/audits", icon: SearchIcon, resource: "audit" },
+      { label: "Indicadores", href: "/indicators", icon: TrendingUp, resource: "indicator" },
+      { label: "Processos", href: "/processes", icon: Cog, resource: "process" },
+      { label: "Analise Critica", href: "/management-reviews", icon: BookOpen, resource: "managementReview" },
+    ],
+  },
 ];
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  mobile?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ collapsed, onToggle, mobile, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { tenant, isAdmin, can } = useTenant();
   const basePath = `/${tenant.slug}`;
 
-  const visibleItems = NAV_ITEMS.filter((item) => {
-    if (!item.resource) return true;
-    return can(item.resource as never, "read");
-  });
+  const filteredSections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      if (!item.resource) return true;
+      return can(item.resource as never, "read");
+    }),
+  })).filter((section) => section.items.length > 0);
 
-  return (
+  function handleLinkClick() {
+    if (mobile && onClose) {
+      onClose();
+    }
+  }
+
+  const sidebarContent = (
     <aside
       className={cn(
-        "flex flex-col bg-surface-primary border-r border-stroke-secondary transition-all duration-200 h-full",
-        collapsed ? "w-[48px]" : "w-[250px]"
+        "flex flex-col bg-surface-primary border-r border-stroke-secondary h-full transition-all duration-200",
+        mobile ? "w-[280px]" : collapsed ? "w-[48px]" : "w-[250px]"
       )}
     >
+      {/* Header: Logo + Tenant Name */}
       <div
         className={cn(
-          "flex items-center h-14 border-b border-stroke-secondary px-3",
-          collapsed ? "justify-center" : "gap-3"
+          "flex items-center h-14 border-b border-stroke-secondary px-3 flex-shrink-0",
+          collapsed && !mobile ? "justify-center" : "gap-3"
         )}
       >
         <div className="h-8 w-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0">
           <Shield className="h-4 w-4 text-white" />
         </div>
-        {!collapsed && (
-          <span className="text-title-3 text-foreground-primary truncate">
+        {(!collapsed || mobile) && (
+          <span className="text-title-3 text-foreground-primary truncate flex-1">
             {tenant.name}
           </span>
         )}
+        {mobile && (
+          <button
+            onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary transition-colors"
+            aria-label="Fechar menu"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        {!mobile && !collapsed && (
+          <button
+            onClick={onToggle}
+            className="h-7 w-7 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+            aria-label="Recolher menu"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      <nav className="flex-1 py-2 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const fullHref = `${basePath}${item.href}`;
-          const isActive =
-            pathname === fullHref || pathname.startsWith(`${fullHref}/`);
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-2" aria-label="Menu principal">
+        {filteredSections.map((section, sIdx) => (
+          <div key={section.title} className={cn(sIdx > 0 && "mt-2")}>
+            {/* Section header */}
+            {(!collapsed || mobile) && (
+              <div className="px-4 py-1.5">
+                <span className="text-[11px] font-semibold text-foreground-tertiary uppercase tracking-wider">
+                  {section.title}
+                </span>
+              </div>
+            )}
+            {collapsed && !mobile && sIdx > 0 && (
+              <hr className="mx-2 my-1 border-stroke-secondary" />
+            )}
 
-          return (
-            <Link
-              key={item.href}
-              href={fullHref}
-              className={cn(
-                "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-button text-body-1 transition-colors",
-                isActive
-                  ? "bg-brand-light text-brand font-medium"
-                  : "text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary",
-                collapsed && "justify-center px-0"
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
+            {/* Section items */}
+            {section.items.map((item) => {
+              const fullHref = `${basePath}${item.href}`;
+              const isActive = pathname === fullHref || pathname.startsWith(`${fullHref}/`);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={fullHref}
+                  onClick={handleLinkClick}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 mx-2 px-3 py-2 rounded-button text-body-2 transition-colors group",
+                    isActive
+                      ? "bg-brand-light text-brand font-medium"
+                      : "text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary",
+                    collapsed && !mobile && "justify-center px-0"
+                  )}
+                  title={collapsed && !mobile ? item.label : undefined}
+                >
+                  <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
+                  {(!collapsed || mobile) && (
+                    <span className="truncate flex-1">{item.label}</span>
+                  )}
+                  {(!collapsed || mobile) && item.badge !== undefined && item.badge > 0 && (
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger text-[10px] font-medium text-white px-1.5">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
+      {/* Footer: Settings */}
       {isAdmin && (
-        <div className="border-t border-stroke-secondary py-2">
+        <div className="border-t border-stroke-secondary py-2 flex-shrink-0">
           <Link
             href={`${basePath}/settings`}
+            onClick={handleLinkClick}
+            aria-current={pathname.startsWith(`${basePath}/settings`) ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-button text-body-1 transition-colors",
+              "flex items-center gap-3 mx-2 px-3 py-2 rounded-button text-body-2 transition-colors",
               pathname.startsWith(`${basePath}/settings`)
                 ? "bg-brand-light text-brand font-medium"
                 : "text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary",
-              collapsed && "justify-center px-0"
+              collapsed && !mobile && "justify-center px-0"
             )}
-            title={collapsed ? "Configurações" : undefined}
+            title={collapsed && !mobile ? "Configuracoes" : undefined}
           >
-            <Settings className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span>Configurações</span>}
+            <Settings className="h-[18px] w-[18px] flex-shrink-0" />
+            {(!collapsed || mobile) && <span>Configuracoes</span>}
           </Link>
         </div>
       )}
 
-      <button
-        onClick={onToggle}
-        className="flex items-center justify-center h-10 border-t border-stroke-secondary text-foreground-tertiary hover:text-foreground-primary transition-colors"
-        aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-      >
-        {collapsed ? (
+      {/* Collapse toggle (desktop only) */}
+      {!mobile && collapsed && (
+        <button
+          onClick={onToggle}
+          className="flex items-center justify-center h-10 border-t border-stroke-secondary text-foreground-tertiary hover:text-foreground-primary transition-colors flex-shrink-0"
+          aria-label="Expandir menu"
+        >
           <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
-      </button>
+        </button>
+      )}
     </aside>
   );
+
+  if (mobile) {
+    return sidebarContent;
+  }
+
+  return sidebarContent;
 }

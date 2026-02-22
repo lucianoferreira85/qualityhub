@@ -1,0 +1,169 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Command } from "cmdk";
+import {
+  LayoutDashboard,
+  FolderKanban,
+  Building2,
+  AlertTriangle,
+  ClipboardCheck,
+  ShieldAlert,
+  Search as SearchIcon,
+  FileText,
+  TrendingUp,
+  Cog,
+  BookOpen,
+  Settings,
+  Plus,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { useTheme } from "@/hooks/use-theme";
+import { useCmdK } from "@/hooks/use-hotkeys";
+
+interface CommandItem {
+  label: string;
+  icon: React.ElementType;
+  action: () => void;
+  keywords?: string;
+}
+
+export function openCommandPalette() {
+  document.dispatchEvent(new CustomEvent("open-command-palette"));
+}
+
+export function CommandPalette() {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const { tenant } = useTenant();
+  const { isDark, toggleTheme } = useTheme();
+  const basePath = `/${tenant.slug}`;
+
+  useCmdK(useCallback(() => setOpen((o) => !o), []));
+
+  // Listen for programmatic open events (e.g., from Header search button)
+  useEffect(() => {
+    function onOpen() {
+      setOpen(true);
+    }
+    document.addEventListener("open-command-palette", onOpen);
+    return () => document.removeEventListener("open-command-palette", onOpen);
+  }, []);
+
+  function navigate(path: string) {
+    router.push(`${basePath}${path}`);
+    setOpen(false);
+  }
+
+  const pages: CommandItem[] = [
+    { label: "Dashboard", icon: LayoutDashboard, action: () => navigate("/dashboard"), keywords: "inicio home" },
+    { label: "Projetos", icon: FolderKanban, action: () => navigate("/projects"), keywords: "iso projeto" },
+    { label: "Clientes", icon: Building2, action: () => navigate("/clients"), keywords: "cliente empresa" },
+    { label: "Nao Conformidades", icon: AlertTriangle, action: () => navigate("/nonconformities"), keywords: "nc nao conformidade" },
+    { label: "Planos de Acao", icon: ClipboardCheck, action: () => navigate("/action-plans"), keywords: "acao plano corretiva" },
+    { label: "Riscos", icon: ShieldAlert, action: () => navigate("/risks"), keywords: "risco ameaca" },
+    { label: "Auditorias", icon: SearchIcon, action: () => navigate("/audits"), keywords: "auditoria interna externa" },
+    { label: "Documentos", icon: FileText, action: () => navigate("/documents"), keywords: "documento politica procedimento" },
+    { label: "Processos", icon: Cog, action: () => navigate("/processes"), keywords: "processo mapeamento" },
+    { label: "Indicadores", icon: TrendingUp, action: () => navigate("/indicators"), keywords: "indicador kpi meta" },
+    { label: "Analise Critica", icon: BookOpen, action: () => navigate("/management-reviews"), keywords: "analise critica direcao" },
+    { label: "Configuracoes", icon: Settings, action: () => navigate("/settings"), keywords: "config preferencia" },
+  ];
+
+  const quickActions: CommandItem[] = [
+    { label: "Novo Projeto", icon: Plus, action: () => navigate("/projects/new"), keywords: "criar projeto novo" },
+    { label: "Nova Nao Conformidade", icon: Plus, action: () => navigate("/nonconformities/new"), keywords: "criar nc nova" },
+    { label: "Novo Risco", icon: Plus, action: () => navigate("/risks/new"), keywords: "criar risco novo" },
+    { label: "Nova Auditoria", icon: Plus, action: () => navigate("/audits/new"), keywords: "criar auditoria nova" },
+  ];
+
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 animate-in fade-in-0" />
+        <Dialog.Content
+          className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-card bg-surface-primary border border-stroke-secondary shadow-dialog animate-in fade-in-0 zoom-in-95 slide-in-from-top-4"
+          aria-label="Busca global e comandos"
+        >
+          <Command className="flex flex-col" loop>
+            <div className="flex items-center border-b border-stroke-secondary px-4">
+              <SearchIcon className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
+              <Command.Input
+                placeholder="Buscar paginas, acoes..."
+                className="flex-1 h-12 bg-transparent px-3 text-body-1 text-foreground-primary placeholder:text-foreground-tertiary outline-none"
+              />
+              <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-stroke-secondary bg-surface-tertiary px-1.5 text-[10px] font-medium text-foreground-tertiary">
+                ESC
+              </kbd>
+            </div>
+
+            <Command.List className="max-h-[300px] overflow-y-auto p-2">
+              <Command.Empty className="py-6 text-center text-body-2 text-foreground-secondary">
+                Nenhum resultado encontrado.
+              </Command.Empty>
+
+              <Command.Group
+                heading="Paginas"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-foreground-tertiary [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              >
+                {pages.map((item) => (
+                  <Command.Item
+                    key={item.label}
+                    value={`${item.label} ${item.keywords || ""}`}
+                    onSelect={item.action}
+                    className="flex items-center gap-3 px-2 py-2 rounded-button text-body-2 text-foreground-secondary cursor-pointer data-[selected=true]:bg-surface-tertiary data-[selected=true]:text-foreground-primary transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+
+              <Command.Separator className="my-1.5 h-px bg-stroke-secondary" />
+
+              <Command.Group
+                heading="Acoes Rapidas"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-foreground-tertiary [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              >
+                {quickActions.map((item) => (
+                  <Command.Item
+                    key={item.label}
+                    value={`${item.label} ${item.keywords || ""}`}
+                    onSelect={item.action}
+                    className="flex items-center gap-3 px-2 py-2 rounded-button text-body-2 text-foreground-secondary cursor-pointer data-[selected=true]:bg-surface-tertiary data-[selected=true]:text-foreground-primary transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+
+              <Command.Separator className="my-1.5 h-px bg-stroke-secondary" />
+
+              <Command.Group
+                heading="Tema"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-foreground-tertiary [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              >
+                <Command.Item
+                  value="alternar tema dark mode claro escuro"
+                  onSelect={() => {
+                    toggleTheme();
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-2 py-2 rounded-button text-body-2 text-foreground-secondary cursor-pointer data-[selected=true]:bg-surface-tertiary data-[selected=true]:text-foreground-primary transition-colors"
+                >
+                  {isDark ? <Sun className="h-4 w-4 flex-shrink-0" /> : <Moon className="h-4 w-4 flex-shrink-0" />}
+                  <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
+                </Command.Item>
+              </Command.Group>
+            </Command.List>
+          </Command>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
