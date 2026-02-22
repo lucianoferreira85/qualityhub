@@ -17,7 +17,15 @@ export async function GET(
       where: { projectId: id },
       include: {
         responsible: { select: { id: true, name: true } },
-        treatments: true,
+        treatments: {
+          include: {
+            projectControl: { select: { id: true, control: { select: { code: true, title: true } } } },
+          },
+        },
+        history: {
+          orderBy: { createdAt: "desc" },
+          take: 5,
+        },
       },
       orderBy: { createdAt: "desc" },
     });

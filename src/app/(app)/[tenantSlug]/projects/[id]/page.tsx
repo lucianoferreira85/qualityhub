@@ -29,6 +29,9 @@ import {
   BookOpen,
   Calendar,
   Plus,
+  Globe,
+  MessageSquare,
+  GraduationCap,
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
@@ -297,6 +300,24 @@ export default function ProjectDetailPage() {
       href: `/${tenant.slug}/projects/${project.id}/gap-analysis`,
       icon: BarChart3,
       description: "Maturidade e conformidade do projeto",
+    },
+    {
+      label: "Escopo",
+      href: `/${tenant.slug}/projects/${project.id}/scope`,
+      icon: Globe,
+      description: "Escopo do SGSI - ISO 27001 cláusula 4.3",
+    },
+    {
+      label: "Comunicação",
+      href: `/${tenant.slug}/projects/${project.id}/communication-plan`,
+      icon: MessageSquare,
+      description: "Plano de Comunicação - ISO 27001 cláusula 7.4",
+    },
+    {
+      label: "Competências",
+      href: `/${tenant.slug}/projects/${project.id}/competences`,
+      icon: GraduationCap,
+      description: "Gestão de Competências - ISO 27001 cláusula 7.2",
     },
   ];
 

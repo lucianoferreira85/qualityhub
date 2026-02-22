@@ -33,6 +33,7 @@ export async function GET(
       compliantReqs,
       compliantCtrls,
       upcomingReviews,
+      overdueRiskReviews,
     ] = await Promise.all([
       ctx.db.project.count({ where: { status: { not: "archived" } } }),
       ctx.db.audit.count(),
@@ -145,6 +146,13 @@ export async function GET(
         orderBy: { nextReviewDate: "asc" },
         take: 5,
       }),
+      // Overdue risk reviews
+      ctx.db.risk.count({
+        where: {
+          nextReviewDate: { lt: new Date() },
+          status: { not: "closed" },
+        },
+      }),
     ]);
 
     const riskDistribution = risksByLevel.map((r) => ({
@@ -205,6 +213,7 @@ export async function GET(
       overdueActions,
       complianceOverview,
       upcomingReviews,
+      overdueRiskReviews,
     });
   } catch (error) {
     return handleApiError(error);

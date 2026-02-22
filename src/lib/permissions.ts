@@ -22,7 +22,10 @@ type Resource =
   | "billing"
   | "managementReview"
   | "context"
-  | "interestedParty";
+  | "interestedParty"
+  | "sgsiScope"
+  | "communicationPlan"
+  | "competence";
 
 type PermissionMatrix = Record<OrgRole, Partial<Record<Resource, Action[]>>>;
 
@@ -48,6 +51,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["create", "read", "update", "delete"],
     context: ["create", "read", "update", "delete"],
     interestedParty: ["create", "read", "update", "delete"],
+    sgsiScope: ["create", "read", "update", "delete"],
+    communicationPlan: ["create", "read", "update", "delete"],
+    competence: ["create", "read", "update", "delete"],
   },
   project_manager: {
     project: ["create", "read", "update"],
@@ -69,6 +75,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["create", "read", "update"],
     context: ["create", "read", "update", "delete"],
     interestedParty: ["create", "read", "update", "delete"],
+    sgsiScope: ["create", "read", "update", "delete"],
+    communicationPlan: ["create", "read", "update", "delete"],
+    competence: ["create", "read", "update", "delete"],
   },
   senior_consultant: {
     project: ["read"],
@@ -88,6 +97,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["read"],
     context: ["create", "read", "update"],
     interestedParty: ["create", "read", "update"],
+    sgsiScope: ["create", "read", "update"],
+    communicationPlan: ["create", "read", "update"],
+    competence: ["create", "read", "update"],
   },
   junior_consultant: {
     project: ["read"],
@@ -107,6 +119,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["read"],
     context: ["read", "update"],
     interestedParty: ["read", "update"],
+    sgsiScope: ["read", "update"],
+    communicationPlan: ["read", "update"],
+    competence: ["read", "update"],
   },
   internal_auditor: {
     project: ["read"],
@@ -126,6 +141,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["read"],
     context: ["read"],
     interestedParty: ["read"],
+    sgsiScope: ["read"],
+    communicationPlan: ["read"],
+    competence: ["read"],
   },
   external_auditor: {
     project: ["read"],
@@ -143,6 +161,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["read"],
     context: ["read"],
     interestedParty: ["read"],
+    sgsiScope: ["read"],
+    communicationPlan: ["read"],
+    competence: ["read"],
   },
   client_viewer: {
     project: ["read"],
@@ -156,6 +177,9 @@ const PERMISSIONS: PermissionMatrix = {
     managementReview: ["read"],
     context: ["read"],
     interestedParty: ["read"],
+    sgsiScope: ["read"],
+    communicationPlan: ["read"],
+    competence: ["read"],
   },
 };
 

@@ -230,6 +230,9 @@ model Tenant {
   soaEntries   SoaEntry[]
   measurements IndicatorMeasurement[]
   auditFindings AuditFinding[]
+  sgsiScopes   SgsiScope[]
+  communicationPlans CommunicationPlan[]
+  competences  Competence[]
 
   @@map("tenants")
 }
@@ -262,6 +265,10 @@ model User {
   assignedProcesses Process[] @relation("ProcessResponsible")
   auditLogs AuditLog[]
   notifications Notification[]
+  approvedScopes SgsiScope[] @relation("ScopeApprover")
+  communicationResponsibilities CommunicationPlan[] @relation("CommunicationResponsible")
+  competenceResponsibilities Competence[] @relation("CompetenceResponsible")
+  riskReviews RiskHistory[] @relation("RiskReviewer")
 
   @@map("users")
 }
@@ -376,6 +383,9 @@ model Project {
   indicators    Indicator[]
   processes     Process[]
   reviews       ManagementReview[]
+  sgsiScopes    SgsiScope[]
+  communicationPlans CommunicationPlan[]
+  competences   Competence[]
 
   @@index([tenantId])
   @@index([clientId])
@@ -448,6 +458,7 @@ model ProjectControl {
   project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   control             StandardControl @relation(fields: [controlId], references: [id])
   responsible         User?           @relation("ControlResponsible", fields: [responsibleId], references: [id])
+  riskTreatments      RiskTreatment[]
 
   @@unique([projectId, controlId])
   @@index([tenantId])
@@ -543,6 +554,11 @@ model Risk {
   status              String          @default("identified")
   residualProbability Int?            @map("residual_probability") @db.SmallInt
   residualImpact      Int?            @map("residual_impact") @db.SmallInt
+  nextReviewDate      DateTime?       @map("next_review_date") @db.Date
+  monitoringFrequency String?         @map("monitoring_frequency")
+  riskAppetite        String?         @map("risk_appetite")
+  lastReviewDate      DateTime?       @map("last_review_date") @db.Date
+  reviewNotes         String?         @map("review_notes")
   createdAt           DateTime        @default(now()) @map("created_at")
   updatedAt           DateTime        @updatedAt @map("updated_at")
   tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -550,6 +566,7 @@ model Risk {
   responsible         User?           @relation("RiskResponsible", fields: [responsibleId], references: [id])
   treatments          RiskTreatment[]
   actionPlans         ActionPlan[]
+  history             RiskHistory[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -559,15 +576,17 @@ model Risk {
 }
 
 model RiskTreatment {
-  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  riskId      String          @map("risk_id") @db.Uuid
-  controlId   String?         @map("control_id") @db.Uuid
-  description String
-  status      String          @default("planned")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  risk        Risk            @relation(fields: [riskId], references: [id], onDelete: Cascade)
-  control     StandardControl? @relation(fields: [controlId], references: [id])
+  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  riskId           String          @map("risk_id") @db.Uuid
+  controlId        String?         @map("control_id") @db.Uuid
+  projectControlId String?         @map("project_control_id") @db.Uuid
+  description      String
+  status           String          @default("planned")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  risk             Risk            @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  control          StandardControl? @relation(fields: [controlId], references: [id])
+  projectControl   ProjectControl? @relation(fields: [projectControlId], references: [id])
 
   @@index([riskId])
   @@map("risk_treatments")
@@ -883,4 +902,106 @@ model Notification {
   @@index([userId])
   @@index([readAt])
   @@map("notifications")
+}
+
+// ==================== SGSI SCOPE (ISO 4.3) ====================
+
+model SgsiScope {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  projectId     String    @map("project_id") @db.Uuid
+  title         String
+  description   String?
+  boundaries    String?
+  exclusions    String?
+  justification String?
+  interfaces    String?
+  status        String    @default("draft")
+  approvedById  String?   @map("approved_by_id") @db.Uuid
+  approvedAt    DateTime? @map("approved_at")
+  version       String    @default("1.0")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approvedBy    User?     @relation("ScopeApprover", fields: [approvedById], references: [id])
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("sgsi_scopes")
+}
+
+// ==================== COMMUNICATION PLAN (ISO 7.4) ====================
+
+model CommunicationPlan {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  projectId     String   @map("project_id") @db.Uuid
+  topic         String
+  audience      String
+  frequency     String
+  method        String
+  responsibleId String?  @map("responsible_id") @db.Uuid
+  notes         String?
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible   User?    @relation("CommunicationResponsible", fields: [responsibleId], references: [id])
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("communication_plans")
+}
+
+// ==================== COMPETENCES (ISO 7.2) ====================
+
+model Competence {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  projectId          String    @map("project_id") @db.Uuid
+  role               String
+  requiredCompetence String    @map("required_competence")
+  currentLevel       String?   @map("current_level")
+  trainingAction     String?   @map("training_action")
+  trainingType       String?   @map("training_type")
+  evidence           String?
+  evidenceFileUrl    String?   @map("evidence_file_url")
+  responsibleId      String?   @map("responsible_id") @db.Uuid
+  status             String    @default("identified")
+  dueDate            DateTime? @map("due_date") @db.Date
+  completedAt        DateTime? @map("completed_at")
+  notes              String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible        User?     @relation("CompetenceResponsible", fields: [responsibleId], references: [id])
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("competences")
+}
+
+// ==================== RISK HISTORY ====================
+
+model RiskHistory {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  riskId              String   @map("risk_id") @db.Uuid
+  probability         Int      @db.SmallInt
+  impact              Int      @db.SmallInt
+  riskLevel           String   @map("risk_level")
+  residualProbability Int?     @map("residual_probability") @db.SmallInt
+  residualImpact      Int?     @map("residual_impact") @db.SmallInt
+  status              String
+  reviewNotes         String?  @map("review_notes")
+  reviewedById        String?  @map("reviewed_by_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
+  risk                Risk     @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  reviewedBy          User?    @relation("RiskReviewer", fields: [reviewedById], references: [id])
+
+  @@index([riskId])
+  @@index([createdAt])
+  @@map("risk_history")
 }

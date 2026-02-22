@@ -295,19 +295,42 @@ export interface Risk {
   status: string;
   residualProbability: number | null;
   residualImpact: number | null;
+  nextReviewDate: Date | null;
+  monitoringFrequency: string | null;
+  riskAppetite: string | null;
+  lastReviewDate: Date | null;
+  reviewNotes: string | null;
   createdAt: Date;
   updatedAt: Date;
   responsible?: User;
   treatments?: RiskTreatment[];
+  history?: RiskHistory[];
 }
 
 export interface RiskTreatment {
   id: string;
   riskId: string;
   controlId: string | null;
+  projectControlId: string | null;
   description: string;
   status: string;
   control?: StandardControl;
+  projectControl?: ProjectControl;
+}
+
+export interface RiskHistory {
+  id: string;
+  riskId: string;
+  probability: number;
+  impact: number;
+  riskLevel: string;
+  residualProbability: number | null;
+  residualImpact: number | null;
+  status: string;
+  reviewNotes: string | null;
+  reviewedById: string | null;
+  createdAt: Date;
+  reviewedBy?: User;
 }
 
 // ==================== Nonconformities ====================
@@ -529,6 +552,68 @@ export interface Notification {
   entityType: string | null;
   entityId: string | null;
   createdAt: Date;
+}
+
+// ==================== SGSI Scope (ISO 4.3) ====================
+
+export interface SgsiScope {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  boundaries: string | null;
+  exclusions: string | null;
+  justification: string | null;
+  interfaces: string | null;
+  status: string;
+  approvedById: string | null;
+  approvedAt: Date | null;
+  version: string;
+  createdAt: Date;
+  updatedAt: Date;
+  approvedBy?: User;
+}
+
+// ==================== Communication Plan (ISO 7.4) ====================
+
+export interface CommunicationPlan {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  topic: string;
+  audience: string;
+  frequency: string;
+  method: string;
+  responsibleId: string | null;
+  notes: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+}
+
+// ==================== Competences (ISO 7.2) ====================
+
+export interface Competence {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  role: string;
+  requiredCompetence: string;
+  currentLevel: string | null;
+  trainingAction: string | null;
+  trainingType: string | null;
+  evidence: string | null;
+  evidenceFileUrl: string | null;
+  responsibleId: string | null;
+  status: string;
+  dueDate: Date | null;
+  completedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
 }
 
 // ==================== Dashboard ====================

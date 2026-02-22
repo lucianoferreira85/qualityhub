@@ -18,9 +18,12 @@ import {
   Shield,
   Trash2,
   Download,
+  Clock,
+  ClipboardCheck,
 } from "lucide-react";
-import { getRiskLevelLabel, getStatusLabel, getStatusColor } from "@/lib/utils";
+import { getRiskLevelLabel, getStatusLabel, getStatusColor, formatDate } from "@/lib/utils";
 import { generateRiskReport } from "@/lib/pdf-reports/risk-report";
+import { toast } from "sonner";
 
 interface Risk {
   id: string;
@@ -35,7 +38,12 @@ interface Risk {
   treatmentPlan: string | null;
   status: string;
   responsible: { id: string; name: string } | null;
-  treatments: { id: string; description: string; status: string }[];
+  treatments: { id: string; description: string; status: string; projectControl?: { id: string; control: { code: string; title: string } } | null }[];
+  nextReviewDate: string | null;
+  monitoringFrequency: string | null;
+  riskAppetite: string | null;
+  lastReviewDate: string | null;
+  history?: { id: string; probability: number; impact: number; riskLevel: string; status: string; createdAt: string; reviewedBy?: { name: string } | null }[];
 }
 
 const CATEGORIES = [
@@ -53,6 +61,13 @@ const TREATMENTS = [
   { value: "transfer", label: "Transferir" },
   { value: "avoid", label: "Evitar" },
 ];
+
+const FREQUENCIES: Record<string, string> = {
+  monthly: "Mensal",
+  quarterly: "Trimestral",
+  semi_annual: "Semestral",
+  annual: "Anual",
+};
 
 function getCategoryLabel(cat: string): string {
   return CATEGORIES.find((c) => c.value === cat)?.label || cat;
@@ -79,6 +94,11 @@ function getRiskColor(level: string): string {
   return c[level] || "bg-gray-100 text-gray-800";
 }
 
+function isOverdue(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  return new Date(dateStr) < new Date();
+}
+
 export default function RisksPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -100,6 +120,11 @@ export default function RisksPage() {
   const [treatmentDesc, setTreatmentDesc] = useState("");
   const [addingTreatment, setAddingTreatment] = useState(false);
 
+  // Review modal
+  const [reviewRisk, setReviewRisk] = useState<Risk | null>(null);
+  const [reviewForm, setReviewForm] = useState({ probability: 3, impact: 3, residualProbability: 0, residualImpact: 0, status: "identified", reviewNotes: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   const fetchRisks = () => {
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/risks`)
       .then((r) => r.json())
@@ -118,38 +143,25 @@ export default function RisksPage() {
     try {
       const res = await fetch(
         `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: treatmentDesc }),
-        }
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description: treatmentDesc }) }
       );
       if (!res.ok) throw new Error("Erro ao criar tratamento");
       setTreatmentDesc("");
       setLoading(true);
       fetchRisks();
-    } catch {
-      // silently fail
-    } finally {
-      setAddingTreatment(false);
-    }
+    } catch { /* silently fail */ }
+    finally { setAddingTreatment(false); }
   };
 
   const handleUpdateTreatmentStatus = async (riskId: string, treatmentId: string, status: string) => {
     try {
       await fetch(
         `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ treatmentId, status }),
-        }
+        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId, status }) }
       );
       setLoading(true);
       fetchRisks();
-    } catch {
-      // silently fail
-    }
+    } catch { /* silently fail */ }
   };
 
   const handleDeleteTreatment = async (riskId: string, treatmentId: string) => {
@@ -157,17 +169,11 @@ export default function RisksPage() {
     try {
       await fetch(
         `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ treatmentId }),
-        }
+        { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId }) }
       );
       setLoading(true);
       fetchRisks();
-    } catch {
-      // silently fail
-    }
+    } catch { /* silently fail */ }
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -202,12 +208,57 @@ export default function RisksPage() {
     }
   };
 
+  const openReview = (risk: Risk) => {
+    setReviewRisk(risk);
+    setReviewForm({
+      probability: risk.probability,
+      impact: risk.impact,
+      residualProbability: 0,
+      residualImpact: 0,
+      status: risk.status,
+      reviewNotes: "",
+    });
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewRisk) return;
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(
+        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${reviewRisk.id}/history`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            probability: Number(reviewForm.probability),
+            impact: Number(reviewForm.impact),
+            residualProbability: reviewForm.residualProbability ? Number(reviewForm.residualProbability) : undefined,
+            residualImpact: reviewForm.residualImpact ? Number(reviewForm.residualImpact) : undefined,
+            status: reviewForm.status,
+            reviewNotes: reviewForm.reviewNotes || undefined,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error("Erro ao registrar revisão");
+      toast.success("Revisão registrada com sucesso");
+      setReviewRisk(null);
+      setLoading(true);
+      fetchRisks();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   // Risk matrix counts
   const matrixCounts: Record<string, number> = {};
   risks.forEach((r) => {
     const key = `${r.probability}-${r.impact}`;
     matrixCounts[key] = (matrixCounts[key] || 0) + 1;
   });
+
+  const overdueCount = risks.filter((r) => isOverdue(r.nextReviewDate)).length;
 
   const stats = {
     total: risks.length,
@@ -247,6 +298,21 @@ export default function RisksPage() {
           )}
         </div>
       </div>
+
+      {/* Overdue reviews alert */}
+      {overdueCount > 0 && (
+        <div className="flex items-center gap-3 bg-danger-bg border border-danger/20 rounded-card p-4">
+          <Clock className="h-5 w-5 text-danger-fg flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-body-1 font-medium text-danger-fg">
+              {overdueCount} risco(s) com revisão vencida
+            </p>
+            <p className="text-body-2 text-danger-fg/80">
+              Revise os riscos para manter o monitoramento atualizado
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       {stats.total > 0 && (
@@ -343,75 +409,35 @@ export default function RisksPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria *</label>
-                  <select
-                    value={form.category}
-                    onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
+                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
+                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">
-                    Probabilidade * ({form.probability})
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={form.probability}
-                    onChange={(e) => setForm({ ...form, probability: Number(e.target.value) })}
-                    className="w-full accent-brand"
-                  />
-                  <div className="flex justify-between text-caption-1 text-foreground-tertiary">
-                    <span>1</span><span>5</span>
-                  </div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Probabilidade * ({form.probability})</label>
+                  <input type="range" min="1" max="5" value={form.probability} onChange={(e) => setForm({ ...form, probability: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>1</span><span>5</span></div>
                 </div>
                 <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">
-                    Impacto * ({form.impact})
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={form.impact}
-                    onChange={(e) => setForm({ ...form, impact: Number(e.target.value) })}
-                    className="w-full accent-brand"
-                  />
-                  <div className="flex justify-between text-caption-1 text-foreground-tertiary">
-                    <span>1</span><span>5</span>
-                  </div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto * ({form.impact})</label>
+                  <input type="range" min="1" max="5" value={form.impact} onChange={(e) => setForm({ ...form, impact: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>1</span><span>5</span></div>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tratamento</label>
-                  <select
-                    value={form.treatment}
-                    onChange={(e) => setForm({ ...form, treatment: e.target.value })}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
+                  <select value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
                     <option value="">Selecionar...</option>
-                    {TREATMENTS.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
+                    {TREATMENTS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Tratamento</label>
-                  <Input
-                    value={form.treatmentPlan}
-                    onChange={(e) => setForm({ ...form, treatmentPlan: e.target.value })}
-                    placeholder="Descreva o plano..."
-                  />
+                  <Input value={form.treatmentPlan} onChange={(e) => setForm({ ...form, treatmentPlan: e.target.value })} placeholder="Descreva o plano..." />
                 </div>
               </div>
-              {error && (
-                <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">{error}</div>
-              )}
+              {error && <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">{error}</div>}
               <div className="flex justify-end gap-3">
                 <Button variant="outline" type="button" onClick={() => setShowAdd(false)}>Cancelar</Button>
                 <Button type="submit" loading={adding}>Criar Risco</Button>
@@ -424,71 +450,64 @@ export default function RisksPage() {
       {/* Risks list */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-surface-primary rounded-card animate-pulse" />
-          ))}
+          {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-surface-primary rounded-card animate-pulse" />)}
         </div>
       ) : risks.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <AlertTriangle className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
             <p className="text-body-1 text-foreground-primary mb-1">Nenhum risco registrado</p>
-            <p className="text-body-2 text-foreground-secondary">
-              Identifique e avalie os riscos do projeto
-            </p>
+            <p className="text-body-2 text-foreground-secondary">Identifique e avalie os riscos do projeto</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
           {risks.map((risk) => {
             const isExpanded = expandedRisk === risk.id;
+            const overdue = isOverdue(risk.nextReviewDate);
             return (
-              <Card key={risk.id}>
+              <Card key={risk.id} className={overdue ? "border-danger/30" : ""}>
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-caption-1 font-mono text-brand">{risk.code}</span>
-                        <h3 className="text-body-1 font-medium text-foreground-primary truncate">
-                          {risk.title}
-                        </h3>
+                        <h3 className="text-body-1 font-medium text-foreground-primary truncate">{risk.title}</h3>
+                        {overdue && (
+                          <Badge variant="bg-danger-bg text-danger-fg" className="text-caption-2 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Revisão vencida
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-body-2 text-foreground-secondary line-clamp-2 mb-2">
-                        {risk.description}
-                      </p>
+                      <p className="text-body-2 text-foreground-secondary line-clamp-2 mb-2">{risk.description}</p>
                       <div className="flex flex-wrap items-center gap-3">
-                        <Badge variant={getRiskColor(risk.riskLevel)}>
-                          {getRiskLevelLabel(risk.riskLevel)}
-                        </Badge>
-                        <Badge variant={getStatusColor(risk.status)}>
-                          {getStatusLabel(risk.status)}
-                        </Badge>
-                        <span className="text-caption-1 text-foreground-tertiary">
-                          {getCategoryLabel(risk.category)}
-                        </span>
-                        {risk.treatment && (
-                          <span className="text-caption-1 text-foreground-tertiary">
-                            Tratamento: {getTreatmentLabel(risk.treatment)}
-                          </span>
-                        )}
-                        {risk.responsible && (
-                          <span className="text-caption-1 text-foreground-tertiary">
-                            Resp: {risk.responsible.name}
-                          </span>
-                        )}
+                        <Badge variant={getRiskColor(risk.riskLevel)}>{getRiskLevelLabel(risk.riskLevel)}</Badge>
+                        <Badge variant={getStatusColor(risk.status)}>{getStatusLabel(risk.status)}</Badge>
+                        <span className="text-caption-1 text-foreground-tertiary">{getCategoryLabel(risk.category)}</span>
+                        {risk.treatment && <span className="text-caption-1 text-foreground-tertiary">Tratamento: {getTreatmentLabel(risk.treatment)}</span>}
+                        {risk.responsible && <span className="text-caption-1 text-foreground-tertiary">Resp: {risk.responsible.name}</span>}
+                        {risk.monitoringFrequency && <span className="text-caption-1 text-foreground-tertiary">Freq: {FREQUENCIES[risk.monitoringFrequency] || risk.monitoringFrequency}</span>}
+                        {risk.nextReviewDate && <span className={`text-caption-1 ${overdue ? "text-danger-fg font-medium" : "text-foreground-tertiary"}`}>Próx. revisão: {formatDate(risk.nextReviewDate)}</span>}
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-1 flex-shrink-0">
                       <div className="text-center">
-                        <p className="text-title-2 font-semibold text-foreground-primary">
-                          {risk.probability * risk.impact}
-                        </p>
+                        <p className="text-title-2 font-semibold text-foreground-primary">{risk.probability * risk.impact}</p>
                         <p className="text-caption-1 text-foreground-tertiary">Score</p>
                       </div>
                       <div className="flex gap-2 text-caption-1 text-foreground-tertiary">
                         <span>P:{risk.probability}</span>
                         <span>I:{risk.impact}</span>
                       </div>
+                      {can("risk", "update") && (
+                        <button
+                          onClick={() => openReview(risk)}
+                          className="mt-2 flex items-center gap-1 text-caption-1 text-brand hover:text-brand-hover transition-colors"
+                          title="Registrar revisão"
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5" /> Revisar
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -512,6 +531,11 @@ export default function RisksPage() {
                         <div key={t.id} className="flex items-center gap-2 bg-surface-secondary rounded-button p-2">
                           <div className="flex-1 min-w-0">
                             <p className="text-body-2 text-foreground-primary truncate">{t.description}</p>
+                            {t.projectControl && (
+                              <p className="text-caption-1 text-foreground-tertiary">
+                                Controle: {t.projectControl.control.code} - {t.projectControl.control.title}
+                              </p>
+                            )}
                           </div>
                           <select
                             value={t.status}
@@ -519,15 +543,10 @@ export default function RisksPage() {
                             disabled={!can("risk", "update")}
                             className="h-7 text-caption-1 rounded border border-stroke-primary bg-surface-primary px-2 focus:outline-none focus:ring-1 focus:ring-brand"
                           >
-                            {TREATMENT_STATUSES.map((s) => (
-                              <option key={s.value} value={s.value}>{s.label}</option>
-                            ))}
+                            {TREATMENT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                           </select>
                           {can("risk", "update") && (
-                            <button
-                              onClick={() => handleDeleteTreatment(risk.id, t.id)}
-                              className="text-foreground-tertiary hover:text-danger-fg p-1"
-                            >
+                            <button onClick={() => handleDeleteTreatment(risk.id, t.id)} className="text-foreground-tertiary hover:text-danger-fg p-1">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -540,19 +559,9 @@ export default function RisksPage() {
                             onChange={(e) => setTreatmentDesc(e.target.value)}
                             placeholder="Descreva o tratamento..."
                             className="h-8 text-body-2"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleAddTreatment(risk.id);
-                              }
-                            }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTreatment(risk.id); } }}
                           />
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddTreatment(risk.id)}
-                            loading={addingTreatment}
-                            disabled={!treatmentDesc.trim()}
-                          >
+                          <Button size="sm" onClick={() => handleAddTreatment(risk.id)} loading={addingTreatment} disabled={!treatmentDesc.trim()}>
                             <Plus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -563,6 +572,69 @@ export default function RisksPage() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {reviewRisk && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <h2 className="text-title-3 text-foreground-primary">Revisar Risco: {reviewRisk.code}</h2>
+                <button onClick={() => setReviewRisk(null)} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
+              </div>
+              <p className="text-body-2 text-foreground-secondary mt-1">{reviewRisk.title}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Probabilidade ({reviewForm.probability})</label>
+                  <input type="range" min="1" max="5" value={reviewForm.probability} onChange={(e) => setReviewForm({ ...reviewForm, probability: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>1</span><span>5</span></div>
+                </div>
+                <div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto ({reviewForm.impact})</label>
+                  <input type="range" min="1" max="5" value={reviewForm.impact} onChange={(e) => setReviewForm({ ...reviewForm, impact: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>1</span><span>5</span></div>
+                </div>
+              </div>
+              <div className="bg-surface-secondary rounded-button p-3 text-center">
+                <p className="text-caption-1 text-foreground-tertiary">Score Inerente</p>
+                <p className="text-title-2 font-semibold text-foreground-primary">{reviewForm.probability * reviewForm.impact}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prob. Residual</label>
+                  <input type="range" min="0" max="5" value={reviewForm.residualProbability} onChange={(e) => setReviewForm({ ...reviewForm, residualProbability: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>0</span><span>5</span></div>
+                </div>
+                <div>
+                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto Residual</label>
+                  <input type="range" min="0" max="5" value={reviewForm.residualImpact} onChange={(e) => setReviewForm({ ...reviewForm, residualImpact: Number(e.target.value) })} className="w-full accent-brand" />
+                  <div className="flex justify-between text-caption-1 text-foreground-tertiary"><span>0</span><span>5</span></div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+                <select value={reviewForm.status} onChange={(e) => setReviewForm({ ...reviewForm, status: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
+                  <option value="identified">Identificado</option>
+                  <option value="analyzing">Em Análise</option>
+                  <option value="treating">Em Tratamento</option>
+                  <option value="monitoring">Monitorando</option>
+                  <option value="closed">Encerrado</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Notas da Revisão</label>
+                <textarea value={reviewForm.reviewNotes} onChange={(e) => setReviewForm({ ...reviewForm, reviewNotes: e.target.value })} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Observações sobre esta revisão..." />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" onClick={() => setReviewRisk(null)}>Cancelar</Button>
+                <Button onClick={handleSubmitReview} loading={submittingReview}>Registrar Revisão</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

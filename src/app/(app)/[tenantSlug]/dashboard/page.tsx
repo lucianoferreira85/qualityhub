@@ -70,6 +70,7 @@ interface DashboardData {
     endDate: string | null;
   }[];
   overdueActions: number;
+  overdueRiskReviews: number;
   complianceOverview: {
     avgRequirementMaturity: number;
     avgControlMaturity: number;
@@ -160,8 +161,9 @@ export default function DashboardPage() {
     },
   ];
 
-  // Overdue alert
+  // Overdue alerts
   const hasOverdue = (data?.overdueActions ?? 0) > 0;
+  const hasOverdueRisks = (data?.overdueRiskReviews ?? 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -182,7 +184,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Overdue alert */}
+      {/* Overdue alerts */}
       {hasOverdue && (
         <div className="flex items-center gap-3 bg-danger-bg border border-danger/20 rounded-card p-4">
           <Clock className="h-5 w-5 text-danger-fg flex-shrink-0" />
@@ -197,6 +199,25 @@ export default function DashboardPage() {
           <Link href={`/${tenant.slug}/action-plans`}>
             <Button variant="outline" size="sm" className="border-danger/30 text-danger-fg hover:bg-danger-bg">
               Ver acoes
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {hasOverdueRisks && (
+        <div className="flex items-center gap-3 bg-warning-bg border border-warning/20 rounded-card p-4">
+          <AlertTriangle className="h-5 w-5 text-warning-fg flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-body-1 font-medium text-warning-fg">
+              {data!.overdueRiskReviews} risco(s) com revisao pendente
+            </p>
+            <p className="text-body-2 text-warning-fg/80">
+              Revise os riscos para manter o monitoramento atualizado
+            </p>
+          </div>
+          <Link href={`/${tenant.slug}/risks`}>
+            <Button variant="outline" size="sm" className="border-warning/30 text-warning-fg hover:bg-warning-bg">
+              Ver riscos
             </Button>
           </Link>
         </div>

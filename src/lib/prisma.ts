@@ -52,6 +52,9 @@ const TENANT_SCOPED_MODELS = [
   "auditLog",
   "organizationContext",
   "interestedParty",
+  "sgsiScope",
+  "communicationPlan",
+  "competence",
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

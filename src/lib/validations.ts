@@ -140,6 +140,10 @@ export const updateRiskSchema = z.object({
   responsibleId: z.string().uuid().nullable().optional(),
   residualProbability: z.number().int().min(1).max(5).nullable().optional(),
   residualImpact: z.number().int().min(1).max(5).nullable().optional(),
+  nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
+  riskAppetite: z.enum(["very_low", "low", "moderate", "high", "very_high"]).nullable().optional(),
+  reviewNotes: z.string().nullable().optional(),
 });
 
 // ==================== Nonconformity ====================
@@ -419,6 +423,92 @@ export const updateInterestedPartySchema = z.object({
   status: z.enum(["active", "inactive"]).optional(),
 });
 
+// ==================== SGSI Scope (ISO 4.3) ====================
+
+export const createSgsiScopeSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  boundaries: z.string().nullable().optional(),
+  exclusions: z.string().nullable().optional(),
+  justification: z.string().nullable().optional(),
+  interfaces: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateSgsiScopeSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  boundaries: z.string().nullable().optional(),
+  exclusions: z.string().nullable().optional(),
+  justification: z.string().nullable().optional(),
+  interfaces: z.string().nullable().optional(),
+  status: z.enum(["draft", "approved", "under_review"]).optional(),
+  version: z.string().optional(),
+});
+
+// ==================== Communication Plan (ISO 7.4) ====================
+
+export const createCommunicationPlanSchema = z.object({
+  topic: z.string().min(1, "Tópico é obrigatório").max(255),
+  audience: z.string().min(1, "Público-alvo é obrigatório").max(255),
+  frequency: z.enum(["daily", "weekly", "monthly", "quarterly", "semi_annual", "annual", "on_event"]),
+  method: z.enum(["email", "meeting", "report", "intranet", "training", "newsletter", "other"]),
+  responsibleId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateCommunicationPlanSchema = z.object({
+  topic: z.string().min(1).max(255).optional(),
+  audience: z.string().min(1).max(255).optional(),
+  frequency: z.enum(["daily", "weekly", "monthly", "quarterly", "semi_annual", "annual", "on_event"]).optional(),
+  method: z.enum(["email", "meeting", "report", "intranet", "training", "newsletter", "other"]).optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
+// ==================== Competences (ISO 7.2) ====================
+
+export const createCompetenceSchema = z.object({
+  role: z.string().min(1, "Função é obrigatória").max(255),
+  requiredCompetence: z.string().min(1, "Competência requerida é obrigatória"),
+  currentLevel: z.enum(["none", "basic", "intermediate", "advanced"]).nullable().optional(),
+  trainingAction: z.string().nullable().optional(),
+  trainingType: z.enum(["course", "workshop", "mentoring", "certification", "self_study", "on_the_job"]).nullable().optional(),
+  evidence: z.string().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateCompetenceSchema = z.object({
+  role: z.string().min(1).max(255).optional(),
+  requiredCompetence: z.string().min(1).optional(),
+  currentLevel: z.enum(["none", "basic", "intermediate", "advanced"]).nullable().optional(),
+  trainingAction: z.string().nullable().optional(),
+  trainingType: z.enum(["course", "workshop", "mentoring", "certification", "self_study", "on_the_job"]).nullable().optional(),
+  evidence: z.string().nullable().optional(),
+  evidenceFileUrl: z.string().url().nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  status: z.enum(["identified", "planned", "in_progress", "completed", "verified"]).optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  completedAt: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Risk Review ====================
+
+export const createRiskReviewSchema = z.object({
+  probability: z.number().int().min(1).max(5),
+  impact: z.number().int().min(1).max(5),
+  residualProbability: z.number().int().min(1).max(5).nullable().optional(),
+  residualImpact: z.number().int().min(1).max(5).nullable().optional(),
+  status: z.enum(["identified", "assessed", "treating", "monitored", "closed"]),
+  reviewNotes: z.string().nullable().optional(),
+});
+
 // ==================== Inferred Types ====================
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
@@ -452,3 +542,10 @@ export type CreateContextInput = z.infer<typeof createContextSchema>;
 export type UpdateContextInput = z.infer<typeof updateContextSchema>;
 export type CreateInterestedPartyInput = z.infer<typeof createInterestedPartySchema>;
 export type UpdateInterestedPartyInput = z.infer<typeof updateInterestedPartySchema>;
+export type CreateSgsiScopeInput = z.infer<typeof createSgsiScopeSchema>;
+export type UpdateSgsiScopeInput = z.infer<typeof updateSgsiScopeSchema>;
+export type CreateCommunicationPlanInput = z.infer<typeof createCommunicationPlanSchema>;
+export type UpdateCommunicationPlanInput = z.infer<typeof updateCommunicationPlanSchema>;
+export type CreateCompetenceInput = z.infer<typeof createCompetenceSchema>;
+export type UpdateCompetenceInput = z.infer<typeof updateCompetenceSchema>;
+export type CreateRiskReviewInput = z.infer<typeof createRiskReviewSchema>;
