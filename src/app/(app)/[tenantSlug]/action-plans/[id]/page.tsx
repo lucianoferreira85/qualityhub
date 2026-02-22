@@ -22,6 +22,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 import type { ActionPlan } from "@/types";
 
 const TYPES = [
@@ -130,8 +131,11 @@ export default function ActionPlanDetailPage() {
       }
       setEditing(false);
       fetchAp();
+      toast.success("Plano de ação atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -148,9 +152,12 @@ export default function ActionPlanDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir plano");
       }
+      toast.success("Plano de ação excluído com sucesso");
       router.push(`/${tenant.slug}/action-plans`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
       setDeleting(false);
       setShowDeleteConfirm(false);
     }

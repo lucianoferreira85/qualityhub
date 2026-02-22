@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createAuditSchema } from "@/lib/validations";
 
 export async function GET(
@@ -21,6 +21,26 @@ export async function GET(
     if (type) where.type = type;
     if (status) where.status = status;
     if (projectId) where.projectId = projectId;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.audit.findMany({
+          where,
+          include: {
+            project: { select: { id: true, name: true } },
+            leadAuditor: { select: { id: true, name: true } },
+            _count: { select: { findings: true } },
+          },
+          orderBy: { startDate: "desc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.audit.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
 
     const audits = await ctx.db.audit.findMany({
       where,

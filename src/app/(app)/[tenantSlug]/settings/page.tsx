@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Users, CreditCard, Pencil, Building2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { tenant, can, plan } = useTenant();
@@ -46,8 +47,11 @@ export default function SettingsPage() {
       }
       setEditing(false);
       setSuccess("Dados atualizados com sucesso. Recarregue a página para ver as mudanças.");
+      toast.success("Dados atualizados com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createManagementReviewSchema } from "@/lib/validations";
 
 export async function GET(
@@ -19,6 +19,24 @@ export async function GET(
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (projectId) where.projectId = projectId;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.managementReview.findMany({
+          where,
+          include: {
+            project: { select: { id: true, name: true } },
+          },
+          orderBy: { scheduledDate: "desc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.managementReview.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
 
     const reviews = await ctx.db.managementReview.findMany({
       where,

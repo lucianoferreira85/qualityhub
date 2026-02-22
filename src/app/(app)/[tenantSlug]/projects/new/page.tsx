@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Building2, BookOpen, X } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 import type { ConsultingClient, Standard } from "@/types";
 
@@ -70,9 +71,12 @@ export default function NewProjectPage() {
       }
 
       const data = await res.json();
+      toast.success("Projeto criado com sucesso");
       router.push(`/${tenant.slug}/projects/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar projeto");
+      const message = err instanceof Error ? err.message : "Erro ao criar projeto";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

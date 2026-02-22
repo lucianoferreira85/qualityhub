@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, FolderKanban, User, Calendar, FileSearch, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, getAuditTypeLabel, formatDate } from "@/lib/utils";
 import type { Audit } from "@/types";
 
@@ -47,20 +48,29 @@ export default function AuditsPage() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchAudits = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filterType) params.set("type", filterType);
     if (filterStatus) params.set("status", filterStatus);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/audits${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setAudits(res.data || []))
+      .then((res) => {
+        setAudits(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterType, filterStatus]);
+  }, [tenant.slug, filterType, filterStatus, page]);
 
   useEffect(() => {
     fetchAudits();
@@ -106,7 +116,7 @@ export default function AuditsPage() {
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {AUDIT_TYPES.map((t) => (
@@ -115,7 +125,7 @@ export default function AuditsPage() {
           </select>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {AUDIT_STATUSES.map((s) => (
@@ -126,7 +136,7 @@ export default function AuditsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFilterType(""); setFilterStatus(""); }}
+              onClick={() => { setFilterType(""); setFilterStatus(""); setPage(1); }}
               className="text-foreground-tertiary"
             >
               Limpar
@@ -217,6 +227,8 @@ export default function AuditsPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

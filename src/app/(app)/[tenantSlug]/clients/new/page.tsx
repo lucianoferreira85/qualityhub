@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 
 const SECTORS = [
@@ -58,9 +59,12 @@ export default function NewClientPage() {
       }
 
       const data = await res.json();
+      toast.success("Cliente criado com sucesso");
       router.push(`/${tenant.slug}/clients/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar cliente");
+      const message = err instanceof Error ? err.message : "Erro ao criar cliente";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

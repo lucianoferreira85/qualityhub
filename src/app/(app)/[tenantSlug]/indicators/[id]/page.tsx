@@ -19,6 +19,7 @@ import {
   Plus,
 } from "lucide-react";
 import { getFrequencyLabel, formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Indicator, IndicatorMeasurement } from "@/types";
 
 const FREQUENCIES = [
@@ -124,8 +125,11 @@ export default function IndicatorDetailPage() {
       setLoading(true);
       fetchIndicator();
       setEditing(false);
+      toast.success("Indicador atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -138,9 +142,11 @@ export default function IndicatorDetailPage() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Erro ao excluir");
+      toast.success("Indicador excluído com sucesso");
       router.push(`/${tenant.slug}/indicators`);
     } catch {
       setError("Erro ao excluir indicador");
+      toast.error("Erro ao excluir indicador");
       setDeleting(false);
       setConfirmDelete(false);
     }
@@ -170,8 +176,11 @@ export default function IndicatorDetailPage() {
       setShowAddMeasurement(false);
       setLoading(true);
       fetchIndicator();
+      toast.success("Medição adicionada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao registrar");
+      const message = err instanceof Error ? err.message : "Erro ao registrar";
+      setError(message);
+      toast.error(message);
     } finally {
       setAddingMeasurement(false);
     }
@@ -209,8 +218,11 @@ export default function IndicatorDetailPage() {
       setEditingMeasurementId(null);
       setLoading(true);
       fetchIndicator();
+      toast.success("Medição atualizada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSavingMeasurement(false);
     }
@@ -227,8 +239,10 @@ export default function IndicatorDetailPage() {
       setConfirmDeleteMeasurement(null);
       setLoading(true);
       fetchIndicator();
+      toast.success("Medição excluída com sucesso");
     } catch {
       setError("Erro ao excluir medição");
+      toast.error("Erro ao excluir medição");
     } finally {
       setDeletingMeasurementId(null);
     }

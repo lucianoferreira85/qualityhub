@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, PlanLimitError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, PlanLimitError, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createClientSchema } from "@/lib/validations";
 import { checkPlanLimit } from "@/lib/plan-limits";
 
@@ -18,6 +18,21 @@ export async function GET(
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.consultingClient.findMany({
+          where,
+          orderBy: { name: "asc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.consultingClient.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
 
     const clients = await ctx.db.consultingClient.findMany({
       where,

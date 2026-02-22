@@ -19,6 +19,7 @@ import {
   FolderKanban,
 } from "lucide-react";
 import { getInitials, getStatusColor, getStatusLabel } from "@/lib/utils";
+import { toast } from "sonner";
 import type { ConsultingClient, Project } from "@/types";
 
 const SECTORS = [
@@ -107,8 +108,11 @@ export default function ClientDetailPage() {
       }
       setEditing(false);
       fetchClient();
+      toast.success("Cliente atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -125,9 +129,12 @@ export default function ClientDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir cliente");
       }
+      toast.success("Cliente excluído com sucesso");
       router.push(`/${tenant.slug}/clients`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
       setDeleting(false);
       setShowDeleteConfirm(false);
     }

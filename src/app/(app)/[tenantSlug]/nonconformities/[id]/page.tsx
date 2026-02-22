@@ -31,6 +31,7 @@ import {
   getOriginLabel,
   formatDate,
 } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Nonconformity, ActionPlan } from "@/types";
 
 const SEVERITIES = [
@@ -152,8 +153,11 @@ export default function NonconformityDetailPage() {
       }
       setEditing(false);
       fetchNc();
+      toast.success("Não conformidade atualizada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -170,9 +174,12 @@ export default function NonconformityDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir NC");
       }
+      toast.success("Não conformidade excluída com sucesso");
       router.push(`/${tenant.slug}/nonconformities`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -231,8 +238,11 @@ export default function NonconformityDetailPage() {
       setEditingRootCause(false);
       setLoading(true);
       fetchNc();
+      toast.success("Análise de causa salva com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSavingRootCause(false);
     }
@@ -249,8 +259,11 @@ export default function NonconformityDetailPage() {
       if (!res.ok) throw new Error("Erro ao excluir");
       setLoading(true);
       fetchNc();
+      toast.success("Análise de causa excluída com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
     } finally {
       setDeletingRootCause(false);
     }

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const FREQUENCIES = [
   { value: "daily", label: "Diário" },
@@ -73,9 +74,12 @@ export default function NewIndicatorPage() {
         throw new Error(data.error || "Erro ao criar indicador");
       }
       const data = await res.json();
+      toast.success("Indicador criado com sucesso");
       router.push(`/${tenant.slug}/indicators/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar");
+      const message = err instanceof Error ? err.message : "Erro ao criar";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

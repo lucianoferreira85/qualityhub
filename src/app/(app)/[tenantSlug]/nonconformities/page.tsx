@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, AlertTriangle, FolderKanban, User, Calendar, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { getStatusColor, getStatusLabel, getSeverityColor, getSeverityLabel, getOriginLabel, formatDate } from "@/lib/utils";
 import type { Nonconformity } from "@/types";
 
@@ -53,6 +54,8 @@ export default function NonconformitiesPage() {
   const [filterOrigin, setFilterOrigin] = useState("");
   const [filterSeverity, setFilterSeverity] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchNcs = useCallback(() => {
     setLoading(true);
@@ -60,14 +63,21 @@ export default function NonconformitiesPage() {
     if (filterOrigin) params.set("origin", filterOrigin);
     if (filterSeverity) params.set("severity", filterSeverity);
     if (filterStatus) params.set("status", filterStatus);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/nonconformities${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setNcs(res.data || []))
+      .then((res) => {
+        setNcs(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterOrigin, filterSeverity, filterStatus]);
+  }, [tenant.slug, filterOrigin, filterSeverity, filterStatus, page]);
 
   useEffect(() => {
     fetchNcs();
@@ -115,7 +125,7 @@ export default function NonconformitiesPage() {
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
           <select
             value={filterOrigin}
-            onChange={(e) => setFilterOrigin(e.target.value)}
+            onChange={(e) => { setFilterOrigin(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {NC_ORIGINS.map((o) => (
@@ -124,7 +134,7 @@ export default function NonconformitiesPage() {
           </select>
           <select
             value={filterSeverity}
-            onChange={(e) => setFilterSeverity(e.target.value)}
+            onChange={(e) => { setFilterSeverity(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {NC_SEVERITIES.map((s) => (
@@ -133,7 +143,7 @@ export default function NonconformitiesPage() {
           </select>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {NC_STATUSES.map((s) => (
@@ -144,7 +154,7 @@ export default function NonconformitiesPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFilterOrigin(""); setFilterSeverity(""); setFilterStatus(""); }}
+              onClick={() => { setFilterOrigin(""); setFilterSeverity(""); setFilterStatus(""); setPage(1); }}
               className="text-foreground-tertiary"
             >
               Limpar
@@ -247,6 +257,8 @@ export default function NonconformitiesPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

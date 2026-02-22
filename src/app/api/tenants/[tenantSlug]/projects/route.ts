@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, PlanLimitError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, PlanLimitError, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createProjectSchema } from "@/lib/validations";
 import { checkPlanLimit } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ tenantSlug: string }> }
 ) {
   try {
@@ -14,7 +14,36 @@ export async function GET(
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "project", "read");
 
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status");
+    const clientId = url.searchParams.get("clientId");
+
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+    if (clientId) where.clientId = clientId;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.project.findMany({
+          where,
+          include: {
+            client: { select: { id: true, name: true } },
+            standards: { include: { standard: { select: { id: true, code: true, name: true } } } },
+            _count: { select: { members: true, risks: true, nonconformities: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.project.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
+
     const projects = await ctx.db.project.findMany({
+      where,
       include: {
         client: { select: { id: true, name: true } },
         standards: { include: { standard: { select: { id: true, code: true, name: true } } } },

@@ -7,6 +7,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProjectOption {
   id: string;
@@ -57,9 +58,12 @@ export default function NewManagementReviewPage() {
         const err = await res.json();
         throw new Error(err.error || "Erro ao criar");
       }
+      toast.success("Análise crítica criada com sucesso");
       router.push(`/${tenant.slug}/management-reviews`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar");
+      const message = err instanceof Error ? err.message : "Erro ao criar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

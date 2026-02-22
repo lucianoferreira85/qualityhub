@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Trash2, Save, X, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -103,8 +104,9 @@ export default function ManagementReviewDetailPage() {
       const updated = await res.json();
       setReview(updated.data);
       setEditing(false);
+      toast.success("Análise crítica atualizada com sucesso");
     } catch {
-      /* ignore */
+      toast.error("Erro ao atualizar análise crítica");
     } finally {
       setSaving(false);
     }
@@ -116,9 +118,10 @@ export default function ManagementReviewDetailPage() {
       await fetch(`/api/tenants/${tenant.slug}/management-reviews/${reviewId}`, {
         method: "DELETE",
       });
+      toast.success("Análise crítica excluída com sucesso");
       router.push(`/${tenant.slug}/management-reviews`);
     } catch {
-      /* ignore */
+      toast.error("Erro ao excluir análise crítica");
     }
   };
 

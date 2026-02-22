@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { getFrequencyLabel } from "@/lib/utils";
 import type { Indicator, IndicatorMeasurement } from "@/types";
 
@@ -46,19 +47,28 @@ export default function IndicatorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterFrequency, setFilterFrequency] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchIndicators = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filterFrequency) params.set("frequency", filterFrequency);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/indicators${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setIndicators(res.data || []))
+      .then((res) => {
+        setIndicators(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterFrequency]);
+  }, [tenant.slug, filterFrequency, page]);
 
   useEffect(() => {
     fetchIndicators();
@@ -104,7 +114,7 @@ export default function IndicatorsPage() {
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
           <select
             value={filterFrequency}
-            onChange={(e) => setFilterFrequency(e.target.value)}
+            onChange={(e) => { setFilterFrequency(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {FREQUENCIES.map((f) => (
@@ -115,7 +125,7 @@ export default function IndicatorsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setFilterFrequency("")}
+              onClick={() => { setFilterFrequency(""); setPage(1); }}
               className="text-foreground-tertiary"
             >
               Limpar
@@ -254,6 +264,8 @@ export default function IndicatorsPage() {
           })}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

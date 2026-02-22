@@ -29,6 +29,7 @@ import {
   Plus,
 } from "lucide-react";
 import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Project } from "@/types";
 
 interface AvailableStandard {
@@ -119,8 +120,11 @@ export default function ProjectDetailPage() {
       }
       setEditing(false);
       fetchProject();
+      toast.success("Projeto atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -137,9 +141,12 @@ export default function ProjectDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir projeto");
       }
+      toast.success("Projeto excluído com sucesso");
       router.push(`/${tenant.slug}/projects`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
       setDeleting(false);
       setShowDeleteConfirm(false);
     }

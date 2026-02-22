@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const AUDIT_TYPES = [
   { value: "internal", label: "Interna" },
@@ -82,9 +83,12 @@ export default function NewAuditPage() {
         throw new Error(data.error || "Erro ao criar auditoria");
       }
       const data = await res.json();
+      toast.success("Auditoria criada com sucesso");
       router.push(`/${tenant.slug}/audits/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar");
+      const message = err instanceof Error ? err.message : "Erro ao criar";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

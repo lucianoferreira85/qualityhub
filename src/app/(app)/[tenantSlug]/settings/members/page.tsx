@@ -22,6 +22,7 @@ import {
   formatDate,
   getInitials,
 } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ROLES = [
   { value: "tenant_admin", label: "Administrador" },
@@ -108,10 +109,13 @@ export default function MembersPage() {
       setInvRole("junior_consultant");
       setShowInvite(false);
       setSuccess("Convite enviado com sucesso!");
+      toast.success("Convite enviado com sucesso");
       setLoading(true);
       fetchData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao convidar");
+      const message = err instanceof Error ? err.message : "Erro ao convidar";
+      setError(message);
+      toast.error(message);
     } finally {
       setInviting(false);
     }

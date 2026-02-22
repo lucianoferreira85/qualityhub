@@ -31,6 +31,7 @@ import {
   getClassificationColor,
   formatDate,
 } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Audit, AuditFinding } from "@/types";
 
 const AUDIT_TYPES = [
@@ -145,8 +146,11 @@ export default function AuditDetailPage() {
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao atualizar"); }
       setEditing(false);
       fetchAudit();
+      toast.success("Auditoria atualizada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar";
+      setError(message);
+      toast.error(message);
     } finally { setSaving(false); }
   };
 
@@ -155,9 +159,12 @@ export default function AuditDetailPage() {
     try {
       const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}`, { method: "DELETE" });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao excluir"); }
+      toast.success("Auditoria excluída com sucesso");
       router.push(`/${tenant.slug}/audits`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir");
+      const message = err instanceof Error ? err.message : "Erro ao excluir";
+      setError(message);
+      toast.error(message);
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -183,8 +190,11 @@ export default function AuditDetailPage() {
       setFindingDescription("");
       setFindingEvidence("");
       fetchAudit();
+      toast.success("Constatação adicionada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao adicionar");
+      const message = err instanceof Error ? err.message : "Erro ao adicionar";
+      setError(message);
+      toast.error(message);
     } finally { setSavingFinding(false); }
   };
 
@@ -212,8 +222,11 @@ export default function AuditDetailPage() {
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao atualizar"); }
       setEditingFindingId(null);
       fetchAudit();
+      toast.success("Constatação atualizada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar constatação");
+      const message = err instanceof Error ? err.message : "Erro ao atualizar constatação";
+      setError(message);
+      toast.error(message);
     } finally { setSavingEditFinding(false); }
   };
 
@@ -227,8 +240,11 @@ export default function AuditDetailPage() {
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao excluir"); }
       setConfirmDeleteFindingId(null);
       fetchAudit();
+      toast.success("Constatação excluída com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao excluir constatação");
+      const message = err instanceof Error ? err.message : "Erro ao excluir constatação";
+      setError(message);
+      toast.error(message);
     } finally { setDeletingFindingId(null); }
   };
 

@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const CATEGORIES = [
   { value: "", label: "Selecione a categoria" },
@@ -76,9 +77,12 @@ export default function NewProcessPage() {
         throw new Error(data.error || "Erro ao criar processo");
       }
       const data = await res.json();
+      toast.success("Processo criado com sucesso");
       router.push(`/${tenant.slug}/processes/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar");
+      const message = err instanceof Error ? err.message : "Erro ao criar";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

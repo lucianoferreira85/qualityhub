@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createDocumentSchema } from "@/lib/validations";
 import { generateCode } from "@/lib/utils";
 
@@ -22,6 +22,25 @@ export async function GET(
     if (type) where.type = type;
     if (status) where.status = status;
     if (projectId) where.projectId = projectId;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.document.findMany({
+          where,
+          include: {
+            project: { select: { id: true, name: true } },
+            author: { select: { id: true, name: true } },
+          },
+          orderBy: { updatedAt: "desc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.document.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
 
     const documents = await ctx.db.document.findMany({
       where,

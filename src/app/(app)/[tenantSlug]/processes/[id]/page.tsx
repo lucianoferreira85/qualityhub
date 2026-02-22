@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Pencil, Trash2, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
 import { getProcessStatusLabel, getProcessStatusColor } from "@/lib/utils";
 
 const STATUSES = [
@@ -96,10 +97,11 @@ export default function ProcessDetailPage() {
         const data = await res.json();
         setProcess((prev) => prev ? { ...prev, ...data.data, responsible: prev.responsible } : prev);
         setEditing(false);
+        toast.success("Processo atualizado com sucesso");
         window.location.reload();
       }
     } catch {
-      // ignore
+      toast.error("Erro ao atualizar processo");
     } finally {
       setSaving(false);
     }
@@ -112,8 +114,10 @@ export default function ProcessDetailPage() {
       await fetch(`/api/tenants/${tenant.slug}/processes/${processId}`, {
         method: "DELETE",
       });
+      toast.success("Processo excluído com sucesso");
       router.push(`/${tenant.slug}/processes`);
     } catch {
+      toast.error("Erro ao excluir processo");
       setDeleting(false);
     }
   };

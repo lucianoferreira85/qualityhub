@@ -8,6 +8,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const TYPES = [
   { value: "corrective", label: "Corretiva" },
@@ -94,9 +95,12 @@ export default function NewActionPlanPage() {
         throw new Error(data.error || "Erro ao criar plano de ação");
       }
       const data = await res.json();
+      toast.success("Plano de ação criado com sucesso");
       router.push(`/${tenant.slug}/action-plans/${data.data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar");
+      const message = err instanceof Error ? err.message : "Erro ao criar";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

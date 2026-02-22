@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ShieldAlert, FolderKanban, User, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { getRiskLevelLabel, getStatusLabel, getStatusColor } from "@/lib/utils";
 
 const RISK_LEVELS = [
@@ -75,6 +76,8 @@ export default function RisksPage() {
   const [filterLevel, setFilterLevel] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchRisks = useCallback(() => {
     setLoading(true);
@@ -82,14 +85,21 @@ export default function RisksPage() {
     if (filterLevel) params.set("riskLevel", filterLevel);
     if (filterStatus) params.set("status", filterStatus);
     if (filterCategory) params.set("category", filterCategory);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/risks${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setRisks(res.data || []))
+      .then((res) => {
+        setRisks(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterLevel, filterStatus, filterCategory]);
+  }, [tenant.slug, filterLevel, filterStatus, filterCategory, page]);
 
   useEffect(() => {
     fetchRisks();
@@ -125,7 +135,7 @@ export default function RisksPage() {
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
           <select
             value={filterLevel}
-            onChange={(e) => setFilterLevel(e.target.value)}
+            onChange={(e) => { setFilterLevel(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {RISK_LEVELS.map((l) => (
@@ -134,7 +144,7 @@ export default function RisksPage() {
           </select>
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {RISK_STATUSES.map((s) => (
@@ -143,7 +153,7 @@ export default function RisksPage() {
           </select>
           <select
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
+            onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {RISK_CATEGORIES.map((c) => (
@@ -154,7 +164,7 @@ export default function RisksPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFilterLevel(""); setFilterStatus(""); setFilterCategory(""); }}
+              onClick={() => { setFilterLevel(""); setFilterStatus(""); setFilterCategory(""); setPage(1); }}
               className="text-foreground-tertiary"
             >
               Limpar
@@ -254,6 +264,8 @@ export default function RisksPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, BookOpen, FolderKanban, Calendar, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { formatDate } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -46,19 +47,28 @@ export default function ManagementReviewsPage() {
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchReviews = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filterStatus) params.set("status", filterStatus);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/management-reviews${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setReviews(res.data || []))
+      .then((res) => {
+        setReviews(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterStatus]);
+  }, [tenant.slug, filterStatus, page]);
 
   useEffect(() => {
     fetchReviews();
@@ -87,7 +97,7 @@ export default function ManagementReviewsPage() {
         <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
         <select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
+          onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
           className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
         >
           {REVIEW_STATUSES.map((s) => (
@@ -98,7 +108,7 @@ export default function ManagementReviewsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setFilterStatus("")}
+            onClick={() => { setFilterStatus(""); setPage(1); }}
             className="text-foreground-tertiary"
           >
             Limpar
@@ -181,6 +191,8 @@ export default function ManagementReviewsPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

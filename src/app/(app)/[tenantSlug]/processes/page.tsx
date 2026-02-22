@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Cog, FolderKanban, User, TrendingUp, Filter } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { getProcessStatusLabel, getProcessStatusColor } from "@/lib/utils";
 
 const PROCESS_STATUSES = [
@@ -49,20 +50,29 @@ export default function ProcessesPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchProcesses = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filterStatus) params.set("status", filterStatus);
     if (filterCategory) params.set("category", filterCategory);
+    params.set("page", String(page));
+    params.set("pageSize", "20");
     const qs = params.toString();
 
     fetch(`/api/tenants/${tenant.slug}/processes${qs ? `?${qs}` : ""}`)
       .then((res) => res.json())
-      .then((res) => setProcesses(res.data || []))
+      .then((res) => {
+        setProcesses(res.data || []);
+        if (res.totalPages !== undefined) {
+          setTotalPages(res.totalPages);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [tenant.slug, filterStatus, filterCategory]);
+  }, [tenant.slug, filterStatus, filterCategory, page]);
 
   useEffect(() => {
     fetchProcesses();
@@ -108,7 +118,7 @@ export default function ProcessesPage() {
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {PROCESS_STATUSES.map((s) => (
@@ -117,7 +127,7 @@ export default function ProcessesPage() {
           </select>
           <select
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
+            onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
             className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
           >
             {PROCESS_CATEGORIES.map((c) => (
@@ -128,7 +138,7 @@ export default function ProcessesPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => { setFilterStatus(""); setFilterCategory(""); }}
+              onClick={() => { setFilterStatus(""); setFilterCategory(""); setPage(1); }}
               className="text-foreground-tertiary"
             >
               Limpar
@@ -224,6 +234,8 @@ export default function ProcessesPage() {
           ))}
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

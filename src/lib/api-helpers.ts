@@ -197,3 +197,34 @@ export function requirePermission(
     );
   }
 }
+
+// ==================== Pagination Helpers ====================
+
+export function parsePaginationParams(url: URL) {
+  const pageParam = url.searchParams.get("page");
+  const pageSizeParam = url.searchParams.get("pageSize");
+
+  if (!pageParam && !pageSizeParam) {
+    return null;
+  }
+
+  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(pageSizeParam || "20", 10) || 20));
+
+  return { page, pageSize, skip: (page - 1) * pageSize };
+}
+
+export function paginatedResponse<T>(
+  data: T[],
+  total: number,
+  page: number,
+  pageSize: number
+) {
+  return NextResponse.json({
+    data,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
+  });
+}

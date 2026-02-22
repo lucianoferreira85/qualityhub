@@ -31,6 +31,7 @@ import {
   getDocumentTypeColor,
   formatDate,
 } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Document, DocumentVersion } from "@/types";
 
 const DOCUMENT_STATUSES = [
@@ -161,8 +162,11 @@ export default function DocumentDetailPage() {
       setEditing(false);
       setLoading(true);
       fetchDoc();
+      toast.success("Documento atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -175,9 +179,11 @@ export default function DocumentDetailPage() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Erro ao excluir");
+      toast.success("Documento excluído com sucesso");
       router.push(`/${tenant.slug}/documents`);
     } catch {
       setError("Erro ao excluir documento");
+      toast.error("Erro ao excluir documento");
       setDeleting(false);
       setConfirmDelete(false);
     }
@@ -205,8 +211,11 @@ export default function DocumentDetailPage() {
       setRevisionNotes("");
       setLoading(true);
       fetchDoc();
+      toast.success("Nova versão criada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar revisão");
+      const message = err instanceof Error ? err.message : "Erro ao criar revisão";
+      setError(message);
+      toast.error(message);
     } finally {
       setCreatingRevision(false);
     }

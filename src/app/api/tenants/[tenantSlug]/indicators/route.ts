@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createIndicatorSchema } from "@/lib/validations";
 
 export async function GET(
@@ -19,6 +19,28 @@ export async function GET(
     const where: Record<string, unknown> = {};
     if (frequency) where.frequency = frequency;
     if (projectId) where.projectId = projectId;
+
+    const pagination = parsePaginationParams(url);
+
+    if (pagination) {
+      const [items, total] = await Promise.all([
+        ctx.db.indicator.findMany({
+          where,
+          include: {
+            project: { select: { id: true, name: true } },
+            measurements: {
+              orderBy: { period: "desc" },
+              take: 12,
+            },
+          },
+          orderBy: { name: "asc" },
+          skip: pagination.skip,
+          take: pagination.pageSize,
+        }),
+        ctx.db.indicator.count({ where }),
+      ]);
+      return paginatedResponse(items, total, pagination.page, pagination.pageSize);
+    }
 
     const indicators = await ctx.db.indicator.findMany({
       where,
