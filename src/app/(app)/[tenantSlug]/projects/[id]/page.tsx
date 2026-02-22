@@ -8,6 +8,11 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Avatar } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   ClipboardList,
@@ -42,7 +47,7 @@ import {
   GitPullRequest,
   Download,
 } from "lucide-react";
-import { getStatusColor, getStatusLabel, formatDate, getInitials } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Project } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -196,8 +201,10 @@ export default function ProjectDetailPage() {
     finally { setAddingStandard(false); }
   };
 
+  const [removeStandardId, setRemoveStandardId] = useState<string | null>(null);
+
   const handleRemoveStandard = async (standardId: string) => {
-    if (!confirm("Remover esta norma e seus requisitos/controles importados?")) return;
+    setRemoveStandardId(null);
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/standards`, {
         method: "DELETE",
@@ -417,9 +424,7 @@ export default function ProjectDetailPage() {
                 {project.name}
               </h1>
             )}
-            <Badge variant={getStatusColor(project.status)}>
-              {getStatusLabel(project.status)}
-            </Badge>
+            <StatusBadge status={project.status} />
           </div>
           {!editing && project.description && (
             <p className="text-body-1 text-foreground-secondary mt-1">
@@ -514,38 +519,24 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Delete confirmation */}
-      {showDeleteConfirm && (
-        <Card className="border-danger/30 bg-danger-bg/30">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-body-1 font-medium text-foreground-primary">
-                Excluir projeto?
-              </p>
-              <p className="text-body-2 text-foreground-secondary">
-                Esta ação não pode ser desfeita. Todos os dados relacionados
-                serão perdidos.
-              </p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDelete}
-                loading={deleting}
-              >
-                Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir projeto?"
+        description="Esta ação não pode ser desfeita. Todos os dados relacionados serão perdidos."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+
+      {/* Remove standard confirmation */}
+      <ConfirmDialog
+        open={!!removeStandardId}
+        onOpenChange={(open) => !open && setRemoveStandardId(null)}
+        title="Remover norma?"
+        description="Remover esta norma e seus requisitos/controles importados?"
+        confirmLabel="Remover"
+        onConfirm={() => removeStandardId && handleRemoveStandard(removeStandardId)}
+      />
 
       {/* Edit form */}
       {editing && (
@@ -555,10 +546,10 @@ export default function ProjectDetailPage() {
               <label className="block text-body-1 font-medium text-foreground-primary mb-1">
                 Descrição
               </label>
-              <textarea
+              <Textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
+                className="h-20"
               />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -566,17 +557,11 @@ export default function ProjectDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Status
                 </label>
-                <select
+                <Select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {statusOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={statusOptions}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
@@ -701,7 +686,7 @@ export default function ProjectDetailPage() {
                     </Badge>
                     {can("project", "update") && (
                       <button
-                        onClick={() => handleRemoveStandard(ps.standard?.id || ps.standardId)}
+                        onClick={() => setRemoveStandardId(ps.standard?.id || ps.standardId)}
                         className="hidden group-hover:inline text-foreground-tertiary hover:text-danger-fg"
                         title="Remover norma"
                       >
@@ -718,18 +703,14 @@ export default function ProjectDetailPage() {
             )}
             {showAddStandard && (
               <div className="mt-3 pt-3 border-t border-stroke-secondary space-y-2">
-                <select
+                <Select
                   value={selectedStandardId}
                   onChange={(e) => setSelectedStandardId(e.target.value)}
-                  className="h-9 w-full rounded-input border border-stroke-primary bg-surface-primary px-2 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"
-                >
-                  <option value="">Selecionar norma...</option>
-                  {allStandards
+                  placeholder="Selecionar norma..."
+                  options={allStandards
                     .filter((s) => !standards.some((ps) => (ps.standard?.id || ps.standardId) === s.id))
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                    ))}
-                </select>
+                    .map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }))}
+                />
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => setShowAddStandard(false)}>
                     Cancelar
@@ -762,11 +743,7 @@ export default function ProjectDetailPage() {
                   key={member.id}
                   className="flex items-center gap-2 px-3 py-2 rounded-button bg-surface-secondary"
                 >
-                  <div className="h-8 w-8 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
-                    <span className="text-caption-1 font-medium text-white">
-                      {getInitials(member.user?.name || "?")}
-                    </span>
-                  </div>
+                  <Avatar name={member.user?.name || "?"} />
                   <div>
                     <p className="text-body-2 font-medium text-foreground-primary leading-tight">
                       {member.user?.name}

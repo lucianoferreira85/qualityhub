@@ -7,7 +7,10 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft,
   Pencil,
@@ -25,10 +28,6 @@ import {
   Download,
 } from "lucide-react";
 import {
-  getStatusColor,
-  getStatusLabel,
-  getSeverityColor,
-  getSeverityLabel,
   getOriginLabel,
   formatDate,
 } from "@/lib/utils";
@@ -251,8 +250,9 @@ export default function NonconformityDetailPage() {
     }
   };
 
+  const [showDeleteRootCauseConfirm, setShowDeleteRootCauseConfirm] = useState(false);
+
   const handleDeleteRootCause = async () => {
-    if (!confirm("Excluir a analise de causa raiz?")) return;
     setDeletingRootCause(true);
     try {
       const res = await fetch(
@@ -309,12 +309,8 @@ export default function NonconformityDetailPage() {
           </p>
           <h1 className="text-title-1 text-foreground-primary">{nc.title}</h1>
           <div className="flex items-center gap-2 mt-1.5">
-            <Badge variant={getStatusColor(nc.status)}>
-              {getStatusLabel(nc.status)}
-            </Badge>
-            <Badge variant={getSeverityColor(nc.severity)}>
-              {getSeverityLabel(nc.severity)}
-            </Badge>
+            <StatusBadge status={nc.status} />
+            <StatusBadge status={nc.severity} type="severity" />
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -370,37 +366,24 @@ export default function NonconformityDetailPage() {
       )}
 
       {/* Delete confirmation */}
-      {showDeleteConfirm && (
-        <Card className="border-danger/30 bg-danger-bg/30">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-body-1 font-medium text-foreground-primary">
-                Excluir esta não conformidade?
-              </p>
-              <p className="text-body-2 text-foreground-secondary">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDelete}
-                loading={deleting}
-              >
-                Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir esta não conformidade?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+
+      {/* Delete root cause confirmation */}
+      <ConfirmDialog
+        open={showDeleteRootCauseConfirm}
+        onOpenChange={setShowDeleteRootCauseConfirm}
+        title="Excluir a análise de causa raiz?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDeleteRootCause}
+        loading={deletingRootCause}
+      />
 
       {/* Status workflow timeline */}
       <Card>
@@ -470,12 +453,11 @@ export default function NonconformityDetailPage() {
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Descrição *
               </label>
-              <textarea
+              <Textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 required
                 rows={4}
-                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -483,33 +465,21 @@ export default function NonconformityDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Severidade
                 </label>
-                <select
+                <Select
                   value={editSeverity}
                   onChange={(e) => setEditSeverity(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {SEVERITIES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  options={SEVERITIES}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Status
                 </label>
-                <select
+                <Select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
+                  options={STATUSES}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
@@ -633,7 +603,7 @@ export default function NonconformityDetailPage() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      onClick={handleDeleteRootCause}
+                      onClick={() => setShowDeleteRootCauseConfirm(true)}
                       loading={deletingRootCause}
                       className="text-foreground-tertiary hover:text-danger-fg"
                     >
@@ -657,15 +627,11 @@ export default function NonconformityDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Método *
                 </label>
-                <select
+                <Select
                   value={rcMethod}
                   onChange={(e) => setRcMethod(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {Object.entries(ROOT_CAUSE_METHODS).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                  options={Object.entries(ROOT_CAUSE_METHODS).map(([value, label]) => ({ value, label }))}
+                />
               </div>
 
               {rcMethod === "five_whys" && (
@@ -702,10 +668,10 @@ export default function NonconformityDetailPage() {
                     ].map(({ key, label }) => (
                       <div key={key}>
                         <label className="block text-caption-1 text-foreground-secondary mb-1">{label}</label>
-                        <textarea
+                        <Textarea
                           value={rcIshikawa[key] || ""}
                           onChange={(e) => setRcIshikawa({ ...rcIshikawa, [key]: e.target.value })}
-                          className="w-full min-h-[60px] rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
+                          className="min-h-[60px] text-body-2"
                           placeholder={`Causas relacionadas a ${label}...`}
                         />
                       </div>
@@ -724,11 +690,10 @@ export default function NonconformityDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Conclusão
                 </label>
-                <textarea
+                <Textarea
                   value={rcConclusion}
                   onChange={(e) => setRcConclusion(e.target.value)}
                   rows={3}
-                  className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
                   placeholder="Causa raiz identificada..."
                 />
               </div>
@@ -830,9 +795,7 @@ export default function NonconformityDetailPage() {
                           {ap.responsible.name.split(" ")[0]}
                         </span>
                       )}
-                      <Badge variant={getStatusColor(ap.status)}>
-                        {getStatusLabel(ap.status)}
-                      </Badge>
+                      <StatusBadge status={ap.status} />
                     </div>
                   </div>
                 </Link>

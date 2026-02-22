@@ -15,9 +15,9 @@ import {
   Menu,
   Search,
 } from "lucide-react";
-import { getInitials } from "@/lib/utils";
 import { AutoBreadcrumb } from "./auto-breadcrumb";
 import { NotificationPopover } from "./notification-popover";
+import { Avatar } from "@/components/ui/avatar";
 
 interface HeaderProps {
   onOpenSidebar?: () => void;
@@ -80,11 +80,7 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button className="flex items-center gap-2 h-9 px-2 rounded-button text-foreground-primary hover:bg-surface-tertiary transition-colors">
-              <div className="h-7 w-7 rounded-full gradient-brand flex items-center justify-center flex-shrink-0">
-                <span className="text-caption-2 text-white font-medium">
-                  {getInitials(userName)}
-                </span>
-              </div>
+              <Avatar name={userName} size="sm" />
               <span className="text-body-2 hidden sm:block max-w-[120px] truncate">
                 {userName}
               </span>

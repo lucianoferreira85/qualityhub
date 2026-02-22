@@ -6,10 +6,13 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 import { Plus, FolderKanban, Building2, Users, Filter, Download } from "lucide-react";
-import { getStatusColor, getStatusLabel, formatDate } from "@/lib/utils";
+import { getStatusLabel, formatDate } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
 import type { Project } from "@/types";
@@ -97,15 +100,11 @@ export default function ProjectsPage() {
         />
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <select
+          <Select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+            options={PROJECT_STATUSES}
+          />
           {filterStatus && (
             <Button
               variant="ghost"
@@ -134,29 +133,17 @@ export default function ProjectsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="h-5 w-3/4 bg-surface-tertiary rounded animate-pulse mb-3" />
-                <div className="h-4 w-1/2 bg-surface-tertiary rounded animate-pulse mb-2" />
-                <div className="h-3 w-1/3 bg-surface-tertiary rounded animate-pulse" />
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <FolderKanban className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              Nenhum projeto encontrado
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search || filterStatus
-                ? "Tente ajustar os filtros ou termos de busca"
-                : "Crie seu primeiro projeto para começar"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FolderKanban}
+          title="Nenhum projeto encontrado"
+          description={search || filterStatus
+            ? "Tente ajustar os filtros ou termos de busca"
+            : "Crie seu primeiro projeto para começar"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((project) => {
@@ -174,9 +161,7 @@ export default function ProjectsPage() {
                       <h3 className="text-title-3 text-foreground-primary line-clamp-1">
                         {project.name}
                       </h3>
-                      <Badge variant={getStatusColor(project.status)} className="flex-shrink-0 ml-2">
-                        {getStatusLabel(project.status)}
-                      </Badge>
+                      <StatusBadge status={project.status} className="flex-shrink-0 ml-2" />
                     </div>
 
                     {project.client && (
