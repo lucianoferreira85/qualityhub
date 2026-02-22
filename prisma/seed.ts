@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
-const prisma = new PrismaClient();
+const pool = new pg.Pool({
+  connectionString: process.env.DIRECT_URL || process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 type ClauseInput = { code: string; title: string; children?: ClauseInput[] };
 type ControlInput = { code: string; title: string; domain: string; type?: string };

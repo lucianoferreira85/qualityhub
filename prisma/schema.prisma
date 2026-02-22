@@ -239,6 +239,12 @@ model Tenant {
   awarenessCampaigns AwarenessCampaign[]
   awarenessParticipants AwarenessParticipant[]
   improvementOpportunities ImprovementOpportunity[]
+  securityIncidents SecurityIncident[]
+  incidentActions   IncidentAction[]
+  informationAssets InformationAsset[]
+  suppliers         Supplier[]
+  supplierAssessments SupplierAssessment[]
+  changeRequests    ChangeRequest[]
 
   @@map("tenants")
 }
@@ -283,6 +289,15 @@ model User {
   campaignResponsibilities AwarenessCampaign[] @relation("CampaignResponsible")
   awarenessParticipations AwarenessParticipant[]
   improvementResponsibilities ImprovementOpportunity[] @relation("ImprovementResponsible")
+  incidentReports           SecurityIncident[] @relation("IncidentReporter")
+  incidentAssignments       SecurityIncident[] @relation("IncidentAssignee")
+  incidentActionResponsibilities IncidentAction[] @relation("IncidentActionResponsible")
+  assetResponsibilities     InformationAsset[] @relation("AssetResponsible")
+  supplierResponsibilities  Supplier[] @relation("SupplierResponsible")
+  supplierAssessments       SupplierAssessment[] @relation("SupplierAssessor")
+  changeRequests            ChangeRequest[] @relation("ChangeRequester")
+  changeAssignments         ChangeRequest[] @relation("ChangeAssignee")
+  changeApprovals           ChangeRequest[] @relation("ChangeApprover")
 
   @@map("users")
 }
@@ -404,6 +419,10 @@ model Project {
   policies      Policy[]
   awarenessCampaigns AwarenessCampaign[]
   improvementOpportunities ImprovementOpportunity[]
+  securityIncidents SecurityIncident[]
+  informationAssets InformationAsset[]
+  suppliers         Supplier[]
+  changeRequests    ChangeRequest[]
 
   @@index([tenantId])
   @@index([clientId])
@@ -636,6 +655,7 @@ model Nonconformity {
   rootCause     NcRootCause?
   actionPlans   ActionPlan[]
   auditFindings AuditFinding[]
+  securityIncidents SecurityIncident[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1204,4 +1224,209 @@ model ImprovementOpportunity {
   @@index([tenantId])
   @@index([projectId])
   @@map("improvement_opportunities")
+}
+
+// ==================== SECURITY INCIDENTS (ISO A.5.24-A.5.28) ====================
+
+model SecurityIncident {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  projectId         String           @map("project_id") @db.Uuid
+  code              String
+  title             String
+  description       String?
+  type              String           // data_breach | unauthorized_access | malware | phishing | denial_of_service | physical | social_engineering | other
+  severity          String           @default("medium") // low | medium | high | critical
+  category          String?          // confidentiality | integrity | availability | multiple
+  detectedAt        DateTime         @map("detected_at")
+  reportedAt        DateTime         @default(now()) @map("reported_at")
+  resolvedAt        DateTime?        @map("resolved_at")
+  closedAt          DateTime?        @map("closed_at")
+  affectedAssets    String?          @map("affected_assets")
+  affectedSystems   String?          @map("affected_systems")
+  impactDescription String?          @map("impact_description")
+  rootCause         String?          @map("root_cause")
+  containmentActions String?         @map("containment_actions")
+  correctiveActions String?          @map("corrective_actions")
+  lessonsLearned    String?          @map("lessons_learned")
+  reportedById      String           @map("reported_by_id") @db.Uuid
+  assignedToId      String?          @map("assigned_to_id") @db.Uuid
+  status            String           @default("reported") // reported | triaged | contained | investigating | resolved | closed
+  notifiedAuthorities Boolean        @default(false) @map("notified_authorities")
+  nonconformityId   String?          @map("nonconformity_id") @db.Uuid
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reportedBy        User             @relation("IncidentReporter", fields: [reportedById], references: [id])
+  assignedTo        User?            @relation("IncidentAssignee", fields: [assignedToId], references: [id])
+  nonconformity     Nonconformity?   @relation(fields: [nonconformityId], references: [id])
+  actions           IncidentAction[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("security_incidents")
+}
+
+model IncidentAction {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String           @map("tenant_id") @db.Uuid
+  incidentId        String           @map("incident_id") @db.Uuid
+  description       String
+  type              String           // containment | eradication | recovery | preventive
+  responsibleId     String?          @map("responsible_id") @db.Uuid
+  dueDate           DateTime?        @map("due_date") @db.Date
+  completedAt       DateTime?        @map("completed_at")
+  status            String           @default("pending") // pending | in_progress | completed
+  notes             String?
+  createdAt         DateTime         @default(now()) @map("created_at")
+  tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  incident          SecurityIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  responsible       User?            @relation("IncidentActionResponsible", fields: [responsibleId], references: [id])
+
+  @@index([tenantId])
+  @@index([incidentId])
+  @@map("incident_actions")
+}
+
+// ==================== INFORMATION ASSETS (ISO A.5.9-A.5.11) ====================
+
+model InformationAsset {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  projectId         String    @map("project_id") @db.Uuid
+  code              String
+  name              String
+  description       String?
+  type              String    // hardware | software | data | service | people | facility | network | other
+  category          String?   // primary | support | infrastructure
+  owner             String?
+  custodian         String?
+  location          String?
+  classification    String    @default("internal") // public | internal | confidential | restricted
+  criticality       String    @default("medium") // low | medium | high | critical
+  businessValue     String?   @map("business_value")
+  status            String    @default("active") // active | inactive | decommissioned | under_review
+  acquisitionDate   DateTime? @map("acquisition_date") @db.Date
+  endOfLifeDate     DateTime? @map("end_of_life_date") @db.Date
+  lastReviewDate    DateTime? @map("last_review_date") @db.Date
+  nextReviewDate    DateTime? @map("next_review_date") @db.Date
+  responsibleId     String?   @map("responsible_id") @db.Uuid
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible       User?     @relation("AssetResponsible", fields: [responsibleId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("information_assets")
+}
+
+// ==================== SUPPLIERS (ISO A.5.19-A.5.23) ====================
+
+model Supplier {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String               @map("tenant_id") @db.Uuid
+  projectId         String               @map("project_id") @db.Uuid
+  code              String
+  name              String
+  cnpj              String?
+  contactName       String?              @map("contact_name")
+  contactEmail      String?              @map("contact_email")
+  contactPhone      String?              @map("contact_phone")
+  type              String               // cloud_provider | saas | outsourcing | consulting | data_processor | infrastructure | other
+  category          String?              // critical | important | standard
+  servicesProvided  String?              @map("services_provided")
+  dataAccess        String?              @map("data_access") // none | limited | full
+  contractStartDate DateTime?            @map("contract_start_date") @db.Date
+  contractEndDate   DateTime?            @map("contract_end_date") @db.Date
+  slaDetails        String?              @map("sla_details")
+  securityRequirements String?           @map("security_requirements")
+  riskLevel         String               @default("medium") // low | medium | high | critical
+  status            String               @default("active") // active | under_review | suspended | terminated
+  responsibleId     String?              @map("responsible_id") @db.Uuid
+  lastAssessmentDate DateTime?           @map("last_assessment_date") @db.Date
+  nextAssessmentDate DateTime?           @map("next_assessment_date") @db.Date
+  notes             String?
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible       User?                @relation("SupplierResponsible", fields: [responsibleId], references: [id])
+  assessments       SupplierAssessment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("suppliers")
+}
+
+model SupplierAssessment {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  supplierId        String    @map("supplier_id") @db.Uuid
+  assessmentDate    DateTime  @map("assessment_date") @db.Date
+  assessorId        String?   @map("assessor_id") @db.Uuid
+  overallScore      Decimal?  @map("overall_score") @db.Decimal(5, 2)
+  securityScore     Decimal?  @map("security_score") @db.Decimal(5, 2)
+  complianceScore   Decimal?  @map("compliance_score") @db.Decimal(5, 2)
+  serviceScore      Decimal?  @map("service_score") @db.Decimal(5, 2)
+  findings          String?
+  recommendations   String?
+  status            String    @default("completed") // planned | in_progress | completed
+  nextAssessmentDate DateTime? @map("next_assessment_date") @db.Date
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier          Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  assessor          User?     @relation("SupplierAssessor", fields: [assessorId], references: [id])
+
+  @@index([tenantId])
+  @@index([supplierId])
+  @@map("supplier_assessments")
+}
+
+// ==================== CHANGE REQUESTS (ISO 6.3) ====================
+
+model ChangeRequest {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  projectId         String    @map("project_id") @db.Uuid
+  code              String
+  title             String
+  description       String?
+  type              String    // process | technology | organizational | documentation | control | scope | other
+  reason            String?
+  impactAnalysis    String?   @map("impact_analysis")
+  riskAssessment    String?   @map("risk_assessment")
+  rollbackPlan      String?   @map("rollback_plan")
+  priority          String    @default("medium") // low | medium | high | urgent
+  requestedById     String    @map("requested_by_id") @db.Uuid
+  assignedToId      String?   @map("assigned_to_id") @db.Uuid
+  approvedById      String?   @map("approved_by_id") @db.Uuid
+  approvedAt        DateTime? @map("approved_at")
+  implementedAt     DateTime? @map("implemented_at")
+  verifiedAt        DateTime? @map("verified_at")
+  rejectedAt        DateTime? @map("rejected_at")
+  plannedDate       DateTime? @map("planned_date") @db.Date
+  status            String    @default("requested") // requested | under_review | approved | in_progress | implemented | verified | rejected | cancelled
+  affectedAreas     String?   @map("affected_areas")
+  notes             String?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requestedBy       User      @relation("ChangeRequester", fields: [requestedById], references: [id])
+  assignedTo        User?     @relation("ChangeAssignee", fields: [assignedToId], references: [id])
+  approvedBy        User?     @relation("ChangeApprover", fields: [approvedById], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([projectId])
+  @@map("change_requests")
 }
