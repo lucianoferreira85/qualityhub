@@ -641,6 +641,206 @@ export const updateImprovementSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
+// ==================== Security Incidents (ISO A.5.24-A.5.28) ====================
+
+export const createIncidentSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  type: z.enum(["data_breach", "unauthorized_access", "malware", "phishing", "denial_of_service", "physical", "social_engineering", "other"]),
+  severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+  category: z.enum(["confidentiality", "integrity", "availability", "multiple"]).nullable().optional(),
+  detectedAt: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
+  affectedAssets: z.string().nullable().optional(),
+  affectedSystems: z.string().nullable().optional(),
+  impactDescription: z.string().nullable().optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+  nonconformityId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateIncidentSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  type: z.enum(["data_breach", "unauthorized_access", "malware", "phishing", "denial_of_service", "physical", "social_engineering", "other"]).optional(),
+  severity: z.enum(["low", "medium", "high", "critical"]).optional(),
+  category: z.enum(["confidentiality", "integrity", "availability", "multiple"]).nullable().optional(),
+  affectedAssets: z.string().nullable().optional(),
+  affectedSystems: z.string().nullable().optional(),
+  impactDescription: z.string().nullable().optional(),
+  rootCause: z.string().nullable().optional(),
+  containmentActions: z.string().nullable().optional(),
+  correctiveActions: z.string().nullable().optional(),
+  lessonsLearned: z.string().nullable().optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+  status: z.enum(["reported", "triaged", "contained", "investigating", "resolved", "closed"]).optional(),
+  notifiedAuthorities: z.boolean().optional(),
+  nonconformityId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const createIncidentActionSchema = z.object({
+  description: z.string().min(1, "Descrição é obrigatória"),
+  type: z.enum(["containment", "eradication", "recovery", "preventive"]),
+  responsibleId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const updateIncidentActionSchema = z.object({
+  description: z.string().min(1).optional(),
+  type: z.enum(["containment", "eradication", "recovery", "preventive"]).optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  status: z.enum(["pending", "in_progress", "completed"]).optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Information Assets (ISO A.5.9-A.5.11) ====================
+
+export const createAssetSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  type: z.enum(["hardware", "software", "data", "service", "people", "facility", "network", "other"]),
+  category: z.enum(["primary", "support", "infrastructure"]).nullable().optional(),
+  owner: z.string().nullable().optional(),
+  custodian: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  classification: z.enum(["public", "internal", "confidential", "restricted"]).optional(),
+  criticality: z.enum(["low", "medium", "high", "critical"]).optional(),
+  businessValue: z.string().nullable().optional(),
+  acquisitionDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  endOfLifeDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateAssetSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  type: z.enum(["hardware", "software", "data", "service", "people", "facility", "network", "other"]).optional(),
+  category: z.enum(["primary", "support", "infrastructure"]).nullable().optional(),
+  owner: z.string().nullable().optional(),
+  custodian: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  classification: z.enum(["public", "internal", "confidential", "restricted"]).optional(),
+  criticality: z.enum(["low", "medium", "high", "critical"]).optional(),
+  businessValue: z.string().nullable().optional(),
+  status: z.enum(["active", "inactive", "decommissioned", "under_review"]).optional(),
+  acquisitionDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  endOfLifeDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  lastReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Suppliers (ISO A.5.19-A.5.23) ====================
+
+export const createSupplierSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório").max(255),
+  cnpj: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactEmail: z.string().email().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  type: z.enum(["cloud_provider", "saas", "outsourcing", "consulting", "data_processor", "infrastructure", "other"]),
+  category: z.enum(["critical", "important", "standard"]).nullable().optional(),
+  servicesProvided: z.string().nullable().optional(),
+  dataAccess: z.enum(["none", "limited", "full"]).nullable().optional(),
+  contractStartDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  contractEndDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  slaDetails: z.string().nullable().optional(),
+  securityRequirements: z.string().nullable().optional(),
+  riskLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  nextAssessmentDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateSupplierSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  cnpj: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactEmail: z.string().email().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  type: z.enum(["cloud_provider", "saas", "outsourcing", "consulting", "data_processor", "infrastructure", "other"]).optional(),
+  category: z.enum(["critical", "important", "standard"]).nullable().optional(),
+  servicesProvided: z.string().nullable().optional(),
+  dataAccess: z.enum(["none", "limited", "full"]).nullable().optional(),
+  contractStartDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  contractEndDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  slaDetails: z.string().nullable().optional(),
+  securityRequirements: z.string().nullable().optional(),
+  riskLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+  status: z.enum(["active", "under_review", "suspended", "terminated"]).optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+  nextAssessmentDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const createSupplierAssessmentSchema = z.object({
+  assessmentDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
+  overallScore: z.number().min(0).max(100).nullable().optional(),
+  securityScore: z.number().min(0).max(100).nullable().optional(),
+  complianceScore: z.number().min(0).max(100).nullable().optional(),
+  serviceScore: z.number().min(0).max(100).nullable().optional(),
+  findings: z.string().nullable().optional(),
+  recommendations: z.string().nullable().optional(),
+  status: z.enum(["planned", "in_progress", "completed"]).optional(),
+  nextAssessmentDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const updateSupplierAssessmentSchema = z.object({
+  assessmentDate: z.string().refine((val) => !isNaN(Date.parse(val))).optional(),
+  overallScore: z.number().min(0).max(100).nullable().optional(),
+  securityScore: z.number().min(0).max(100).nullable().optional(),
+  complianceScore: z.number().min(0).max(100).nullable().optional(),
+  serviceScore: z.number().min(0).max(100).nullable().optional(),
+  findings: z.string().nullable().optional(),
+  recommendations: z.string().nullable().optional(),
+  status: z.enum(["planned", "in_progress", "completed"]).optional(),
+  nextAssessmentDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+// ==================== Change Requests (ISO 6.3) ====================
+
+export const createChangeRequestSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório").max(255),
+  description: z.string().nullable().optional(),
+  type: z.enum(["process", "technology", "organizational", "documentation", "control", "scope", "other"]),
+  reason: z.string().nullable().optional(),
+  impactAnalysis: z.string().nullable().optional(),
+  riskAssessment: z.string().nullable().optional(),
+  rollbackPlan: z.string().nullable().optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+  plannedDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  affectedAreas: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  projectId: z.string().uuid(),
+});
+
+export const updateChangeRequestSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().nullable().optional(),
+  type: z.enum(["process", "technology", "organizational", "documentation", "control", "scope", "other"]).optional(),
+  reason: z.string().nullable().optional(),
+  impactAnalysis: z.string().nullable().optional(),
+  riskAssessment: z.string().nullable().optional(),
+  rollbackPlan: z.string().nullable().optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  assignedToId: z.string().uuid().nullable().optional(),
+  status: z.enum(["requested", "under_review", "approved", "in_progress", "implemented", "verified", "rejected", "cancelled"]).optional(),
+  plannedDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
+  affectedAreas: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
 // ==================== Risk Review ====================
 
 export const createRiskReviewSchema = z.object({
@@ -702,3 +902,15 @@ export type AddParticipantInput = z.infer<typeof addParticipantSchema>;
 export type UpdateParticipantInput = z.infer<typeof updateParticipantSchema>;
 export type CreateImprovementInput = z.infer<typeof createImprovementSchema>;
 export type UpdateImprovementInput = z.infer<typeof updateImprovementSchema>;
+export type CreateIncidentInput = z.infer<typeof createIncidentSchema>;
+export type UpdateIncidentInput = z.infer<typeof updateIncidentSchema>;
+export type CreateIncidentActionInput = z.infer<typeof createIncidentActionSchema>;
+export type UpdateIncidentActionInput = z.infer<typeof updateIncidentActionSchema>;
+export type CreateAssetInput = z.infer<typeof createAssetSchema>;
+export type UpdateAssetInput = z.infer<typeof updateAssetSchema>;
+export type CreateSupplierInput = z.infer<typeof createSupplierSchema>;
+export type UpdateSupplierInput = z.infer<typeof updateSupplierSchema>;
+export type CreateSupplierAssessmentInput = z.infer<typeof createSupplierAssessmentSchema>;
+export type UpdateSupplierAssessmentInput = z.infer<typeof updateSupplierAssessmentSchema>;
+export type CreateChangeRequestInput = z.infer<typeof createChangeRequestSchema>;
+export type UpdateChangeRequestInput = z.infer<typeof updateChangeRequestSchema>;

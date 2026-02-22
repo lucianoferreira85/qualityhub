@@ -61,6 +61,12 @@ const TENANT_SCOPED_MODELS = [
   "awarenessCampaign",
   "awarenessParticipant",
   "improvementOpportunity",
+  "securityIncident",
+  "incidentAction",
+  "informationAsset",
+  "supplier",
+  "supplierAssessment",
+  "changeRequest",
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

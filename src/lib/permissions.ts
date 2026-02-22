@@ -29,7 +29,11 @@ type Resource =
   | "securityObjective"
   | "policy"
   | "awarenessCampaign"
-  | "improvement";
+  | "improvement"
+  | "securityIncident"
+  | "informationAsset"
+  | "supplier"
+  | "changeRequest";
 
 type PermissionMatrix = Record<OrgRole, Partial<Record<Resource, Action[]>>>;
 
@@ -62,6 +66,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["create", "read", "update", "delete"],
     awarenessCampaign: ["create", "read", "update", "delete"],
     improvement: ["create", "read", "update", "delete"],
+    securityIncident: ["create", "read", "update", "delete"],
+    informationAsset: ["create", "read", "update", "delete"],
+    supplier: ["create", "read", "update", "delete"],
+    changeRequest: ["create", "read", "update", "delete"],
   },
   project_manager: {
     project: ["create", "read", "update"],
@@ -90,6 +98,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["create", "read", "update"],
     awarenessCampaign: ["create", "read", "update"],
     improvement: ["create", "read", "update"],
+    securityIncident: ["create", "read", "update"],
+    informationAsset: ["create", "read", "update"],
+    supplier: ["create", "read", "update"],
+    changeRequest: ["create", "read", "update"],
   },
   senior_consultant: {
     project: ["read"],
@@ -116,6 +128,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["create", "read", "update"],
     awarenessCampaign: ["create", "read", "update"],
     improvement: ["create", "read", "update"],
+    securityIncident: ["create", "read", "update"],
+    informationAsset: ["create", "read", "update"],
+    supplier: ["create", "read", "update"],
+    changeRequest: ["create", "read", "update"],
   },
   junior_consultant: {
     project: ["read"],
@@ -142,6 +158,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["read"],
     awarenessCampaign: ["read"],
     improvement: ["read", "update"],
+    securityIncident: ["read", "update"],
+    informationAsset: ["read", "update"],
+    supplier: ["read"],
+    changeRequest: ["read", "update"],
   },
   internal_auditor: {
     project: ["read"],
@@ -168,6 +188,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["read"],
     awarenessCampaign: ["read"],
     improvement: ["read"],
+    securityIncident: ["read"],
+    informationAsset: ["read"],
+    supplier: ["read"],
+    changeRequest: ["read"],
   },
   external_auditor: {
     project: ["read"],
@@ -192,6 +216,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["read"],
     awarenessCampaign: ["read"],
     improvement: ["read"],
+    securityIncident: ["read"],
+    informationAsset: ["read"],
+    supplier: ["read"],
+    changeRequest: ["read"],
   },
   client_viewer: {
     project: ["read"],
@@ -212,6 +240,10 @@ const PERMISSIONS: PermissionMatrix = {
     policy: ["read"],
     awarenessCampaign: ["read"],
     improvement: ["read"],
+    securityIncident: ["read"],
+    informationAsset: ["read"],
+    supplier: ["read"],
+    changeRequest: ["read"],
   },
 };
 

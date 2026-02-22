@@ -754,6 +754,172 @@ export interface ImprovementOpportunity {
   actionPlan?: ActionPlan;
 }
 
+// ==================== Security Incidents (ISO A.5.24-A.5.28) ====================
+
+export interface SecurityIncident {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  type: string;
+  severity: string;
+  category: string | null;
+  detectedAt: Date;
+  reportedAt: Date;
+  resolvedAt: Date | null;
+  closedAt: Date | null;
+  affectedAssets: string | null;
+  affectedSystems: string | null;
+  impactDescription: string | null;
+  rootCause: string | null;
+  containmentActions: string | null;
+  correctiveActions: string | null;
+  lessonsLearned: string | null;
+  reportedById: string;
+  assignedToId: string | null;
+  status: string;
+  notifiedAuthorities: boolean;
+  nonconformityId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  reportedBy?: User;
+  assignedTo?: User;
+  nonconformity?: Nonconformity;
+  actions?: IncidentAction[];
+}
+
+export interface IncidentAction {
+  id: string;
+  tenantId: string;
+  incidentId: string;
+  description: string;
+  type: string;
+  responsibleId: string | null;
+  dueDate: Date | null;
+  completedAt: Date | null;
+  status: string;
+  notes: string | null;
+  createdAt: Date;
+  responsible?: User;
+}
+
+// ==================== Information Assets (ISO A.5.9-A.5.11) ====================
+
+export interface InformationAsset {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  type: string;
+  category: string | null;
+  owner: string | null;
+  custodian: string | null;
+  location: string | null;
+  classification: string;
+  criticality: string;
+  businessValue: string | null;
+  status: string;
+  acquisitionDate: Date | null;
+  endOfLifeDate: Date | null;
+  lastReviewDate: Date | null;
+  nextReviewDate: Date | null;
+  responsibleId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+}
+
+// ==================== Suppliers (ISO A.5.19-A.5.23) ====================
+
+export interface Supplier {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  name: string;
+  cnpj: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  type: string;
+  category: string | null;
+  servicesProvided: string | null;
+  dataAccess: string | null;
+  contractStartDate: Date | null;
+  contractEndDate: Date | null;
+  slaDetails: string | null;
+  securityRequirements: string | null;
+  riskLevel: string;
+  status: string;
+  responsibleId: string | null;
+  lastAssessmentDate: Date | null;
+  nextAssessmentDate: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  responsible?: User;
+  assessments?: SupplierAssessment[];
+  _count?: { assessments: number };
+}
+
+export interface SupplierAssessment {
+  id: string;
+  tenantId: string;
+  supplierId: string;
+  assessmentDate: Date;
+  assessorId: string | null;
+  overallScore: number | null;
+  securityScore: number | null;
+  complianceScore: number | null;
+  serviceScore: number | null;
+  findings: string | null;
+  recommendations: string | null;
+  status: string;
+  nextAssessmentDate: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  assessor?: User;
+}
+
+// ==================== Change Requests (ISO 6.3) ====================
+
+export interface ChangeRequest {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  code: string;
+  title: string;
+  description: string | null;
+  type: string;
+  reason: string | null;
+  impactAnalysis: string | null;
+  riskAssessment: string | null;
+  rollbackPlan: string | null;
+  priority: string;
+  requestedById: string;
+  assignedToId: string | null;
+  approvedById: string | null;
+  approvedAt: Date | null;
+  implementedAt: Date | null;
+  verifiedAt: Date | null;
+  rejectedAt: Date | null;
+  plannedDate: Date | null;
+  status: string;
+  affectedAreas: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  requestedBy?: User;
+  assignedTo?: User;
+  approvedBy?: User;
+}
+
 // ==================== Dashboard ====================
 
 export interface DashboardData {
