@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, requireFeature, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createRiskSchema } from "@/lib/validations";
 import { generateCode, getRiskLevel } from "@/lib/utils";
 import { logActivity, getClientIp } from "@/lib/audit-log";
@@ -71,6 +71,7 @@ export async function POST(
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "risk", "create");
+    await requireFeature(ctx.tenantId, "risks");
 
     const body = await request.json();
     const data = createRiskSchema.parse(body);
@@ -102,7 +103,7 @@ export async function POST(
       ipAddress: getClientIp(request),
     });
 
-    if (riskLevel === "critical") {
+    if (riskLevel === "very_high") {
       triggerRiskCritical({
         tenantId: ctx.tenantId,
         tenantSlug: ctx.tenantSlug,

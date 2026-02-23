@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, requireFeature, NotFoundError } from "@/lib/api-helpers";
 import { updateSoaSchema } from "@/lib/validations";
 import { z } from "zod";
 
@@ -45,6 +45,7 @@ export async function POST(
     const { tenantSlug, id } = await params;
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "soaEntry", "create");
+    await requireFeature(ctx.tenantId, "soa");
 
     const project = await ctx.db.project.findFirst({ where: { id } });
     if (!project) throw new NotFoundError("Projeto");

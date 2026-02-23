@@ -35,20 +35,21 @@ export function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function getRiskLevel(probability: number, impact: number): string {
+export function getRiskLevel(probability: number, impact: number) {
   const score = probability * impact;
-  if (score >= 17) return "critical";
-  if (score >= 10) return "high";
-  if (score >= 5) return "medium";
-  return "low";
+  if (score >= 17) return "very_high" as const;
+  if (score >= 10) return "high" as const;
+  if (score >= 5) return "medium" as const;
+  return "low" as const;
 }
 
 export function getRiskLevelLabel(level: string): string {
   const labels: Record<string, string> = {
+    very_low: "Muito Baixo",
     low: "Baixo",
     medium: "Médio",
     high: "Alto",
-    critical: "Crítico",
+    very_high: "Muito Alto",
   };
   return labels[level] || level;
 }

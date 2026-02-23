@@ -136,13 +136,13 @@ export const updateRiskSchema = z.object({
   impactDimensions: z.record(z.string(), z.unknown()).optional(),
   treatment: z.enum(["accept", "mitigate", "transfer", "avoid"]).nullable().optional(),
   treatmentPlan: z.string().nullable().optional(),
-  status: z.enum(["identified", "assessed", "treating", "monitored", "closed"]).optional(),
+  status: z.enum(["identified", "analyzing", "treated", "accepted", "monitored", "closed"]).optional(),
   responsibleId: z.string().uuid().nullable().optional(),
   residualProbability: z.number().int().min(1).max(5).nullable().optional(),
   residualImpact: z.number().int().min(1).max(5).nullable().optional(),
   nextReviewDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
-  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
-  riskAppetite: z.enum(["very_low", "low", "moderate", "high", "very_high"]).nullable().optional(),
+  monitoringFrequency: z.enum(["weekly", "monthly", "quarterly", "semiannual", "annual"]).nullable().optional(),
+  riskAppetite: z.enum(["averse", "minimal", "cautious", "flexible", "open"]).nullable().optional(),
   reviewNotes: z.string().nullable().optional(),
 });
 
@@ -203,7 +203,7 @@ export const updateActionSchema = z.object({
 
 export const createAuditSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(255),
-  type: z.enum(["internal", "external", "supplier", "certification"]),
+  type: z.enum(["internal", "external", "certification", "surveillance"]),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   leadAuditorId: z.string().uuid().nullable().optional(),
@@ -214,7 +214,7 @@ export const createAuditSchema = z.object({
 
 export const updateAuditSchema = z.object({
   title: z.string().min(1).max(255).optional(),
-  type: z.enum(["internal", "external", "supplier", "certification"]).optional(),
+  type: z.enum(["internal", "external", "certification", "surveillance"]).optional(),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val))).optional(),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   status: z.enum(["planned", "in_progress", "completed", "cancelled"]).optional(),
@@ -308,7 +308,7 @@ export const createProcessSchema = z.object({
   description: z.string().nullable().optional(),
   projectId: z.string().uuid(),
   responsibleId: z.string().uuid().nullable().optional(),
-  status: z.enum(["active", "inactive", "draft"]).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
   category: z.string().nullable().optional(),
 });
 
@@ -316,7 +316,7 @@ export const updateProcessSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().nullable().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
-  status: z.enum(["active", "inactive", "draft"]).optional(),
+  status: z.enum(["active", "inactive"]).optional(),
   category: z.string().nullable().optional(),
 });
 
@@ -442,7 +442,7 @@ export const updateSgsiScopeSchema = z.object({
   exclusions: z.string().nullable().optional(),
   justification: z.string().nullable().optional(),
   interfaces: z.string().nullable().optional(),
-  status: z.enum(["draft", "approved", "under_review"]).optional(),
+  status: z.enum(["draft", "active", "approved", "archived"]).optional(),
   version: z.string().optional(),
 });
 
@@ -511,7 +511,7 @@ export const createObjectiveSchema = z.object({
   indicatorId: z.string().uuid().nullable().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
   measurable: z.boolean().optional(),
-  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
+  monitoringFrequency: z.enum(["weekly", "monthly", "quarterly", "semiannual", "annual"]).nullable().optional(),
   notes: z.string().nullable().optional(),
   projectId: z.string().uuid(),
 });
@@ -526,9 +526,9 @@ export const updateObjectiveSchema = z.object({
   deadline: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   indicatorId: z.string().uuid().nullable().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
-  status: z.enum(["defined", "in_progress", "achieved", "not_achieved", "cancelled"]).optional(),
+  status: z.enum(["identified", "analyzing", "planned", "in_progress", "implemented", "verified", "closed"]).optional(),
   measurable: z.boolean().optional(),
-  monitoringFrequency: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
+  monitoringFrequency: z.enum(["weekly", "monthly", "quarterly", "semiannual", "annual"]).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -567,7 +567,7 @@ export const updatePolicySchema = z.object({
 export const createCampaignSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(255),
   description: z.string().nullable().optional(),
-  type: z.enum(["training", "workshop", "e_learning", "awareness_session", "phishing_simulation", "other"]),
+  type: z.enum(["training", "workshop", "awareness_session", "e_learning", "exercise"]),
   targetAudience: z.string().nullable().optional(),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
   endDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
@@ -617,7 +617,7 @@ export const createImprovementSchema = z.object({
   description: z.string().nullable().optional(),
   source: z.enum(["audit", "management_review", "incident", "feedback", "risk_assessment", "benchmarking", "other"]),
   category: z.enum(["process", "technology", "people", "documentation", "controls", "other"]).nullable().optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   expectedImpact: z.string().nullable().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
   actionPlanId: z.string().uuid().nullable().optional(),
@@ -631,11 +631,11 @@ export const updateImprovementSchema = z.object({
   description: z.string().nullable().optional(),
   source: z.enum(["audit", "management_review", "incident", "feedback", "risk_assessment", "benchmarking", "other"]).optional(),
   category: z.enum(["process", "technology", "people", "documentation", "controls", "other"]).nullable().optional(),
-  priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
   expectedImpact: z.string().nullable().optional(),
   actualImpact: z.string().nullable().optional(),
   responsibleId: z.string().uuid().nullable().optional(),
-  status: z.enum(["identified", "evaluated", "approved", "in_progress", "implemented", "verified", "rejected"]).optional(),
+  status: z.enum(["identified", "analyzing", "planned", "in_progress", "implemented", "verified", "closed"]).optional(),
   actionPlanId: z.string().uuid().nullable().optional(),
   dueDate: z.string().refine((val) => !isNaN(Date.parse(val))).nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -848,8 +848,93 @@ export const createRiskReviewSchema = z.object({
   impact: z.number().int().min(1).max(5),
   residualProbability: z.number().int().min(1).max(5).nullable().optional(),
   residualImpact: z.number().int().min(1).max(5).nullable().optional(),
-  status: z.enum(["identified", "assessed", "treating", "monitored", "closed"]),
+  status: z.enum(["identified", "analyzing", "treated", "accepted", "monitored", "closed"]),
   reviewNotes: z.string().nullable().optional(),
+});
+
+// ==================== Member Management ====================
+
+const orgRoleEnum = z.enum([
+  "tenant_admin",
+  "project_manager",
+  "senior_consultant",
+  "junior_consultant",
+  "internal_auditor",
+  "external_auditor",
+  "client_viewer",
+]);
+
+export const updateMemberSchema = z.object({
+  role: orgRoleEnum,
+});
+
+// ==================== User Profile ====================
+
+export const updateUserProfileSchema = z.object({
+  name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(100).optional(),
+  avatarUrl: z.string().url("URL inválida").nullable().optional(),
+});
+
+// ==================== Admin: Standards ====================
+
+export const updateStandardSchema = z.object({
+  code: z.string().min(1).optional(),
+  name: z.string().min(1).optional(),
+  version: z.string().min(1).optional(),
+  year: z.number().int().min(1900).max(2100).optional(),
+  description: z.string().nullable().optional(),
+  status: z.enum(["active", "deprecated"]).optional(),
+});
+
+// ==================== Admin: Plans ====================
+
+export const createPlanSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  slug: z.string().min(1, "Slug é obrigatório").regex(/^[a-z0-9-]+$/, "Slug deve conter apenas letras minúsculas, números e hífens"),
+  price: z.number().min(0),
+  maxUsers: z.number().int().min(1),
+  maxProjects: z.number().int().min(1),
+  maxStandards: z.number().int().min(1),
+  maxStorage: z.number().int().min(1),
+  maxClients: z.number().int().min(1),
+  features: z.record(z.string(), z.boolean()).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updatePlanSchema = z.object({
+  name: z.string().min(1).optional(),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/).optional(),
+  price: z.number().min(0).optional(),
+  maxUsers: z.number().int().min(1).optional(),
+  maxProjects: z.number().int().min(1).optional(),
+  maxStandards: z.number().int().min(1).optional(),
+  maxStorage: z.number().int().min(1).optional(),
+  maxClients: z.number().int().min(1).optional(),
+  features: z.record(z.string(), z.boolean()).optional(),
+  isActive: z.boolean().optional(),
+});
+
+// ==================== Admin: Tenants ====================
+
+export const updateAdminTenantSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  status: z.enum(["trial", "active", "suspended", "cancelled"]).optional(),
+});
+
+// ==================== Notifications ====================
+
+export const markNotificationsSchema = z.object({
+  ids: z.array(z.string().uuid()).optional(),
+  all: z.boolean().optional(),
+}).refine(
+  (data) => data.ids !== undefined || data.all !== undefined,
+  { message: "Informe 'ids' ou 'all'" }
+);
+
+// ==================== Billing ====================
+
+export const checkoutSchema = z.object({
+  planSlug: z.enum(["starter", "professional", "enterprise"]),
 });
 
 // ==================== Inferred Types ====================
@@ -914,3 +999,9 @@ export type CreateSupplierAssessmentInput = z.infer<typeof createSupplierAssessm
 export type UpdateSupplierAssessmentInput = z.infer<typeof updateSupplierAssessmentSchema>;
 export type CreateChangeRequestInput = z.infer<typeof createChangeRequestSchema>;
 export type UpdateChangeRequestInput = z.infer<typeof updateChangeRequestSchema>;
+export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+export type UpdateUserProfileInput = z.infer<typeof updateUserProfileSchema>;
+export type UpdateStandardInput = z.infer<typeof updateStandardSchema>;
+export type CreatePlanInput = z.infer<typeof createPlanSchema>;
+export type UpdatePlanInput = z.infer<typeof updatePlanSchema>;
+export type UpdateAdminTenantInput = z.infer<typeof updateAdminTenantSchema>;

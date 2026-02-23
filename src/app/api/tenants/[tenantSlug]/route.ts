@@ -13,14 +13,24 @@ export async function GET(
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
 
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: ctx.tenantId },
-      include: {
-        subscription: {
-          include: { plan: true },
+    const [tenant, membership] = await Promise.all([
+      prisma.tenant.findUnique({
+        where: { id: ctx.tenantId },
+        include: {
+          subscription: {
+            include: { plan: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.tenantMember.findUnique({
+        where: {
+          tenantId_userId: {
+            tenantId: ctx.tenantId,
+            userId: ctx.userId,
+          },
+        },
+      }),
+    ]);
 
     return successResponse({
       tenant: {
@@ -32,7 +42,7 @@ export async function GET(
       },
       membership: {
         role: ctx.role,
-        joinedAt: new Date().toISOString(),
+        joinedAt: membership?.joinedAt?.toISOString() ?? new Date().toISOString(),
       },
       plan: tenant!.subscription?.plan
         ? {

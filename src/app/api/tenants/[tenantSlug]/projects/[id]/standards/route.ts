@@ -1,14 +1,11 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError, PlanLimitError, ValidationError } from "@/lib/api-helpers";
+import { checkPlanLimit } from "@/lib/plan-limits";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const addStandardSchema = z.object({
-  standardId: z.string().uuid(),
-});
-
-const removeStandardSchema = z.object({
   standardId: z.string().uuid(),
 });
 
@@ -27,6 +24,12 @@ export async function POST(
 
     const body = await request.json();
     const data = addStandardSchema.parse(body);
+
+    // Check plan limit for standards
+    const limitCheck = await checkPlanLimit(ctx.tenantId, "standards");
+    if (!limitCheck.allowed) {
+      throw new PlanLimitError("standards", limitCheck.current, limitCheck.limit);
+    }
 
     // Link standard to project
     await prisma.projectStandard.create({
@@ -96,17 +99,21 @@ export async function DELETE(
     const project = await ctx.db.project.findFirst({ where: { id: projectId } });
     if (!project) throw new NotFoundError("Projeto");
 
-    const body = await request.json();
-    const data = removeStandardSchema.parse(body);
+    const url = new URL(request.url);
+    const standardId = url.searchParams.get("id");
+
+    if (!standardId) {
+      throw new ValidationError({ id: ["id da norma é obrigatório"] });
+    }
 
     // Get clause and control IDs from this standard
     const [clauseIds, controlIds] = await Promise.all([
       prisma.standardClause.findMany({
-        where: { standardId: data.standardId },
+        where: { standardId },
         select: { id: true },
       }),
       prisma.standardControl.findMany({
-        where: { standardId: data.standardId },
+        where: { standardId },
         select: { id: true },
       }),
     ]);
@@ -134,7 +141,7 @@ export async function DELETE(
     await prisma.projectStandard.deleteMany({
       where: {
         projectId,
-        standardId: data.standardId,
+        standardId,
       },
     });
 

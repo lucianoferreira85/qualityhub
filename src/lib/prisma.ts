@@ -67,6 +67,8 @@ const TENANT_SCOPED_MODELS = [
   "supplier",
   "supplierAssessment",
   "changeRequest",
+  "riskTreatment",
+  "riskHistory",
 ] as const;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

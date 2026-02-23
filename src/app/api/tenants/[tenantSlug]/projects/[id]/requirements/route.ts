@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError, ValidationError } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const createRequirementSchema = z.object({
@@ -87,11 +87,11 @@ export async function DELETE(
     const project = await ctx.db.project.findFirst({ where: { id } });
     if (!project) throw new NotFoundError("Projeto");
 
-    const body = await request.json();
-    const { requirementId } = body;
+    const url = new URL(request.url);
+    const requirementId = url.searchParams.get("id");
 
     if (!requirementId) {
-      return new Response(JSON.stringify({ error: "requirementId é obrigatório" }), { status: 400 });
+      throw new ValidationError({ id: ["id do requisito é obrigatório"] });
     }
 
     const existing = await ctx.db.projectRequirement.findFirst({

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError, ValidationError } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const createTreatmentSchema = z.object({
@@ -10,13 +10,8 @@ const createTreatmentSchema = z.object({
 });
 
 const updateTreatmentSchema = z.object({
-  treatmentId: z.string().uuid(),
   description: z.string().min(1).optional(),
   status: z.enum(["planned", "in_progress", "completed", "cancelled"]).optional(),
-});
-
-const deleteTreatmentSchema = z.object({
-  treatmentId: z.string().uuid(),
 });
 
 // GET - List treatments for a risk
@@ -68,6 +63,7 @@ export async function POST(
 
     const treatment = await ctx.db.riskTreatment.create({
       data: {
+        tenantId: ctx.tenantId,
         riskId,
         description: data.description,
         controlId: data.controlId || null,
@@ -81,8 +77,8 @@ export async function POST(
   }
 }
 
-// PUT - Update a treatment
-export async function PUT(
+// PATCH - Update a treatment
+export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ tenantSlug: string; id: string; riskId: string }> }
 ) {
@@ -96,16 +92,23 @@ export async function PUT(
     });
     if (!risk) throw new NotFoundError("Risco");
 
+    const url = new URL(request.url);
+    const treatmentId = url.searchParams.get("id");
+
+    if (!treatmentId) {
+      throw new ValidationError({ id: ["id do tratamento é obrigatório"] });
+    }
+
     const body = await request.json();
     const data = updateTreatmentSchema.parse(body);
 
     const existing = await ctx.db.riskTreatment.findFirst({
-      where: { id: data.treatmentId, riskId },
+      where: { id: treatmentId, riskId },
     });
     if (!existing) throw new NotFoundError("Tratamento");
 
     const updated = await ctx.db.riskTreatment.update({
-      where: { id: data.treatmentId },
+      where: { id: treatmentId },
       data: {
         ...(data.description && { description: data.description }),
         ...(data.status && { status: data.status }),
@@ -133,16 +136,20 @@ export async function DELETE(
     });
     if (!risk) throw new NotFoundError("Risco");
 
-    const body = await request.json();
-    const data = deleteTreatmentSchema.parse(body);
+    const url = new URL(request.url);
+    const treatmentId = url.searchParams.get("id");
+
+    if (!treatmentId) {
+      throw new ValidationError({ id: ["id do tratamento é obrigatório"] });
+    }
 
     const existing = await ctx.db.riskTreatment.findFirst({
-      where: { id: data.treatmentId, riskId },
+      where: { id: treatmentId, riskId },
     });
     if (!existing) throw new NotFoundError("Tratamento");
 
     await ctx.db.riskTreatment.delete({
-      where: { id: data.treatmentId },
+      where: { id: treatmentId },
     });
 
     return successResponse({ deleted: true });

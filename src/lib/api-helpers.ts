@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { prisma, tenantPrisma, type TenantPrismaClient } from "@/lib/prisma";
 import { hasPermission, type Action, type Resource } from "@/lib/permissions";
+import { getPlanFeatures, hasFeature, DEFAULT_PLANS } from "@/lib/plan-limits";
 import { OrgRole } from "@prisma/client";
 
 // ==================== Response Helpers ====================
@@ -194,6 +195,24 @@ export function requirePermission(
   if (!hasPermission(ctx.role, resource, action)) {
     throw new ForbiddenError(
       `Sem permissão para ${action} em ${resource}`
+    );
+  }
+}
+
+// ==================== Feature Flag Helper ====================
+
+export async function requireFeature(
+  tenantId: string,
+  feature: string
+): Promise<void> {
+  const planFeatures = await getPlanFeatures(tenantId);
+  // No subscription = starter plan features
+  const features = planFeatures || {
+    ...DEFAULT_PLANS.starter,
+  };
+  if (!hasFeature(features, feature)) {
+    throw new ForbiddenError(
+      `Recurso "${feature}" não disponível no seu plano. Faça upgrade para acessar.`
     );
   }
 }

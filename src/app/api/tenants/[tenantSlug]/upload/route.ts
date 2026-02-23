@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, errorResponse } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, errorResponse, requirePermission } from "@/lib/api-helpers";
 import { uploadFile } from "@/lib/storage";
 import { logActivity, getClientIp } from "@/lib/audit-log";
 
@@ -24,6 +24,7 @@ export async function POST(
   try {
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
+    requirePermission(ctx, "document", "create");
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;

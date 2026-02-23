@@ -225,9 +225,5 @@ export function Sidebar({ collapsed, onToggle, mobile, onClose }: SidebarProps) 
     </aside>
   );
 
-  if (mobile) {
-    return sidebarContent;
-  }
-
   return sidebarContent;
 }

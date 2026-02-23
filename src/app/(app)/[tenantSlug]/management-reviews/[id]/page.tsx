@@ -98,7 +98,7 @@ export default function ManagementReviewDetailPage() {
     setSaving(true);
     try {
       const res = await fetch(`/api/tenants/${tenant.slug}/management-reviews/${reviewId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: editStatus,

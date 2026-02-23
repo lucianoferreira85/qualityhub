@@ -102,6 +102,9 @@ export async function GET(
           controls: {
             select: { maturity: true, control: { select: { domain: true } } },
           },
+          risks: {
+            select: { id: true },
+          },
           nonconformities: {
             where: { status: { not: "closed" } },
             select: { id: true },
@@ -224,7 +227,7 @@ export async function GET(
         name: p.name,
         compliance: totalItems > 0 ? Math.round((compliantItems / totalItems) * 100) : 0,
         avgMaturity: Math.round(avgMat * 100) / 100,
-        totalRisks: p.requirements.length, // this is a proxy; real risk count from project
+        totalRisks: p.risks.length,
         openNCs: p.nonconformities.length,
         pendingActions: p.actionPlans.length,
       };

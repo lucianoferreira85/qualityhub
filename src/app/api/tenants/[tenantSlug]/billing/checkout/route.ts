@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
 import { createCheckoutSession, type PlanSlug } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { checkoutSchema } from "@/lib/validations";
 
 export async function POST(
   request: Request,
@@ -14,11 +15,7 @@ export async function POST(
     requirePermission(ctx, "billing", "update");
 
     const body = await request.json();
-    const planSlug = body.planSlug as PlanSlug;
-
-    if (!["starter", "professional", "enterprise"].includes(planSlug)) {
-      return new Response(JSON.stringify({ error: "Plano inválido" }), { status: 400 });
-    }
+    const { planSlug } = checkoutSchema.parse(body) as { planSlug: PlanSlug };
 
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();

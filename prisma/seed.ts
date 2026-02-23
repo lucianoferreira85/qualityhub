@@ -889,12 +889,12 @@ function futureDate(days: number): Date {
   return d;
 }
 
-function getRiskLevel(p: number, i: number): string {
+function getRiskLevel(p: number, i: number) {
   const score = p * i;
-  if (score >= 17) return "critical";
-  if (score >= 10) return "high";
-  if (score >= 5) return "medium";
-  return "low";
+  if (score >= 17) return "very_high" as const;
+  if (score >= 10) return "high" as const;
+  if (score >= 5) return "medium" as const;
+  return "low" as const;
 }
 
 async function seedDemoTenant(
@@ -1035,16 +1035,16 @@ async function seedDemoTenant(
 
   // 6. Risks (10 total, 5 per project)
   const riskData = [
-    { proj: proj1.id, code: "RSK-2025-001", title: "Acesso não autorizado a sistemas críticos", desc: "Funcionários com acesso excessivo a sistemas que contêm dados sensíveis", cat: "access_control", p: 4, i: 5, treatment: "mitigate", treatmentPlan: "Implementar controle de acesso baseado em papéis (RBAC)", daysBack: 150 },
-    { proj: proj1.id, code: "RSK-2025-002", title: "Vazamento de dados pessoais", desc: "Risco de exposição de dados pessoais de clientes em sistemas internos", cat: "data_protection", p: 3, i: 5, treatment: "mitigate", treatmentPlan: "Criptografia de dados em repouso e em trânsito", daysBack: 140 },
-    { proj: proj1.id, code: "RSK-2025-003", title: "Phishing direcionado a executivos", desc: "Ataques de engenharia social via email direcionados à alta direção", cat: "social_engineering", p: 4, i: 4, treatment: "mitigate", treatmentPlan: "Treinamento de conscientização e filtros avançados de email", daysBack: 120 },
-    { proj: proj1.id, code: "RSK-2025-004", title: "Indisponibilidade de serviços em nuvem", desc: "Falha do provedor de nuvem principal afetando operações", cat: "availability", p: 2, i: 4, treatment: "transfer", treatmentPlan: "SLA com provedor e plano de DR", daysBack: 100 },
-    { proj: proj1.id, code: "RSK-2025-005", title: "Desatualização de software", desc: "Sistemas operacionais e aplicações sem patches de segurança", cat: "vulnerability", p: 3, i: 3, treatment: "mitigate", treatmentPlan: "Política de patch management mensal", daysBack: 80 },
-    { proj: proj2.id, code: "RSK-2025-006", title: "Falha no controle de qualidade de MP", desc: "Matéria-prima recebida sem inspeção adequada", cat: "quality", p: 3, i: 4, treatment: "mitigate", treatmentPlan: "Inspeção de recebimento com checklist padronizado", daysBack: 60 },
-    { proj: proj2.id, code: "RSK-2025-007", title: "Perda de calibração de instrumentos", desc: "Instrumentos de medição fora de calibração gerando medições incorretas", cat: "measurement", p: 3, i: 3, treatment: "mitigate", treatmentPlan: "Programa de calibração semestral", daysBack: 50 },
-    { proj: proj2.id, code: "RSK-2025-008", title: "Turnover de operadores qualificados", desc: "Perda de funcionários treinados em processos críticos", cat: "human_resources", p: 4, i: 3, treatment: "mitigate", treatmentPlan: "Programa de retenção e matriz de competências", daysBack: 45 },
-    { proj: proj2.id, code: "RSK-2025-009", title: "Atraso de fornecedor estratégico", desc: "Fornecedor único com histórico de atrasos na entrega", cat: "supply_chain", p: 2, i: 3, treatment: "transfer", treatmentPlan: "Segundo fornecedor homologado como backup", daysBack: 30 },
-    { proj: proj2.id, code: "RSK-2025-010", title: "Não conformidade regulatória ambiental", desc: "Descarte inadequado de resíduos do processo produtivo", cat: "regulatory", p: 2, i: 5, treatment: "avoid", treatmentPlan: "Contratação de empresa licenciada de gestão de resíduos", daysBack: 20 },
+    { proj: proj1.id, code: "RSK-2025-001", title: "Acesso não autorizado a sistemas críticos", desc: "Funcionários com acesso excessivo a sistemas que contêm dados sensíveis", cat: "access_control", p: 4, i: 5, treatment: "mitigate" as const, treatmentPlan: "Implementar controle de acesso baseado em papéis (RBAC)", daysBack: 150 },
+    { proj: proj1.id, code: "RSK-2025-002", title: "Vazamento de dados pessoais", desc: "Risco de exposição de dados pessoais de clientes em sistemas internos", cat: "data_protection", p: 3, i: 5, treatment: "mitigate" as const, treatmentPlan: "Criptografia de dados em repouso e em trânsito", daysBack: 140 },
+    { proj: proj1.id, code: "RSK-2025-003", title: "Phishing direcionado a executivos", desc: "Ataques de engenharia social via email direcionados à alta direção", cat: "social_engineering", p: 4, i: 4, treatment: "mitigate" as const, treatmentPlan: "Treinamento de conscientização e filtros avançados de email", daysBack: 120 },
+    { proj: proj1.id, code: "RSK-2025-004", title: "Indisponibilidade de serviços em nuvem", desc: "Falha do provedor de nuvem principal afetando operações", cat: "availability", p: 2, i: 4, treatment: "transfer" as const, treatmentPlan: "SLA com provedor e plano de DR", daysBack: 100 },
+    { proj: proj1.id, code: "RSK-2025-005", title: "Desatualização de software", desc: "Sistemas operacionais e aplicações sem patches de segurança", cat: "vulnerability", p: 3, i: 3, treatment: "mitigate" as const, treatmentPlan: "Política de patch management mensal", daysBack: 80 },
+    { proj: proj2.id, code: "RSK-2025-006", title: "Falha no controle de qualidade de MP", desc: "Matéria-prima recebida sem inspeção adequada", cat: "quality", p: 3, i: 4, treatment: "mitigate" as const, treatmentPlan: "Inspeção de recebimento com checklist padronizado", daysBack: 60 },
+    { proj: proj2.id, code: "RSK-2025-007", title: "Perda de calibração de instrumentos", desc: "Instrumentos de medição fora de calibração gerando medições incorretas", cat: "measurement", p: 3, i: 3, treatment: "mitigate" as const, treatmentPlan: "Programa de calibração semestral", daysBack: 50 },
+    { proj: proj2.id, code: "RSK-2025-008", title: "Turnover de operadores qualificados", desc: "Perda de funcionários treinados em processos críticos", cat: "human_resources", p: 4, i: 3, treatment: "mitigate" as const, treatmentPlan: "Programa de retenção e matriz de competências", daysBack: 45 },
+    { proj: proj2.id, code: "RSK-2025-009", title: "Atraso de fornecedor estratégico", desc: "Fornecedor único com histórico de atrasos na entrega", cat: "supply_chain", p: 2, i: 3, treatment: "transfer" as const, treatmentPlan: "Segundo fornecedor homologado como backup", daysBack: 30 },
+    { proj: proj2.id, code: "RSK-2025-010", title: "Não conformidade regulatória ambiental", desc: "Descarte inadequado de resíduos do processo produtivo", cat: "regulatory", p: 2, i: 5, treatment: "avoid" as const, treatmentPlan: "Contratação de empresa licenciada de gestão de resíduos", daysBack: 20 },
   ];
 
   const risks = [];
@@ -1156,10 +1156,10 @@ async function seedDemoTenant(
   // 10. Audits (4) + Findings (6)
   const audit1 = await prisma.audit.create({
     data: {
-      tenantId: T, projectId: proj1.id, type: "internal",
+      tenantId: T, projectId: proj1.id, type: "internal" as const,
       title: "Auditoria Interna SGSI - Ciclo 1",
       startDate: daysAgo(90), endDate: daysAgo(85),
-      status: "completed", leadAuditorId: userId,
+      status: "completed" as const, leadAuditorId: userId,
       scope: "Cláusulas 4-10 e Anexo A", conclusion: "Conformidade parcial identificada",
       createdAt: daysAgo(95),
     },
@@ -1167,9 +1167,9 @@ async function seedDemoTenant(
 
   const audit2 = await prisma.audit.create({
     data: {
-      tenantId: T, projectId: proj1.id, type: "internal",
+      tenantId: T, projectId: proj1.id, type: "internal" as const,
       title: "Auditoria de Acompanhamento SGSI",
-      startDate: daysAgo(10), status: "in_progress", leadAuditorId: userId,
+      startDate: daysAgo(10), status: "in_progress" as const, leadAuditorId: userId,
       scope: "Cláusulas 6, 7, 8 e controles A.5, A.8",
       createdAt: daysAgo(15),
     },
@@ -1177,9 +1177,9 @@ async function seedDemoTenant(
 
   await prisma.audit.create({
     data: {
-      tenantId: T, projectId: proj2.id, type: "internal",
+      tenantId: T, projectId: proj2.id, type: "internal" as const,
       title: "Auditoria Interna SGQ - Planejada",
-      startDate: futureDate(30), status: "planned", leadAuditorId: userId,
+      startDate: futureDate(30), status: "planned" as const, leadAuditorId: userId,
       scope: "Cláusulas 4-10 da ISO 9001",
       createdAt: daysAgo(5),
     },
@@ -1187,9 +1187,9 @@ async function seedDemoTenant(
 
   await prisma.audit.create({
     data: {
-      tenantId: T, projectId: proj2.id, type: "external",
+      tenantId: T, projectId: proj2.id, type: "external" as const,
       title: "Pré-auditoria de Certificação SGQ",
-      startDate: futureDate(90), status: "planned",
+      startDate: futureDate(90), status: "planned" as const,
       scope: "Análise completa do SGQ",
       createdAt: daysAgo(3),
     },
@@ -1291,7 +1291,7 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id,
       scheduledDate: daysAgo(60), actualDate: daysAgo(58),
-      status: "completed",
+      status: "completed" as const,
       minutes: "Análise dos resultados do SGSI no 1º semestre. Decisões tomadas sobre investimentos em segurança.",
       decisions: [
         { decision: "Aprovar orçamento para ferramenta SIEM", responsible: "Diretor de TI", deadline: "2025-09-30" },
@@ -1305,30 +1305,30 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id,
       scheduledDate: futureDate(60),
-      status: "scheduled",
+      status: "scheduled" as const,
     },
   });
   console.log("Management Reviews: 2 created");
 
   // 14. Processes (3)
   await prisma.process.create({
-    data: { tenantId: T, projectId: proj1.id, code: "PCS-001", name: "Gestão de Incidentes de Segurança", responsibleId: userId, status: "active", category: "core" },
+    data: { tenantId: T, projectId: proj1.id, code: "PCS-001", name: "Gestão de Incidentes de Segurança", responsibleId: userId, status: "active" as const, category: "core" },
   });
   await prisma.process.create({
-    data: { tenantId: T, projectId: proj1.id, code: "PCS-002", name: "Gestão de Acessos", responsibleId: userId, status: "active", category: "core" },
+    data: { tenantId: T, projectId: proj1.id, code: "PCS-002", name: "Gestão de Acessos", responsibleId: userId, status: "active" as const, category: "core" },
   });
   await prisma.process.create({
-    data: { tenantId: T, projectId: proj2.id, code: "PCS-003", name: "Controle da Qualidade", responsibleId: userId, status: "active", category: "core" },
+    data: { tenantId: T, projectId: proj2.id, code: "PCS-003", name: "Controle da Qualidade", responsibleId: userId, status: "active" as const, category: "core" },
   });
   console.log("Processes: 3 created");
 
   // 15. Policies (4) + Acknowledgments
   const policies = [];
   const polData = [
-    { proj: proj1.id, code: "PPOL-001", title: "Política de Segurança da Informação", status: "published", category: "security" },
-    { proj: proj1.id, code: "PPOL-002", title: "Política de Uso Aceitável", status: "published", category: "security" },
-    { proj: proj1.id, code: "PPOL-003", title: "Política de Privacidade", status: "draft", category: "privacy" },
-    { proj: proj2.id, code: "PPOL-004", title: "Política da Qualidade", status: "published", category: "quality" },
+    { proj: proj1.id, code: "PPOL-001", title: "Política de Segurança da Informação", status: "published" as const, category: "security" },
+    { proj: proj1.id, code: "PPOL-002", title: "Política de Uso Aceitável", status: "published" as const, category: "security" },
+    { proj: proj1.id, code: "PPOL-003", title: "Política de Privacidade", status: "draft" as const, category: "privacy" },
+    { proj: proj2.id, code: "PPOL-004", title: "Política da Qualidade", status: "published" as const, category: "quality" },
   ];
 
   for (const p of polData) {
@@ -1357,8 +1357,8 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id, code: "INC-2025-001",
       title: "Tentativa de phishing detectada", description: "Emails de phishing enviados a 5 colaboradores simulando suporte de TI",
-      type: "phishing", severity: "medium", category: "confidentiality",
-      detectedAt: daysAgo(45), reportedById: userId, status: "resolved",
+      type: "phishing" as const, severity: "medium" as const, category: "confidentiality" as const,
+      detectedAt: daysAgo(45), reportedById: userId, status: "resolved" as const,
       resolvedAt: daysAgo(43), containmentActions: "Bloqueio do remetente e exclusão dos emails",
       correctiveActions: "Treinamento emergencial sobre phishing", lessonsLearned: "Reforçar filtros de email e conscientização",
       createdAt: daysAgo(45),
@@ -1369,8 +1369,8 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id, code: "INC-2025-002",
       title: "Acesso indevido a pasta compartilhada", description: "Estagiário com acesso a pasta de RH contendo dados sensíveis",
-      type: "unauthorized_access", severity: "high", category: "confidentiality",
-      detectedAt: daysAgo(20), reportedById: userId, assignedToId: userId, status: "investigating",
+      type: "unauthorized_access" as const, severity: "high" as const, category: "confidentiality" as const,
+      detectedAt: daysAgo(20), reportedById: userId, assignedToId: userId, status: "investigating" as const,
       containmentActions: "Revogação imediata do acesso", createdAt: daysAgo(20),
     },
   });
@@ -1379,8 +1379,8 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id, code: "INC-2025-003",
       title: "Falha no backup semanal", description: "Backup agendado de sexta-feira falhou por falta de espaço em disco",
-      type: "other", severity: "low", category: "availability",
-      detectedAt: daysAgo(5), reportedById: userId, status: "reported",
+      type: "other" as const, severity: "low" as const, category: "availability" as const,
+      detectedAt: daysAgo(5), reportedById: userId, status: "reported" as const,
       createdAt: daysAgo(5),
     },
   });
@@ -1388,16 +1388,16 @@ async function seedDemoTenant(
 
   // 17. Information Assets (4)
   await prisma.informationAsset.create({
-    data: { tenantId: T, projectId: proj1.id, code: "AST-001", name: "Servidor de Aplicações Principal", type: "hardware", classification: "confidential", criticality: "critical", owner: "TI", location: "Data Center São Paulo", responsibleId: userId, status: "active" },
+    data: { tenantId: T, projectId: proj1.id, code: "AST-001", name: "Servidor de Aplicações Principal", type: "hardware" as const, classification: "confidential" as const, criticality: "critical" as const, owner: "TI", location: "Data Center São Paulo", responsibleId: userId, status: "active" as const },
   });
   await prisma.informationAsset.create({
-    data: { tenantId: T, projectId: proj1.id, code: "AST-002", name: "Sistema ERP", type: "software", classification: "confidential", criticality: "high", owner: "TI", location: "Cloud AWS", responsibleId: userId, status: "active" },
+    data: { tenantId: T, projectId: proj1.id, code: "AST-002", name: "Sistema ERP", type: "software" as const, classification: "confidential" as const, criticality: "high" as const, owner: "TI", location: "Cloud AWS", responsibleId: userId, status: "active" as const },
   });
   await prisma.informationAsset.create({
-    data: { tenantId: T, projectId: proj1.id, code: "AST-003", name: "Base de Dados de Clientes", type: "data", classification: "restricted", criticality: "critical", owner: "Comercial", location: "RDS AWS", responsibleId: userId, status: "active" },
+    data: { tenantId: T, projectId: proj1.id, code: "AST-003", name: "Base de Dados de Clientes", type: "data" as const, classification: "restricted" as const, criticality: "critical" as const, owner: "Comercial", location: "RDS AWS", responsibleId: userId, status: "active" as const },
   });
   await prisma.informationAsset.create({
-    data: { tenantId: T, projectId: proj1.id, code: "AST-004", name: "Serviço de Email (M365)", type: "service", classification: "internal", criticality: "high", owner: "TI", location: "Microsoft Cloud", responsibleId: userId, status: "active" },
+    data: { tenantId: T, projectId: proj1.id, code: "AST-004", name: "Serviço de Email (M365)", type: "service" as const, classification: "internal" as const, criticality: "high" as const, owner: "TI", location: "Microsoft Cloud", responsibleId: userId, status: "active" as const },
   });
   console.log("Information Assets: 4 created");
 
@@ -1406,9 +1406,9 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id, code: "SUP-001", name: "CloudTech Solutions",
       contactName: "Roberto Mendes", contactEmail: "roberto@cloudtech.com",
-      type: "cloud_provider", category: "critical", riskLevel: "high",
-      servicesProvided: "Infraestrutura em nuvem (IaaS)", dataAccess: "full",
-      responsibleId: userId, status: "active",
+      type: "cloud_provider" as const, category: "critical" as const, riskLevel: "high" as const,
+      servicesProvided: "Infraestrutura em nuvem (IaaS)", dataAccess: "full" as const,
+      responsibleId: userId, status: "active" as const,
       contractStartDate: monthsAgo(12, 1), contractEndDate: futureDate(365),
     },
   });
@@ -1417,9 +1417,9 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj1.id, code: "SUP-002", name: "SecureNet Consulting",
       contactName: "Maria Santos", contactEmail: "maria@securenet.com",
-      type: "consulting", category: "important", riskLevel: "medium",
-      servicesProvided: "Consultoria em segurança e pentest", dataAccess: "limited",
-      responsibleId: userId, status: "active",
+      type: "consulting" as const, category: "important" as const, riskLevel: "medium" as const,
+      servicesProvided: "Consultoria em segurança e pentest", dataAccess: "limited" as const,
+      responsibleId: userId, status: "active" as const,
     },
   });
 
@@ -1427,18 +1427,18 @@ async function seedDemoTenant(
     data: {
       tenantId: T, projectId: proj2.id, code: "SUP-003", name: "Calibra Metrologia",
       contactName: "José Ferreira", contactEmail: "jose@calibra.com.br",
-      type: "consulting", category: "standard", riskLevel: "low",
-      servicesProvided: "Calibração de instrumentos de medição", dataAccess: "none",
-      responsibleId: userId, status: "active",
+      type: "consulting" as const, category: "standard" as const, riskLevel: "low" as const,
+      servicesProvided: "Calibração de instrumentos de medição", dataAccess: "none" as const,
+      responsibleId: userId, status: "active" as const,
     },
   });
 
   // Supplier Assessments
   await prisma.supplierAssessment.create({
-    data: { tenantId: T, supplierId: sup1.id, assessmentDate: daysAgo(60), assessorId: userId, overallScore: 85, securityScore: 82, complianceScore: 90, serviceScore: 83, findings: "SLA cumprido em 98% dos meses", status: "completed" },
+    data: { tenantId: T, supplierId: sup1.id, assessmentDate: daysAgo(60), assessorId: userId, overallScore: 85, securityScore: 82, complianceScore: 90, serviceScore: 83, findings: "SLA cumprido em 98% dos meses", status: "completed" as const },
   });
   await prisma.supplierAssessment.create({
-    data: { tenantId: T, supplierId: sup2.id, assessmentDate: daysAgo(30), assessorId: userId, overallScore: 92, securityScore: 95, complianceScore: 90, serviceScore: 91, findings: "Excelente qualidade técnica", status: "completed" },
+    data: { tenantId: T, supplierId: sup2.id, assessmentDate: daysAgo(30), assessorId: userId, overallScore: 92, securityScore: 95, complianceScore: 90, serviceScore: 91, findings: "Excelente qualidade técnica", status: "completed" as const },
   });
   console.log("Suppliers: 3 + 2 assessments created");
 
@@ -1446,10 +1446,10 @@ async function seedDemoTenant(
   await prisma.changeRequest.create({
     data: {
       tenantId: T, projectId: proj1.id, code: "CHG-2025-001",
-      title: "Migração de firewall para next-gen", type: "technology",
+      title: "Migração de firewall para next-gen", type: "technology" as const,
       description: "Substituição do firewall atual por solução next-generation com IPS",
-      reason: "Requisito de segurança A.8.20 e A.8.22", priority: "high",
-      requestedById: userId, status: "approved", approvedAt: daysAgo(10),
+      reason: "Requisito de segurança A.8.20 e A.8.22", priority: "high" as const,
+      requestedById: userId, status: "approved" as const, approvedAt: daysAgo(10),
       impactAnalysis: "Janela de manutenção de 4h necessária",
     },
   });
@@ -1457,20 +1457,20 @@ async function seedDemoTenant(
   await prisma.changeRequest.create({
     data: {
       tenantId: T, projectId: proj1.id, code: "CHG-2025-002",
-      title: "Implementação de MFA para todos os sistemas", type: "technology",
+      title: "Implementação de MFA para todos os sistemas", type: "technology" as const,
       description: "Autenticação multifator obrigatória para acesso a sistemas críticos",
-      reason: "Controle A.8.5 - Autenticação segura", priority: "high",
-      requestedById: userId, status: "in_progress",
+      reason: "Controle A.8.5 - Autenticação segura", priority: "high" as const,
+      requestedById: userId, status: "in_progress" as const,
     },
   });
 
   await prisma.changeRequest.create({
     data: {
       tenantId: T, projectId: proj2.id, code: "CHG-2025-003",
-      title: "Reestruturação do layout produtivo", type: "process",
+      title: "Reestruturação do layout produtivo", type: "process" as const,
       description: "Reorganização do chão de fábrica para otimizar fluxo de produção",
-      reason: "Melhoria de eficiência operacional", priority: "medium",
-      requestedById: userId, status: "requested",
+      reason: "Melhoria de eficiência operacional", priority: "medium" as const,
+      requestedById: userId, status: "requested" as const,
     },
   });
   console.log("Change Requests: 3 created");
@@ -1479,11 +1479,11 @@ async function seedDemoTenant(
   const campaign1 = await prisma.awarenessCampaign.create({
     data: {
       tenantId: T, projectId: proj1.id, code: "AWR-2025-001",
-      title: "Conscientização em Segurança da Informação", type: "training",
+      title: "Conscientização em Segurança da Informação", type: "training" as const,
       description: "Treinamento obrigatório para todos os colaboradores sobre práticas de segurança",
       targetAudience: "Todos os colaboradores", startDate: daysAgo(30),
       endDate: daysAgo(28), duration: 120, location: "Auditório principal",
-      instructor: "Especialista SI", status: "completed", completionRate: 92,
+      instructor: "Especialista SI", status: "completed" as const, completionRate: 92,
       responsibleId: userId,
     },
   });
@@ -1491,15 +1491,15 @@ async function seedDemoTenant(
   const campaign2 = await prisma.awarenessCampaign.create({
     data: {
       tenantId: T, projectId: proj1.id, code: "AWR-2025-002",
-      title: "Workshop Anti-Phishing", type: "workshop",
+      title: "Workshop Anti-Phishing", type: "workshop" as const,
       description: "Workshop prático sobre identificação de emails de phishing",
       targetAudience: "Equipe administrativa", startDate: futureDate(15),
-      duration: 60, status: "planned", responsibleId: userId,
+      duration: 60, status: "planned" as const, responsibleId: userId,
     },
   });
 
-  await prisma.awarenessParticipant.create({ data: { tenantId: T, campaignId: campaign1.id, userId, attended: true, completedAt: daysAgo(28), score: 95, status: "completed" } });
-  await prisma.awarenessParticipant.create({ data: { tenantId: T, campaignId: campaign2.id, userId, status: "invited" } });
+  await prisma.awarenessParticipant.create({ data: { tenantId: T, campaignId: campaign1.id, userId, attended: true, completedAt: daysAgo(28), score: 95, status: "completed" as const } });
+  await prisma.awarenessParticipant.create({ data: { tenantId: T, campaignId: campaign2.id, userId, status: "invited" as const } });
   console.log("Awareness Campaigns: 2 + 2 participants created");
 
   // 21. Communication Plans (2)
@@ -1510,7 +1510,7 @@ async function seedDemoTenant(
       audience: "Alta direção e gestores de área",
       frequency: "Após cada ciclo de auditoria",
       method: "Reunião presencial + relatório por email",
-      responsibleId: userId, status: "active",
+      responsibleId: userId, status: "active" as const,
     },
   });
 
@@ -1521,7 +1521,7 @@ async function seedDemoTenant(
       audience: "Todos os colaboradores",
       frequency: "Conforme ocorrência",
       method: "Email corporativo + intranet",
-      responsibleId: userId, status: "active",
+      responsibleId: userId, status: "active" as const,
     },
   });
   console.log("Communication Plans: 2 created");
@@ -1532,7 +1532,7 @@ async function seedDemoTenant(
       tenantId: T, projectId: proj1.id, role: "Analista de Segurança",
       requiredCompetence: "Conhecimento em ISO 27001, análise de vulnerabilidades e gestão de incidentes",
       currentLevel: "intermediate", trainingAction: "Certificação ISO 27001 Lead Implementer",
-      trainingType: "external", responsibleId: userId, status: "in_progress",
+      trainingType: "external", responsibleId: userId, status: "in_progress" as const,
       dueDate: futureDate(90),
     },
   });
@@ -1542,7 +1542,7 @@ async function seedDemoTenant(
       tenantId: T, projectId: proj1.id, role: "DPO",
       requiredCompetence: "LGPD, ISO 27701, gestão de privacidade",
       currentLevel: "basic", trainingAction: "Curso de DPO certificado",
-      trainingType: "external", responsibleId: userId, status: "identified",
+      trainingType: "external", responsibleId: userId, status: "identified" as const,
       dueDate: futureDate(120),
     },
   });
@@ -1552,7 +1552,7 @@ async function seedDemoTenant(
       tenantId: T, projectId: proj2.id, role: "Auditor Interno da Qualidade",
       requiredCompetence: "ISO 9001, técnicas de auditoria, ISO 19011",
       currentLevel: "advanced", trainingAction: "Reciclagem em ISO 19011:2018",
-      trainingType: "internal", responsibleId: userId, status: "completed",
+      trainingType: "internal", responsibleId: userId, status: "completed" as const,
       completedAt: daysAgo(15),
     },
   });
@@ -1565,7 +1565,7 @@ async function seedDemoTenant(
       title: "Reduzir incidentes de segurança em 50%",
       description: "Reduzir o número de incidentes de segurança para no máximo 2/mês até dezembro",
       category: "operational", targetValue: 2, targetUnit: "incidentes/mês",
-      currentValue: 3, responsibleId: userId, status: "in_progress",
+      currentValue: 3, responsibleId: userId, status: "in_progress" as const,
       measurable: true, monitoringFrequency: "monthly",
       deadline: futureDate(120),
     },
@@ -1577,7 +1577,7 @@ async function seedDemoTenant(
       title: "Atingir 80% de conformidade dos controles",
       description: "Implementar ao menos 80% dos controles aplicáveis do Anexo A da ISO 27001",
       category: "compliance", targetValue: 80, targetUnit: "%",
-      currentValue: 72, responsibleId: userId, status: "in_progress",
+      currentValue: 72, responsibleId: userId, status: "in_progress" as const,
       measurable: true, monitoringFrequency: "quarterly",
       deadline: futureDate(180),
     },
@@ -1594,7 +1594,7 @@ async function seedDemoTenant(
       exclusions: "Processos de RH e financeiro (escopo futuro)",
       justification: "Foco inicial nos processos de maior risco conforme análise de contexto",
       interfaces: "Clientes externos, fornecedores de TI, órgãos reguladores",
-      status: "approved", approvedById: userId, approvedAt: daysAgo(100),
+      status: "approved" as const, approvedById: userId, approvedAt: daysAgo(100),
       version: "1.0",
     },
   });
@@ -1602,10 +1602,10 @@ async function seedDemoTenant(
 
   // 25. Organization Contexts (2 SWOT)
   const swotData = [
-    { type: "strength", title: "Equipe técnica qualificada", desc: "Time de TI com certificações de mercado", cat: "human_resources", impact: "high" },
-    { type: "weakness", title: "Processos manuais de SI", desc: "Muitos controles de segurança dependem de processos manuais", cat: "technological", impact: "high" },
-    { type: "opportunity", title: "Expansão para mercado regulado", desc: "Clientes do setor financeiro exigem ISO 27001", cat: "market", impact: "high" },
-    { type: "threat", title: "Aumento de ataques cibernéticos", desc: "Crescimento de 40% nos ataques ao setor em 2024", cat: "technological", impact: "high" },
+    { type: "strength" as const, title: "Equipe técnica qualificada", desc: "Time de TI com certificações de mercado", cat: "human_resources", impact: "high" as const },
+    { type: "weakness" as const, title: "Processos manuais de SI", desc: "Muitos controles de segurança dependem de processos manuais", cat: "technological", impact: "high" as const },
+    { type: "opportunity" as const, title: "Expansão para mercado regulado", desc: "Clientes do setor financeiro exigem ISO 27001", cat: "market", impact: "high" as const },
+    { type: "threat" as const, title: "Aumento de ataques cibernéticos", desc: "Crescimento de 40% nos ataques ao setor em 2024", cat: "technological", impact: "high" as const },
   ];
 
   for (const s of swotData) {
@@ -1618,28 +1618,28 @@ async function seedDemoTenant(
   // 26. Interested Parties (3)
   await prisma.interestedParty.create({
     data: {
-      tenantId: T, projectId: proj1.id, name: "Clientes corporativos", type: "external",
+      tenantId: T, projectId: proj1.id, name: "Clientes corporativos", type: "external" as const,
       category: "customer", needsExpectations: "Proteção de dados e disponibilidade de serviços",
       requirements: "SLA 99.9%, conformidade LGPD, relatórios de segurança",
-      influence: "high", interest: "high", strategy: "manage_closely",
+      influence: "high" as const, interest: "high" as const, strategy: "manage_closely" as const,
     },
   });
 
   await prisma.interestedParty.create({
     data: {
-      tenantId: T, projectId: proj1.id, name: "ANPD - Autoridade Nacional de Proteção de Dados", type: "external",
+      tenantId: T, projectId: proj1.id, name: "ANPD - Autoridade Nacional de Proteção de Dados", type: "external" as const,
       category: "regulator", needsExpectations: "Conformidade com LGPD",
       requirements: "Relatório de impacto, DPO nomeado, notificação de incidentes",
-      influence: "high", interest: "medium", strategy: "keep_satisfied",
+      influence: "high" as const, interest: "medium" as const, strategy: "keep_satisfied" as const,
     },
   });
 
   await prisma.interestedParty.create({
     data: {
-      tenantId: T, projectId: proj1.id, name: "Colaboradores", type: "internal",
+      tenantId: T, projectId: proj1.id, name: "Colaboradores", type: "internal" as const,
       category: "employee", needsExpectations: "Ambiente de trabalho seguro e treinamento",
       requirements: "Conscientização em SI, canais de comunicação, proteção de dados pessoais",
-      influence: "medium", interest: "medium", strategy: "keep_informed",
+      influence: "medium" as const, interest: "medium" as const, strategy: "keep_informed" as const,
     },
   });
   console.log("Interested Parties: 3 created");

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError, ValidationError } from "@/lib/api-helpers";
 import { updatePolicySchema } from "@/lib/validations";
 
 export async function PATCH(
@@ -26,7 +26,7 @@ export async function PATCH(
     // Status transitions
     if (data.status === "in_review" && existing.status === "draft") {
       if (!data.reviewerId && !existing.reviewerId) {
-        return new Response(JSON.stringify({ error: "Revisor é obrigatório para enviar à revisão" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        throw new ValidationError({ reviewerId: ["Revisor é obrigatório para enviar à revisão"] });
       }
     }
     if (data.status === "approved" && existing.status === "in_review") {

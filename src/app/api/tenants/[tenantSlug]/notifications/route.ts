@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { getRequestContext, handleApiError, successResponse, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
+import { markNotificationsSchema } from "@/lib/validations";
 
 export async function GET(
   request: Request,
@@ -49,7 +50,7 @@ export async function PATCH(
     const ctx = await getRequestContext(tenantSlug);
 
     const body = await request.json();
-    const { ids, all } = body as { ids?: string[]; all?: boolean };
+    const { ids, all } = markNotificationsSchema.parse(body);
 
     if (all) {
       await ctx.db.notification.updateMany({

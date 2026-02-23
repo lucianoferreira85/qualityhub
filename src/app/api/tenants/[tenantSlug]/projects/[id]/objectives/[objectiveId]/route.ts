@@ -22,7 +22,7 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = { ...data };
     if (data.deadline) updateData.deadline = new Date(data.deadline);
-    if (data.status === "achieved" && existing.status !== "achieved") {
+    if (data.status === "implemented" && existing.status !== "implemented") {
       updateData.achievedAt = new Date();
     }
 

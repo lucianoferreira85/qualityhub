@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, requireFeature, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createManagementReviewSchema } from "@/lib/validations";
 
 export async function GET(
@@ -60,6 +60,7 @@ export async function POST(
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "managementReview", "create");
+    await requireFeature(ctx.tenantId, "managementReview");
 
     const body = await request.json();
     const data = createManagementReviewSchema.parse(body);

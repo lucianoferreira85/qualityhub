@@ -149,10 +149,8 @@ export default function RequirementsPage() {
   const handleRemove = async (reqId: string) => {
     setRequirements((prev) => prev.filter((r) => r.id !== reqId));
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/requirements`, {
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/requirements?id=${reqId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requirementId: reqId }),
       });
     } catch {
       fetchRequirements();

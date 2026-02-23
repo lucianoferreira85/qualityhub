@@ -116,6 +116,310 @@ enum RootCauseMethod {
   brainstorming
 }
 
+// ==================== STATUS & CLASSIFICATION ENUMS ====================
+
+enum ActiveStatus {
+  active
+  inactive
+}
+
+enum RiskStatus {
+  identified
+  analyzing
+  treated
+  accepted
+  monitored
+  closed
+}
+
+enum RiskLevel {
+  very_low
+  low
+  medium
+  high
+  very_high
+}
+
+enum RiskTreatmentType {
+  avoid
+  mitigate
+  transfer
+  accept
+}
+
+enum TreatmentStatus {
+  planned
+  in_progress
+  completed
+  cancelled
+}
+
+enum MonitoringFrequency {
+  weekly
+  monthly
+  quarterly
+  semiannual
+  annual
+}
+
+enum RiskAppetite {
+  averse
+  minimal
+  cautious
+  flexible
+  open
+}
+
+enum AuditType {
+  internal
+  external
+  certification
+  surveillance
+}
+
+enum AuditStatus {
+  planned
+  in_progress
+  completed
+  cancelled
+}
+
+enum ReviewStatus {
+  scheduled
+  in_progress
+  completed
+  cancelled
+}
+
+enum PolicyStatus {
+  draft
+  in_review
+  approved
+  published
+  archived
+}
+
+enum CampaignType {
+  training
+  workshop
+  awareness_session
+  e_learning
+  exercise
+}
+
+enum CampaignStatus {
+  planned
+  in_progress
+  completed
+  cancelled
+}
+
+enum ParticipantStatus {
+  invited
+  confirmed
+  attended
+  completed
+  absent
+}
+
+enum ImprovementStatus {
+  identified
+  analyzing
+  planned
+  in_progress
+  implemented
+  verified
+  closed
+}
+
+enum PriorityLevel {
+  low
+  medium
+  high
+  urgent
+}
+
+enum IncidentType {
+  data_breach
+  unauthorized_access
+  malware
+  phishing
+  denial_of_service
+  physical
+  social_engineering
+  other
+}
+
+enum IncidentSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum IncidentCategory {
+  confidentiality
+  integrity
+  availability
+  multiple
+}
+
+enum IncidentStatus {
+  reported
+  triaged
+  contained
+  investigating
+  resolved
+  closed
+}
+
+enum IncidentActionType {
+  containment
+  eradication
+  recovery
+  preventive
+}
+
+enum IncidentActionStatus {
+  pending
+  in_progress
+  completed
+}
+
+enum AssetType {
+  hardware
+  software
+  data
+  service
+  people
+  facility
+  network
+  other
+}
+
+enum AssetCategory {
+  primary
+  support
+  infrastructure
+}
+
+enum AssetClassification {
+  public
+  internal
+  confidential
+  restricted
+}
+
+enum AssetCriticality {
+  low
+  medium
+  high
+  critical
+}
+
+enum AssetStatus {
+  active
+  inactive
+  decommissioned
+  under_review
+}
+
+enum SupplierType {
+  cloud_provider
+  saas
+  outsourcing
+  consulting
+  data_processor
+  infrastructure
+  other
+}
+
+enum SupplierCategory {
+  critical
+  important
+  standard
+}
+
+enum DataAccessLevel {
+  none
+  limited
+  full
+}
+
+enum SupplierStatus {
+  active
+  under_review
+  suspended
+  terminated
+}
+
+enum AssessmentStatus {
+  planned
+  in_progress
+  completed
+}
+
+enum ChangeType {
+  process
+  technology
+  organizational
+  documentation
+  control
+  scope
+  other
+}
+
+enum ChangeStatus {
+  requested
+  under_review
+  approved
+  in_progress
+  implemented
+  verified
+  rejected
+  cancelled
+}
+
+enum ContextType {
+  strength
+  weakness
+  opportunity
+  threat
+}
+
+enum ImpactLevel {
+  high
+  medium
+  low
+}
+
+enum PartyType {
+  internal
+  external
+}
+
+enum EngagementStrategy {
+  manage_closely
+  keep_satisfied
+  keep_informed
+  monitor
+}
+
+enum ScopeStatus {
+  draft
+  active
+  approved
+  archived
+}
+
+enum CompetenceStatus {
+  identified
+  planned
+  in_progress
+  completed
+  verified
+}
+
 // ==================== GLOBAL MODELS (Super Admin) ====================
 
 model Plan {
@@ -198,53 +502,55 @@ model StandardControl {
 // ==================== TENANT MODEL ====================
 
 model Tenant {
-  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  slug         String             @unique
-  logo         String?
-  cnpj         String?
-  settings     Json               @default("{}")
-  status       TenantStatus       @default(trial)
-  trialEndsAt  DateTime?          @map("trial_ends_at")
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
-  members      TenantMember[]
-  invitations  Invitation[]
-  subscription Subscription?
-  clients      ConsultingClient[]
-  projects     Project[]
-  contexts     OrganizationContext[]
-  interestedParties InterestedParty[]
-  risks        Risk[]
-  actionPlans  ActionPlan[]
-  nonconformities Nonconformity[]
-  audits       Audit[]
-  documents    Document[]
-  indicators   Indicator[]
-  processes    Process[]
-  reviews      ManagementReview[]
-  auditLogs    AuditLog[]
-  notifications Notification[]
-  requirements ProjectRequirement[]
-  controls     ProjectControl[]
-  soaEntries   SoaEntry[]
-  measurements IndicatorMeasurement[]
-  auditFindings AuditFinding[]
-  sgsiScopes   SgsiScope[]
-  communicationPlans CommunicationPlan[]
-  competences  Competence[]
-  securityObjectives SecurityObjective[]
-  policies      Policy[]
-  policyAcknowledgments PolicyAcknowledgment[]
-  awarenessCampaigns AwarenessCampaign[]
-  awarenessParticipants AwarenessParticipant[]
+  id                       String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String
+  slug                     String                   @unique
+  logo                     String?
+  cnpj                     String?
+  settings                 Json                     @default("{}")
+  status                   TenantStatus             @default(trial)
+  trialEndsAt              DateTime?                @map("trial_ends_at")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  members                  TenantMember[]
+  invitations              Invitation[]
+  subscription             Subscription?
+  clients                  ConsultingClient[]
+  projects                 Project[]
+  contexts                 OrganizationContext[]
+  interestedParties        InterestedParty[]
+  risks                    Risk[]
+  actionPlans              ActionPlan[]
+  nonconformities          Nonconformity[]
+  audits                   Audit[]
+  documents                Document[]
+  indicators               Indicator[]
+  processes                Process[]
+  reviews                  ManagementReview[]
+  auditLogs                AuditLog[]
+  notifications            Notification[]
+  requirements             ProjectRequirement[]
+  controls                 ProjectControl[]
+  soaEntries               SoaEntry[]
+  measurements             IndicatorMeasurement[]
+  auditFindings            AuditFinding[]
+  sgsiScopes               SgsiScope[]
+  communicationPlans       CommunicationPlan[]
+  competences              Competence[]
+  securityObjectives       SecurityObjective[]
+  policies                 Policy[]
+  policyAcknowledgments    PolicyAcknowledgment[]
+  awarenessCampaigns       AwarenessCampaign[]
+  awarenessParticipants    AwarenessParticipant[]
   improvementOpportunities ImprovementOpportunity[]
-  securityIncidents SecurityIncident[]
-  incidentActions   IncidentAction[]
-  informationAssets InformationAsset[]
-  suppliers         Supplier[]
-  supplierAssessments SupplierAssessment[]
-  changeRequests    ChangeRequest[]
+  securityIncidents        SecurityIncident[]
+  incidentActions          IncidentAction[]
+  informationAssets        InformationAsset[]
+  suppliers                Supplier[]
+  supplierAssessments      SupplierAssessment[]
+  changeRequests           ChangeRequest[]
+  riskTreatments           RiskTreatment[]
+  riskHistory              RiskHistory[]
 
   @@map("tenants")
 }
@@ -252,65 +558,65 @@ model Tenant {
 // ==================== USER & MEMBERSHIP ====================
 
 model User {
-  id          String         @id @db.Uuid
-  email       String         @unique
-  name        String
-  avatarUrl   String?        @map("avatar_url")
-  isSuperAdmin Boolean       @default(false) @map("is_super_admin")
-  isActive    Boolean        @default(true) @map("is_active")
-  lastLoginAt DateTime?      @map("last_login_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  memberships TenantMember[]
-  invitationsSent Invitation[] @relation("InvitedBy")
-  projectMembers ProjectMember[]
-  assignedRequirements ProjectRequirement[] @relation("RequirementResponsible")
-  assignedControls ProjectControl[] @relation("ControlResponsible")
-  assignedRisks Risk[] @relation("RiskResponsible")
-  assignedActions ActionPlan[] @relation("ActionResponsible")
-  assignedNcs Nonconformity[] @relation("NcResponsible")
-  leadAudits Audit[] @relation("LeadAuditor")
-  authoredDocuments Document[] @relation("DocumentAuthor")
-  reviewedDocuments Document[] @relation("DocumentReviewer")
-  approvedDocuments Document[] @relation("DocumentApprover")
-  documentVersions DocumentVersion[]
-  assignedProcesses Process[] @relation("ProcessResponsible")
-  auditLogs AuditLog[]
-  notifications Notification[]
-  approvedScopes SgsiScope[] @relation("ScopeApprover")
-  communicationResponsibilities CommunicationPlan[] @relation("CommunicationResponsible")
-  competenceResponsibilities Competence[] @relation("CompetenceResponsible")
-  riskReviews RiskHistory[] @relation("RiskReviewer")
-  assignedObjectives SecurityObjective[] @relation("ObjectiveResponsible")
-  authoredPolicies Policy[] @relation("PolicyAuthor")
-  reviewedPolicies Policy[] @relation("PolicyReviewer")
-  approvedPolicies Policy[] @relation("PolicyApprover")
-  policyAcknowledgments PolicyAcknowledgment[]
-  campaignResponsibilities AwarenessCampaign[] @relation("CampaignResponsible")
-  awarenessParticipations AwarenessParticipant[]
-  improvementResponsibilities ImprovementOpportunity[] @relation("ImprovementResponsible")
-  incidentReports           SecurityIncident[] @relation("IncidentReporter")
-  incidentAssignments       SecurityIncident[] @relation("IncidentAssignee")
-  incidentActionResponsibilities IncidentAction[] @relation("IncidentActionResponsible")
-  assetResponsibilities     InformationAsset[] @relation("AssetResponsible")
-  supplierResponsibilities  Supplier[] @relation("SupplierResponsible")
-  supplierAssessments       SupplierAssessment[] @relation("SupplierAssessor")
-  changeRequests            ChangeRequest[] @relation("ChangeRequester")
-  changeAssignments         ChangeRequest[] @relation("ChangeAssignee")
-  changeApprovals           ChangeRequest[] @relation("ChangeApprover")
+  id                             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                          String                   @unique
+  name                           String
+  avatarUrl                      String?                  @map("avatar_url")
+  isSuperAdmin                   Boolean                  @default(false) @map("is_super_admin")
+  isActive                       Boolean                  @default(true) @map("is_active")
+  lastLoginAt                    DateTime?                @map("last_login_at")
+  createdAt                      DateTime                 @default(now()) @map("created_at")
+  updatedAt                      DateTime                 @updatedAt @map("updated_at")
+  memberships                    TenantMember[]
+  invitationsSent                Invitation[]             @relation("InvitedBy")
+  projectMembers                 ProjectMember[]
+  assignedRequirements           ProjectRequirement[]     @relation("RequirementResponsible")
+  assignedControls               ProjectControl[]         @relation("ControlResponsible")
+  assignedRisks                  Risk[]                   @relation("RiskResponsible")
+  assignedActions                ActionPlan[]             @relation("ActionResponsible")
+  assignedNcs                    Nonconformity[]          @relation("NcResponsible")
+  leadAudits                     Audit[]                  @relation("LeadAuditor")
+  authoredDocuments              Document[]               @relation("DocumentAuthor")
+  reviewedDocuments              Document[]               @relation("DocumentReviewer")
+  approvedDocuments              Document[]               @relation("DocumentApprover")
+  documentVersions               DocumentVersion[]
+  assignedProcesses              Process[]                @relation("ProcessResponsible")
+  auditLogs                      AuditLog[]
+  notifications                  Notification[]
+  approvedScopes                 SgsiScope[]              @relation("ScopeApprover")
+  communicationResponsibilities  CommunicationPlan[]      @relation("CommunicationResponsible")
+  competenceResponsibilities     Competence[]             @relation("CompetenceResponsible")
+  riskReviews                    RiskHistory[]            @relation("RiskReviewer")
+  assignedObjectives             SecurityObjective[]      @relation("ObjectiveResponsible")
+  authoredPolicies               Policy[]                 @relation("PolicyAuthor")
+  reviewedPolicies               Policy[]                 @relation("PolicyReviewer")
+  approvedPolicies               Policy[]                 @relation("PolicyApprover")
+  policyAcknowledgments          PolicyAcknowledgment[]
+  campaignResponsibilities       AwarenessCampaign[]      @relation("CampaignResponsible")
+  awarenessParticipations        AwarenessParticipant[]
+  improvementResponsibilities    ImprovementOpportunity[] @relation("ImprovementResponsible")
+  incidentReports                SecurityIncident[]       @relation("IncidentReporter")
+  incidentAssignments            SecurityIncident[]       @relation("IncidentAssignee")
+  incidentActionResponsibilities IncidentAction[]         @relation("IncidentActionResponsible")
+  assetResponsibilities          InformationAsset[]       @relation("AssetResponsible")
+  supplierResponsibilities       Supplier[]               @relation("SupplierResponsible")
+  supplierAssessments            SupplierAssessment[]     @relation("SupplierAssessor")
+  changeRequests                 ChangeRequest[]          @relation("ChangeRequester")
+  changeAssignments              ChangeRequest[]          @relation("ChangeAssignee")
+  changeApprovals                ChangeRequest[]          @relation("ChangeApprover")
 
   @@map("users")
 }
 
 model TenantMember {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  role      OrgRole  @default(junior_consultant)
-  invitedById String? @map("invited_by_id") @db.Uuid
-  joinedAt  DateTime @default(now()) @map("joined_at")
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  role        OrgRole  @default(junior_consultant)
+  invitedById String?  @map("invited_by_id") @db.Uuid
+  joinedAt    DateTime @default(now()) @map("joined_at")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, userId])
   @@index([tenantId])
@@ -319,17 +625,17 @@ model TenantMember {
 }
 
 model Invitation {
-  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String           @map("tenant_id") @db.Uuid
-  email     String
-  role      OrgRole          @default(junior_consultant)
-  token     String           @unique @default(dbgenerated("gen_random_uuid()"))
-  status    InvitationStatus @default(pending)
-  expiresAt DateTime         @map("expires_at")
-  invitedById String         @map("invited_by_id") @db.Uuid
-  createdAt DateTime         @default(now()) @map("created_at")
-  tenant    Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invitedBy User             @relation("InvitedBy", fields: [invitedById], references: [id])
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  email       String
+  role        OrgRole          @default(junior_consultant)
+  token       String           @unique @default(dbgenerated("gen_random_uuid()"))
+  status      InvitationStatus @default(pending)
+  expiresAt   DateTime         @map("expires_at")
+  invitedById String           @map("invited_by_id") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at")
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedBy   User             @relation("InvitedBy", fields: [invitedById], references: [id])
 
   @@index([tenantId])
   @@index([token])
@@ -382,47 +688,47 @@ model ConsultingClient {
 // ==================== PROJECTS ====================
 
 model Project {
-  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String               @map("tenant_id") @db.Uuid
-  name          String
-  description   String?
-  clientId      String?              @map("client_id") @db.Uuid
-  status          ProjectStatus        @default(planning)
-  startDate       DateTime?            @map("start_date") @db.Date
-  endDate         DateTime?            @map("end_date") @db.Date
-  progress        Decimal              @default(0) @db.Decimal(5, 2)
-  targetMaturity  Int                  @default(3) @map("target_maturity") @db.SmallInt
-  archivedAt    DateTime?            @map("archived_at")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @updatedAt @map("updated_at")
-  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  client        ConsultingClient?    @relation(fields: [clientId], references: [id])
-  standards     ProjectStandard[]
-  members       ProjectMember[]
-  contexts      OrganizationContext[]
-  interestedParties InterestedParty[]
-  requirements  ProjectRequirement[]
-  controls      ProjectControl[]
-  soaEntries    SoaEntry[]
-  risks         Risk[]
-  actionPlans   ActionPlan[]
-  nonconformities Nonconformity[]
-  audits        Audit[]
-  documents     Document[]
-  indicators    Indicator[]
-  processes     Process[]
-  reviews       ManagementReview[]
-  sgsiScopes    SgsiScope[]
-  communicationPlans CommunicationPlan[]
-  competences   Competence[]
-  securityObjectives SecurityObjective[]
-  policies      Policy[]
-  awarenessCampaigns AwarenessCampaign[]
+  id                       String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                 String                   @map("tenant_id") @db.Uuid
+  name                     String
+  description              String?
+  clientId                 String?                  @map("client_id") @db.Uuid
+  status                   ProjectStatus            @default(planning)
+  startDate                DateTime?                @map("start_date") @db.Date
+  endDate                  DateTime?                @map("end_date") @db.Date
+  progress                 Decimal                  @default(0) @db.Decimal(5, 2)
+  targetMaturity           Int                      @default(3) @map("target_maturity") @db.SmallInt
+  archivedAt               DateTime?                @map("archived_at")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  tenant                   Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client                   ConsultingClient?        @relation(fields: [clientId], references: [id])
+  standards                ProjectStandard[]
+  members                  ProjectMember[]
+  contexts                 OrganizationContext[]
+  interestedParties        InterestedParty[]
+  requirements             ProjectRequirement[]
+  controls                 ProjectControl[]
+  soaEntries               SoaEntry[]
+  risks                    Risk[]
+  actionPlans              ActionPlan[]
+  nonconformities          Nonconformity[]
+  audits                   Audit[]
+  documents                Document[]
+  indicators               Indicator[]
+  processes                Process[]
+  reviews                  ManagementReview[]
+  sgsiScopes               SgsiScope[]
+  communicationPlans       CommunicationPlan[]
+  competences              Competence[]
+  securityObjectives       SecurityObjective[]
+  policies                 Policy[]
+  awarenessCampaigns       AwarenessCampaign[]
   improvementOpportunities ImprovementOpportunity[]
-  securityIncidents SecurityIncident[]
-  informationAssets InformationAsset[]
-  suppliers         Supplier[]
-  changeRequests    ChangeRequest[]
+  securityIncidents        SecurityIncident[]
+  informationAssets        InformationAsset[]
+  suppliers                Supplier[]
+  changeRequests           ChangeRequest[]
 
   @@index([tenantId])
   @@index([clientId])
@@ -481,20 +787,20 @@ model ProjectRequirement {
 }
 
 model ProjectControl {
-  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String          @map("tenant_id") @db.Uuid
-  projectId           String          @map("project_id") @db.Uuid
-  controlId           String          @map("control_id") @db.Uuid
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  projectId           String            @map("project_id") @db.Uuid
+  controlId           String            @map("control_id") @db.Uuid
   status              RequirementStatus @default(not_started)
-  maturity            Int             @default(0) @db.SmallInt
-  responsibleId       String?         @map("responsible_id") @db.Uuid
-  implementationNotes String?         @map("implementation_notes")
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  control             StandardControl @relation(fields: [controlId], references: [id])
-  responsible         User?           @relation("ControlResponsible", fields: [responsibleId], references: [id])
+  maturity            Int               @default(0) @db.SmallInt
+  responsibleId       String?           @map("responsible_id") @db.Uuid
+  implementationNotes String?           @map("implementation_notes")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  control             StandardControl   @relation(fields: [controlId], references: [id])
+  responsible         User?             @relation("ControlResponsible", fields: [responsibleId], references: [id])
   riskTreatments      RiskTreatment[]
 
   @@unique([projectId, controlId])
@@ -526,19 +832,19 @@ model SoaEntry {
 // ==================== ORGANIZATION CONTEXT (ISO 4.1) ====================
 
 model OrganizationContext {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  projectId   String?  @map("project_id") @db.Uuid
-  type        String   // "strength" | "weakness" | "opportunity" | "threat"
-  category    String?  // "financial" | "technological" | "legal" | "market" | "organizational" | "human_resources"
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  projectId   String?      @map("project_id") @db.Uuid
+  type        ContextType
+  category    String?
   title       String
   description String?
-  impact      String?  // "high" | "medium" | "low"
-  status      String   @default("active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  impact      ImpactLevel?
+  status      ActiveStatus @default(active)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project     Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([projectId])
@@ -548,23 +854,23 @@ model OrganizationContext {
 // ==================== INTERESTED PARTIES (ISO 4.2) ====================
 
 model InterestedParty {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String   @map("tenant_id") @db.Uuid
-  projectId         String?  @map("project_id") @db.Uuid
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String              @map("tenant_id") @db.Uuid
+  projectId         String?             @map("project_id") @db.Uuid
   name              String
-  type              String   // "internal" | "external"
-  category          String?  // "employee" | "customer" | "supplier" | "regulator" | "shareholder" | "community" | "partner"
-  needsExpectations String?  @map("needs_expectations")
+  type              PartyType
+  category          String?
+  needsExpectations String?             @map("needs_expectations")
   requirements      String?
-  influence         String?  // "high" | "medium" | "low"
-  interest          String?  // "high" | "medium" | "low"
-  strategy          String?  // "manage_closely" | "keep_satisfied" | "keep_informed" | "monitor"
-  monitoringMethod  String?  @map("monitoring_method")
-  status            String   @default("active")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  influence         ImpactLevel?
+  interest          ImpactLevel?
+  strategy          EngagementStrategy?
+  monitoringMethod  String?             @map("monitoring_method")
+  status            ActiveStatus        @default(active)
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+  tenant            Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project?            @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([projectId])
@@ -574,33 +880,33 @@ model InterestedParty {
 // ==================== RISKS ====================
 
 model Risk {
-  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String          @map("tenant_id") @db.Uuid
-  projectId           String          @map("project_id") @db.Uuid
+  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String               @map("tenant_id") @db.Uuid
+  projectId           String               @map("project_id") @db.Uuid
   code                String
   title               String
   description         String
   category            String
-  impactDimensions    Json            @default("{}") @map("impact_dimensions")
-  probability         Int             @db.SmallInt
-  impact              Int             @db.SmallInt
-  riskLevel           String          @map("risk_level")
-  treatment           String?
-  treatmentPlan       String?         @map("treatment_plan")
-  responsibleId       String?         @map("responsible_id") @db.Uuid
-  status              String          @default("identified")
-  residualProbability Int?            @map("residual_probability") @db.SmallInt
-  residualImpact      Int?            @map("residual_impact") @db.SmallInt
-  nextReviewDate      DateTime?       @map("next_review_date") @db.Date
-  monitoringFrequency String?         @map("monitoring_frequency")
-  riskAppetite        String?         @map("risk_appetite")
-  lastReviewDate      DateTime?       @map("last_review_date") @db.Date
-  reviewNotes         String?         @map("review_notes")
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-  tenant              Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project             Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible         User?           @relation("RiskResponsible", fields: [responsibleId], references: [id])
+  impactDimensions    Json                 @default("{}") @map("impact_dimensions")
+  probability         Int                  @db.SmallInt
+  impact              Int                  @db.SmallInt
+  riskLevel           RiskLevel            @map("risk_level")
+  treatment           RiskTreatmentType?
+  treatmentPlan       String?              @map("treatment_plan")
+  responsibleId       String?              @map("responsible_id") @db.Uuid
+  status              RiskStatus           @default(identified)
+  residualProbability Int?                 @map("residual_probability") @db.SmallInt
+  residualImpact      Int?                 @map("residual_impact") @db.SmallInt
+  nextReviewDate      DateTime?            @map("next_review_date") @db.Date
+  monitoringFrequency MonitoringFrequency? @map("monitoring_frequency")
+  riskAppetite        RiskAppetite?        @map("risk_appetite")
+  lastReviewDate      DateTime?            @map("last_review_date") @db.Date
+  reviewNotes         String?              @map("review_notes")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project             Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible         User?                @relation("RiskResponsible", fields: [responsibleId], references: [id])
   treatments          RiskTreatment[]
   actionPlans         ActionPlan[]
   history             RiskHistory[]
@@ -613,54 +919,58 @@ model Risk {
 }
 
 model RiskTreatment {
-  id               String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  riskId           String          @map("risk_id") @db.Uuid
-  controlId        String?         @map("control_id") @db.Uuid
-  projectControlId String?         @map("project_control_id") @db.Uuid
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  riskId           String           @map("risk_id") @db.Uuid
+  controlId        String?          @map("control_id") @db.Uuid
+  projectControlId String?          @map("project_control_id") @db.Uuid
   description      String
-  status           String          @default("planned")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-  risk             Risk            @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  status           TreatmentStatus  @default(planned)
+  tenantId         String           @map("tenant_id") @db.Uuid
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  risk             Risk             @relation(fields: [riskId], references: [id], onDelete: Cascade)
   control          StandardControl? @relation(fields: [controlId], references: [id])
-  projectControl   ProjectControl? @relation(fields: [projectControlId], references: [id])
+  projectControl   ProjectControl?  @relation(fields: [projectControlId], references: [id])
+  tenant           Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([riskId])
+  @@index([tenantId])
   @@map("risk_treatments")
 }
 
 // ==================== NONCONFORMITIES ====================
 
 model Nonconformity {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String         @map("tenant_id") @db.Uuid
-  projectId     String         @map("project_id") @db.Uuid
-  code          String
-  title         String
-  description   String
-  origin        String
-  type          String?
-  severity      NcSeverity     @default(minor)
-  clauseId      String?        @map("clause_id") @db.Uuid
-  status        NcStatus       @default(open)
-  responsibleId String?        @map("responsible_id") @db.Uuid
-  dueDate       DateTime?      @map("due_date") @db.Date
-  closedAt      DateTime?      @map("closed_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  clause        StandardClause? @relation(fields: [clauseId], references: [id])
-  responsible   User?          @relation("NcResponsible", fields: [responsibleId], references: [id])
-  rootCause     NcRootCause?
-  actionPlans   ActionPlan[]
-  auditFindings AuditFinding[]
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String             @map("tenant_id") @db.Uuid
+  projectId         String             @map("project_id") @db.Uuid
+  code              String
+  title             String
+  description       String
+  origin            String
+  type              String?
+  severity          NcSeverity         @default(minor)
+  clauseId          String?            @map("clause_id") @db.Uuid
+  status            NcStatus           @default(open)
+  responsibleId     String?            @map("responsible_id") @db.Uuid
+  dueDate           DateTime?          @map("due_date") @db.Date
+  closedAt          DateTime?          @map("closed_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  clause            StandardClause?    @relation(fields: [clauseId], references: [id])
+  responsible       User?              @relation("NcResponsible", fields: [responsibleId], references: [id])
+  rootCause         NcRootCause?
+  actionPlans       ActionPlan[]
+  auditFindings     AuditFinding[]
   securityIncidents SecurityIncident[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([projectId])
   @@index([status])
+  @@index([responsibleId])
   @@map("nonconformities")
 }
 
@@ -680,29 +990,29 @@ model NcRootCause {
 // ==================== ACTION PLANS ====================
 
 model ActionPlan {
-  id                String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String       @map("tenant_id") @db.Uuid
-  projectId         String       @map("project_id") @db.Uuid
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String                   @map("tenant_id") @db.Uuid
+  projectId         String                   @map("project_id") @db.Uuid
   code              String
   title             String
   description       String
   type              ActionType
-  status            ActionStatus @default(planned)
-  responsibleId     String?      @map("responsible_id") @db.Uuid
-  nonconformityId   String?      @map("nonconformity_id") @db.Uuid
-  riskId            String?      @map("risk_id") @db.Uuid
-  dueDate           DateTime?    @map("due_date") @db.Date
-  completedAt       DateTime?    @map("completed_at")
-  verifiedAt        DateTime?    @map("verified_at")
-  verificationNotes String?      @map("verification_notes")
-  isEffective       Boolean?     @map("is_effective")
-  createdAt         DateTime     @default(now()) @map("created_at")
-  updatedAt         DateTime     @updatedAt @map("updated_at")
-  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible       User?        @relation("ActionResponsible", fields: [responsibleId], references: [id])
-  nonconformity     Nonconformity? @relation(fields: [nonconformityId], references: [id])
-  risk              Risk?        @relation(fields: [riskId], references: [id])
+  status            ActionStatus             @default(planned)
+  responsibleId     String?                  @map("responsible_id") @db.Uuid
+  nonconformityId   String?                  @map("nonconformity_id") @db.Uuid
+  riskId            String?                  @map("risk_id") @db.Uuid
+  dueDate           DateTime?                @map("due_date") @db.Date
+  completedAt       DateTime?                @map("completed_at")
+  verifiedAt        DateTime?                @map("verified_at")
+  verificationNotes String?                  @map("verification_notes")
+  isEffective       Boolean?                 @map("is_effective")
+  createdAt         DateTime                 @default(now()) @map("created_at")
+  updatedAt         DateTime                 @updatedAt @map("updated_at")
+  tenant            Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible       User?                    @relation("ActionResponsible", fields: [responsibleId], references: [id])
+  nonconformity     Nonconformity?           @relation(fields: [nonconformityId], references: [id])
+  risk              Risk?                    @relation(fields: [riskId], references: [id])
   improvements      ImprovementOpportunity[]
 
   @@unique([tenantId, code])
@@ -719,11 +1029,11 @@ model Audit {
   id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId      String         @map("tenant_id") @db.Uuid
   projectId     String         @map("project_id") @db.Uuid
-  type          String
+  type          AuditType
   title         String
   startDate     DateTime       @map("start_date") @db.Date
   endDate       DateTime?      @map("end_date") @db.Date
-  status        String         @default("planned")
+  status        AuditStatus    @default(planned)
   leadAuditorId String?        @map("lead_auditor_id") @db.Uuid
   scope         String?
   conclusion    String?
@@ -764,29 +1074,29 @@ model AuditFinding {
 // ==================== DOCUMENTS ====================
 
 model Document {
-  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String           @map("tenant_id") @db.Uuid
-  projectId      String?          @map("project_id") @db.Uuid
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String            @map("tenant_id") @db.Uuid
+  projectId      String?           @map("project_id") @db.Uuid
   code           String
   title          String
   type           DocumentType
   category       String?
-  version        String           @default("1.0")
-  status         DocumentStatus   @default(draft)
+  version        String            @default("1.0")
+  status         DocumentStatus    @default(draft)
   content        String?
-  fileUrl        String?          @map("file_url")
-  authorId       String           @map("author_id") @db.Uuid
-  reviewerId     String?          @map("reviewer_id") @db.Uuid
-  approverId     String?          @map("approver_id") @db.Uuid
-  approvedAt     DateTime?        @map("approved_at")
-  nextReviewDate DateTime?        @map("next_review_date") @db.Date
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project        Project?         @relation(fields: [projectId], references: [id])
-  author         User             @relation("DocumentAuthor", fields: [authorId], references: [id])
-  reviewer       User?            @relation("DocumentReviewer", fields: [reviewerId], references: [id])
-  approver       User?            @relation("DocumentApprover", fields: [approverId], references: [id])
+  fileUrl        String?           @map("file_url")
+  authorId       String            @map("author_id") @db.Uuid
+  reviewerId     String?           @map("reviewer_id") @db.Uuid
+  approverId     String?           @map("approver_id") @db.Uuid
+  approvedAt     DateTime?         @map("approved_at")
+  nextReviewDate DateTime?         @map("next_review_date") @db.Date
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project?          @relation(fields: [projectId], references: [id])
+  author         User              @relation("DocumentAuthor", fields: [authorId], references: [id])
+  reviewer       User?             @relation("DocumentReviewer", fields: [reviewerId], references: [id])
+  approver       User?             @relation("DocumentApprover", fields: [approverId], references: [id])
   versions       DocumentVersion[]
   policies       Policy[]
 
@@ -795,6 +1105,7 @@ model Document {
   @@index([projectId])
   @@index([type])
   @@index([status])
+  @@index([authorId])
   @@map("documents")
 }
 
@@ -811,26 +1122,27 @@ model DocumentVersion {
   changedBy   User     @relation(fields: [changedById], references: [id])
 
   @@index([documentId])
+  @@index([changedById])
   @@map("document_versions")
 }
 
 // ==================== PROCESSES ====================
 
 model Process {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String      @map("tenant_id") @db.Uuid
-  projectId     String      @map("project_id") @db.Uuid
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  projectId     String       @map("project_id") @db.Uuid
   code          String
   name          String
   description   String?
-  responsibleId String?     @map("responsible_id") @db.Uuid
-  status        String      @default("active")
+  responsibleId String?      @map("responsible_id") @db.Uuid
+  status        ActiveStatus @default(active)
   category      String?
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible   User?       @relation("ProcessResponsible", fields: [responsibleId], references: [id])
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible   User?        @relation("ProcessResponsible", fields: [responsibleId], references: [id])
   indicators    Indicator[]
 
   @@unique([tenantId, code])
@@ -885,18 +1197,18 @@ model IndicatorMeasurement {
 // ==================== MANAGEMENT REVIEW ====================
 
 model ManagementReview {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String   @map("tenant_id") @db.Uuid
-  projectId     String   @map("project_id") @db.Uuid
-  scheduledDate DateTime @map("scheduled_date") @db.Date
-  actualDate    DateTime? @map("actual_date") @db.Date
-  status        String   @default("scheduled")
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  projectId     String       @map("project_id") @db.Uuid
+  scheduledDate DateTime     @map("scheduled_date") @db.Date
+  actualDate    DateTime?    @map("actual_date") @db.Date
+  status        ReviewStatus @default(scheduled)
   minutes       String?
-  decisions     Json     @default("[]")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  decisions     Json         @default("[]")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([projectId])
@@ -948,24 +1260,24 @@ model Notification {
 // ==================== SGSI SCOPE (ISO 4.3) ====================
 
 model SgsiScope {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String    @map("tenant_id") @db.Uuid
-  projectId     String    @map("project_id") @db.Uuid
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String      @map("tenant_id") @db.Uuid
+  projectId     String      @map("project_id") @db.Uuid
   title         String
   description   String?
   boundaries    String?
   exclusions    String?
   justification String?
   interfaces    String?
-  status        String    @default("draft")
-  approvedById  String?   @map("approved_by_id") @db.Uuid
-  approvedAt    DateTime? @map("approved_at")
-  version       String    @default("1.0")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  approvedBy    User?     @relation("ScopeApprover", fields: [approvedById], references: [id])
+  status        ScopeStatus @default(draft)
+  approvedById  String?     @map("approved_by_id") @db.Uuid
+  approvedAt    DateTime?   @map("approved_at")
+  version       String      @default("1.0")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approvedBy    User?       @relation("ScopeApprover", fields: [approvedById], references: [id])
 
   @@index([tenantId])
   @@index([projectId])
@@ -975,21 +1287,21 @@ model SgsiScope {
 // ==================== COMMUNICATION PLAN (ISO 7.4) ====================
 
 model CommunicationPlan {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String   @map("tenant_id") @db.Uuid
-  projectId     String   @map("project_id") @db.Uuid
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  projectId     String       @map("project_id") @db.Uuid
   topic         String
   audience      String
   frequency     String
   method        String
-  responsibleId String?  @map("responsible_id") @db.Uuid
+  responsibleId String?      @map("responsible_id") @db.Uuid
   notes         String?
-  status        String   @default("active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible   User?    @relation("CommunicationResponsible", fields: [responsibleId], references: [id])
+  status        ActiveStatus @default(active)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible   User?        @relation("CommunicationResponsible", fields: [responsibleId], references: [id])
 
   @@index([tenantId])
   @@index([projectId])
@@ -999,26 +1311,26 @@ model CommunicationPlan {
 // ==================== COMPETENCES (ISO 7.2) ====================
 
 model Competence {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String    @map("tenant_id") @db.Uuid
-  projectId          String    @map("project_id") @db.Uuid
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String           @map("tenant_id") @db.Uuid
+  projectId          String           @map("project_id") @db.Uuid
   role               String
-  requiredCompetence String    @map("required_competence")
-  currentLevel       String?   @map("current_level")
-  trainingAction     String?   @map("training_action")
-  trainingType       String?   @map("training_type")
+  requiredCompetence String           @map("required_competence")
+  currentLevel       String?          @map("current_level")
+  trainingAction     String?          @map("training_action")
+  trainingType       String?          @map("training_type")
   evidence           String?
-  evidenceFileUrl    String?   @map("evidence_file_url")
-  responsibleId      String?   @map("responsible_id") @db.Uuid
-  status             String    @default("identified")
-  dueDate            DateTime? @map("due_date") @db.Date
-  completedAt        DateTime? @map("completed_at")
+  evidenceFileUrl    String?          @map("evidence_file_url")
+  responsibleId      String?          @map("responsible_id") @db.Uuid
+  status             CompetenceStatus @default(identified)
+  dueDate            DateTime?        @map("due_date") @db.Date
+  completedAt        DateTime?        @map("completed_at")
   notes              String?
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  tenant             Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible        User?     @relation("CompetenceResponsible", fields: [responsibleId], references: [id])
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project            Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible        User?            @relation("CompetenceResponsible", fields: [responsibleId], references: [id])
 
   @@index([tenantId])
   @@index([projectId])
@@ -1028,52 +1340,55 @@ model Competence {
 // ==================== RISK HISTORY ====================
 
 model RiskHistory {
-  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  riskId              String   @map("risk_id") @db.Uuid
-  probability         Int      @db.SmallInt
-  impact              Int      @db.SmallInt
-  riskLevel           String   @map("risk_level")
-  residualProbability Int?     @map("residual_probability") @db.SmallInt
-  residualImpact      Int?     @map("residual_impact") @db.SmallInt
-  status              String
-  reviewNotes         String?  @map("review_notes")
-  reviewedById        String?  @map("reviewed_by_id") @db.Uuid
-  createdAt           DateTime @default(now()) @map("created_at")
-  risk                Risk     @relation(fields: [riskId], references: [id], onDelete: Cascade)
-  reviewedBy          User?    @relation("RiskReviewer", fields: [reviewedById], references: [id])
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  riskId              String     @map("risk_id") @db.Uuid
+  probability         Int        @db.SmallInt
+  impact              Int        @db.SmallInt
+  riskLevel           RiskLevel  @map("risk_level")
+  residualProbability Int?       @map("residual_probability") @db.SmallInt
+  residualImpact      Int?       @map("residual_impact") @db.SmallInt
+  status              RiskStatus
+  reviewNotes         String?    @map("review_notes")
+  reviewedById        String?    @map("reviewed_by_id") @db.Uuid
+  tenantId            String     @map("tenant_id") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at")
+  risk                Risk       @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  reviewedBy          User?      @relation("RiskReviewer", fields: [reviewedById], references: [id])
+  tenant              Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([riskId])
   @@index([createdAt])
+  @@index([tenantId])
   @@map("risk_history")
 }
 
 // ==================== SECURITY OBJECTIVES (ISO 6.2) ====================
 
 model SecurityObjective {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId            String    @map("tenant_id") @db.Uuid
-  projectId           String    @map("project_id") @db.Uuid
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  projectId           String            @map("project_id") @db.Uuid
   code                String
   title               String
   description         String?
   category            String?
-  targetValue         Decimal?  @map("target_value") @db.Decimal(12, 2)
-  targetUnit          String?   @map("target_unit")
-  currentValue        Decimal?  @map("current_value") @db.Decimal(12, 2)
-  deadline            DateTime? @db.Date
-  indicatorId         String?   @map("indicator_id") @db.Uuid
-  responsibleId       String?   @map("responsible_id") @db.Uuid
-  status              String    @default("defined")
-  measurable          Boolean   @default(true)
-  monitoringFrequency String?   @map("monitoring_frequency")
-  achievedAt          DateTime? @map("achieved_at")
+  targetValue         Decimal?          @map("target_value") @db.Decimal(12, 2)
+  targetUnit          String?           @map("target_unit")
+  currentValue        Decimal?          @map("current_value") @db.Decimal(12, 2)
+  deadline            DateTime?         @db.Date
+  indicatorId         String?           @map("indicator_id") @db.Uuid
+  responsibleId       String?           @map("responsible_id") @db.Uuid
+  status              ImprovementStatus @default(identified)
+  measurable          Boolean           @default(true)
+  monitoringFrequency String?           @map("monitoring_frequency")
+  achievedAt          DateTime?         @map("achieved_at")
   notes               String?
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  indicator           Indicator? @relation(fields: [indicatorId], references: [id])
-  responsible         User?     @relation("ObjectiveResponsible", fields: [responsibleId], references: [id])
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  indicator           Indicator?        @relation(fields: [indicatorId], references: [id])
+  responsible         User?             @relation("ObjectiveResponsible", fields: [responsibleId], references: [id])
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1084,50 +1399,51 @@ model SecurityObjective {
 // ==================== POLICIES (ISO 5.2) ====================
 
 model Policy {
-  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String              @map("tenant_id") @db.Uuid
-  projectId       String              @map("project_id") @db.Uuid
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String                 @map("tenant_id") @db.Uuid
+  projectId       String                 @map("project_id") @db.Uuid
   code            String
   title           String
   description     String?
   content         String?
   category        String?
-  version         String              @default("1.0")
-  status          String              @default("draft")
-  authorId        String              @map("author_id") @db.Uuid
-  reviewerId      String?             @map("reviewer_id") @db.Uuid
-  approverId      String?             @map("approver_id") @db.Uuid
-  approvedAt      DateTime?           @map("approved_at")
-  publishedAt     DateTime?           @map("published_at")
-  nextReviewDate  DateTime?           @map("next_review_date") @db.Date
-  documentId      String?             @map("document_id") @db.Uuid
-  fileUrl         String?             @map("file_url")
+  version         String                 @default("1.0")
+  status          PolicyStatus           @default(draft)
+  authorId        String                 @map("author_id") @db.Uuid
+  reviewerId      String?                @map("reviewer_id") @db.Uuid
+  approverId      String?                @map("approver_id") @db.Uuid
+  approvedAt      DateTime?              @map("approved_at")
+  publishedAt     DateTime?              @map("published_at")
+  nextReviewDate  DateTime?              @map("next_review_date") @db.Date
+  documentId      String?                @map("document_id") @db.Uuid
+  fileUrl         String?                @map("file_url")
   notes           String?
-  createdAt       DateTime            @default(now()) @map("created_at")
-  updatedAt       DateTime            @updatedAt @map("updated_at")
-  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project         Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  author          User                @relation("PolicyAuthor", fields: [authorId], references: [id])
-  reviewer        User?               @relation("PolicyReviewer", fields: [reviewerId], references: [id])
-  approver        User?               @relation("PolicyApprover", fields: [approverId], references: [id])
-  document        Document?           @relation(fields: [documentId], references: [id])
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project         Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author          User                   @relation("PolicyAuthor", fields: [authorId], references: [id])
+  reviewer        User?                  @relation("PolicyReviewer", fields: [reviewerId], references: [id])
+  approver        User?                  @relation("PolicyApprover", fields: [approverId], references: [id])
+  document        Document?              @relation(fields: [documentId], references: [id])
   acknowledgments PolicyAcknowledgment[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([projectId])
+  @@index([authorId])
   @@map("policies")
 }
 
 model PolicyAcknowledgment {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String   @map("tenant_id") @db.Uuid
-  policyId        String   @map("policy_id") @db.Uuid
-  userId          String   @map("user_id") @db.Uuid
-  acknowledgedAt  DateTime @default(now()) @map("acknowledged_at")
-  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  policy          Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  policyId       String   @map("policy_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  acknowledgedAt DateTime @default(now()) @map("acknowledged_at")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  policy         Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([policyId, userId])
   @@index([tenantId])
@@ -1138,30 +1454,30 @@ model PolicyAcknowledgment {
 // ==================== AWARENESS CAMPAIGNS (ISO 7.3) ====================
 
 model AwarenessCampaign {
-  id              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String                @map("tenant_id") @db.Uuid
-  projectId       String                @map("project_id") @db.Uuid
-  code            String
-  title           String
-  description     String?
-  type            String
-  targetAudience  String?               @map("target_audience")
-  startDate       DateTime              @map("start_date") @db.Date
-  endDate         DateTime?             @map("end_date") @db.Date
-  duration        Int?
-  location        String?
-  instructor      String?
-  materials       String?
-  status          String                @default("planned")
-  completionRate  Decimal?              @map("completion_rate") @db.Decimal(5, 2)
-  responsibleId   String?               @map("responsible_id") @db.Uuid
-  notes           String?
-  createdAt       DateTime              @default(now()) @map("created_at")
-  updatedAt       DateTime              @updatedAt @map("updated_at")
-  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project         Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible     User?                 @relation("CampaignResponsible", fields: [responsibleId], references: [id])
-  participants    AwarenessParticipant[]
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String                 @map("tenant_id") @db.Uuid
+  projectId      String                 @map("project_id") @db.Uuid
+  code           String
+  title          String
+  description    String?
+  type           CampaignType
+  targetAudience String?                @map("target_audience")
+  startDate      DateTime               @map("start_date") @db.Date
+  endDate        DateTime?              @map("end_date") @db.Date
+  duration       Int?
+  location       String?
+  instructor     String?
+  materials      String?
+  status         CampaignStatus         @default(planned)
+  completionRate Decimal?               @map("completion_rate") @db.Decimal(5, 2)
+  responsibleId  String?                @map("responsible_id") @db.Uuid
+  notes          String?
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
+  tenant         Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible    User?                  @relation("CampaignResponsible", fields: [responsibleId], references: [id])
+  participants   AwarenessParticipant[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1170,21 +1486,21 @@ model AwarenessCampaign {
 }
 
 model AwarenessParticipant {
-  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String             @map("tenant_id") @db.Uuid
-  campaignId      String             @map("campaign_id") @db.Uuid
-  userId          String?            @map("user_id") @db.Uuid
-  externalName    String?            @map("external_name")
-  externalEmail   String?            @map("external_email")
-  attended        Boolean            @default(false)
-  completedAt     DateTime?          @map("completed_at")
-  score           Decimal?           @db.Decimal(5, 2)
-  feedback        String?
-  status          String             @default("invited")
-  createdAt       DateTime           @default(now()) @map("created_at")
-  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  campaign        AwarenessCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  user            User?              @relation(fields: [userId], references: [id])
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  campaignId    String            @map("campaign_id") @db.Uuid
+  userId        String?           @map("user_id") @db.Uuid
+  externalName  String?           @map("external_name")
+  externalEmail String?           @map("external_email")
+  attended      Boolean           @default(false)
+  completedAt   DateTime?         @map("completed_at")
+  score         Decimal?          @db.Decimal(5, 2)
+  feedback      String?
+  status        ParticipantStatus @default(invited)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  campaign      AwarenessCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user          User?             @relation(fields: [userId], references: [id])
 
   @@unique([campaignId, userId])
   @@index([tenantId])
@@ -1195,30 +1511,30 @@ model AwarenessParticipant {
 // ==================== IMPROVEMENT OPPORTUNITIES (ISO 10.3) ====================
 
 model ImprovementOpportunity {
-  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String    @map("tenant_id") @db.Uuid
-  projectId       String    @map("project_id") @db.Uuid
-  code            String
-  title           String
-  description     String?
-  source          String
-  category        String?
-  priority        String    @default("medium")
-  expectedImpact  String?   @map("expected_impact")
-  actualImpact    String?   @map("actual_impact")
-  responsibleId   String?   @map("responsible_id") @db.Uuid
-  status          String    @default("identified")
-  actionPlanId    String?   @map("action_plan_id") @db.Uuid
-  dueDate         DateTime? @map("due_date") @db.Date
-  implementedAt   DateTime? @map("implemented_at")
-  verifiedAt      DateTime? @map("verified_at")
-  notes           String?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible     User?     @relation("ImprovementResponsible", fields: [responsibleId], references: [id])
-  actionPlan      ActionPlan? @relation(fields: [actionPlanId], references: [id])
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String            @map("tenant_id") @db.Uuid
+  projectId      String            @map("project_id") @db.Uuid
+  code           String
+  title          String
+  description    String?
+  source         String
+  category       String?
+  priority       PriorityLevel     @default(medium)
+  expectedImpact String?           @map("expected_impact")
+  actualImpact   String?           @map("actual_impact")
+  responsibleId  String?           @map("responsible_id") @db.Uuid
+  status         ImprovementStatus @default(identified)
+  actionPlanId   String?           @map("action_plan_id") @db.Uuid
+  dueDate        DateTime?         @map("due_date") @db.Date
+  implementedAt  DateTime?         @map("implemented_at")
+  verifiedAt     DateTime?         @map("verified_at")
+  notes          String?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible    User?             @relation("ImprovementResponsible", fields: [responsibleId], references: [id])
+  actionPlan     ActionPlan?       @relation(fields: [actionPlanId], references: [id])
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1229,62 +1545,63 @@ model ImprovementOpportunity {
 // ==================== SECURITY INCIDENTS (ISO A.5.24-A.5.28) ====================
 
 model SecurityIncident {
-  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String           @map("tenant_id") @db.Uuid
-  projectId         String           @map("project_id") @db.Uuid
-  code              String
-  title             String
-  description       String?
-  type              String           // data_breach | unauthorized_access | malware | phishing | denial_of_service | physical | social_engineering | other
-  severity          String           @default("medium") // low | medium | high | critical
-  category          String?          // confidentiality | integrity | availability | multiple
-  detectedAt        DateTime         @map("detected_at")
-  reportedAt        DateTime         @default(now()) @map("reported_at")
-  resolvedAt        DateTime?        @map("resolved_at")
-  closedAt          DateTime?        @map("closed_at")
-  affectedAssets    String?          @map("affected_assets")
-  affectedSystems   String?          @map("affected_systems")
-  impactDescription String?          @map("impact_description")
-  rootCause         String?          @map("root_cause")
-  containmentActions String?         @map("containment_actions")
-  correctiveActions String?          @map("corrective_actions")
-  lessonsLearned    String?          @map("lessons_learned")
-  reportedById      String           @map("reported_by_id") @db.Uuid
-  assignedToId      String?          @map("assigned_to_id") @db.Uuid
-  status            String           @default("reported") // reported | triaged | contained | investigating | resolved | closed
-  notifiedAuthorities Boolean        @default(false) @map("notified_authorities")
-  nonconformityId   String?          @map("nonconformity_id") @db.Uuid
-  notes             String?
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  reportedBy        User             @relation("IncidentReporter", fields: [reportedById], references: [id])
-  assignedTo        User?            @relation("IncidentAssignee", fields: [assignedToId], references: [id])
-  nonconformity     Nonconformity?   @relation(fields: [nonconformityId], references: [id])
-  actions           IncidentAction[]
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  projectId           String            @map("project_id") @db.Uuid
+  code                String
+  title               String
+  description         String?
+  type                IncidentType
+  severity            IncidentSeverity  @default(medium)
+  category            IncidentCategory?
+  detectedAt          DateTime          @map("detected_at")
+  reportedAt          DateTime          @default(now()) @map("reported_at")
+  resolvedAt          DateTime?         @map("resolved_at")
+  closedAt            DateTime?         @map("closed_at")
+  affectedAssets      String?           @map("affected_assets")
+  affectedSystems     String?           @map("affected_systems")
+  impactDescription   String?           @map("impact_description")
+  rootCause           String?           @map("root_cause")
+  containmentActions  String?           @map("containment_actions")
+  correctiveActions   String?           @map("corrective_actions")
+  lessonsLearned      String?           @map("lessons_learned")
+  reportedById        String            @map("reported_by_id") @db.Uuid
+  assignedToId        String?           @map("assigned_to_id") @db.Uuid
+  status              IncidentStatus    @default(reported)
+  notifiedAuthorities Boolean           @default(false) @map("notified_authorities")
+  nonconformityId     String?           @map("nonconformity_id") @db.Uuid
+  notes               String?
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  tenant              Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project             Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reportedBy          User              @relation("IncidentReporter", fields: [reportedById], references: [id])
+  assignedTo          User?             @relation("IncidentAssignee", fields: [assignedToId], references: [id])
+  nonconformity       Nonconformity?    @relation(fields: [nonconformityId], references: [id])
+  actions             IncidentAction[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([projectId])
+  @@index([reportedById])
   @@map("security_incidents")
 }
 
 model IncidentAction {
-  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String           @map("tenant_id") @db.Uuid
-  incidentId        String           @map("incident_id") @db.Uuid
-  description       String
-  type              String           // containment | eradication | recovery | preventive
-  responsibleId     String?          @map("responsible_id") @db.Uuid
-  dueDate           DateTime?        @map("due_date") @db.Date
-  completedAt       DateTime?        @map("completed_at")
-  status            String           @default("pending") // pending | in_progress | completed
-  notes             String?
-  createdAt         DateTime         @default(now()) @map("created_at")
-  tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  incident          SecurityIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
-  responsible       User?            @relation("IncidentActionResponsible", fields: [responsibleId], references: [id])
+  id            String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String               @map("tenant_id") @db.Uuid
+  incidentId    String               @map("incident_id") @db.Uuid
+  description   String
+  type          IncidentActionType
+  responsibleId String?              @map("responsible_id") @db.Uuid
+  dueDate       DateTime?            @map("due_date") @db.Date
+  completedAt   DateTime?            @map("completed_at")
+  status        IncidentActionStatus @default(pending)
+  notes         String?
+  createdAt     DateTime             @default(now()) @map("created_at")
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  incident      SecurityIncident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  responsible   User?                @relation("IncidentActionResponsible", fields: [responsibleId], references: [id])
 
   @@index([tenantId])
   @@index([incidentId])
@@ -1294,32 +1611,32 @@ model IncidentAction {
 // ==================== INFORMATION ASSETS (ISO A.5.9-A.5.11) ====================
 
 model InformationAsset {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String    @map("tenant_id") @db.Uuid
-  projectId         String    @map("project_id") @db.Uuid
-  code              String
-  name              String
-  description       String?
-  type              String    // hardware | software | data | service | people | facility | network | other
-  category          String?   // primary | support | infrastructure
-  owner             String?
-  custodian         String?
-  location          String?
-  classification    String    @default("internal") // public | internal | confidential | restricted
-  criticality       String    @default("medium") // low | medium | high | critical
-  businessValue     String?   @map("business_value")
-  status            String    @default("active") // active | inactive | decommissioned | under_review
-  acquisitionDate   DateTime? @map("acquisition_date") @db.Date
-  endOfLifeDate     DateTime? @map("end_of_life_date") @db.Date
-  lastReviewDate    DateTime? @map("last_review_date") @db.Date
-  nextReviewDate    DateTime? @map("next_review_date") @db.Date
-  responsibleId     String?   @map("responsible_id") @db.Uuid
-  notes             String?
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible       User?     @relation("AssetResponsible", fields: [responsibleId], references: [id])
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String              @map("tenant_id") @db.Uuid
+  projectId       String              @map("project_id") @db.Uuid
+  code            String
+  name            String
+  description     String?
+  type            AssetType
+  category        AssetCategory?
+  owner           String?
+  custodian       String?
+  location        String?
+  classification  AssetClassification @default(internal)
+  criticality     AssetCriticality    @default(medium)
+  businessValue   String?             @map("business_value")
+  status          AssetStatus         @default(active)
+  acquisitionDate DateTime?           @map("acquisition_date") @db.Date
+  endOfLifeDate   DateTime?           @map("end_of_life_date") @db.Date
+  lastReviewDate  DateTime?           @map("last_review_date") @db.Date
+  nextReviewDate  DateTime?           @map("next_review_date") @db.Date
+  responsibleId   String?             @map("responsible_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project         Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible     User?               @relation("AssetResponsible", fields: [responsibleId], references: [id])
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1330,35 +1647,35 @@ model InformationAsset {
 // ==================== SUPPLIERS (ISO A.5.19-A.5.23) ====================
 
 model Supplier {
-  id                String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String               @map("tenant_id") @db.Uuid
-  projectId         String               @map("project_id") @db.Uuid
-  code              String
-  name              String
-  cnpj              String?
-  contactName       String?              @map("contact_name")
-  contactEmail      String?              @map("contact_email")
-  contactPhone      String?              @map("contact_phone")
-  type              String               // cloud_provider | saas | outsourcing | consulting | data_processor | infrastructure | other
-  category          String?              // critical | important | standard
-  servicesProvided  String?              @map("services_provided")
-  dataAccess        String?              @map("data_access") // none | limited | full
-  contractStartDate DateTime?            @map("contract_start_date") @db.Date
-  contractEndDate   DateTime?            @map("contract_end_date") @db.Date
-  slaDetails        String?              @map("sla_details")
-  securityRequirements String?           @map("security_requirements")
-  riskLevel         String               @default("medium") // low | medium | high | critical
-  status            String               @default("active") // active | under_review | suspended | terminated
-  responsibleId     String?              @map("responsible_id") @db.Uuid
-  lastAssessmentDate DateTime?           @map("last_assessment_date") @db.Date
-  nextAssessmentDate DateTime?           @map("next_assessment_date") @db.Date
-  notes             String?
-  createdAt         DateTime             @default(now()) @map("created_at")
-  updatedAt         DateTime             @updatedAt @map("updated_at")
-  tenant            Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  responsible       User?                @relation("SupplierResponsible", fields: [responsibleId], references: [id])
-  assessments       SupplierAssessment[]
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String               @map("tenant_id") @db.Uuid
+  projectId            String               @map("project_id") @db.Uuid
+  code                 String
+  name                 String
+  cnpj                 String?
+  contactName          String?              @map("contact_name")
+  contactEmail         String?              @map("contact_email")
+  contactPhone         String?              @map("contact_phone")
+  type                 SupplierType
+  category             SupplierCategory?
+  servicesProvided     String?              @map("services_provided")
+  dataAccess           DataAccessLevel?     @map("data_access")
+  contractStartDate    DateTime?            @map("contract_start_date") @db.Date
+  contractEndDate      DateTime?            @map("contract_end_date") @db.Date
+  slaDetails           String?              @map("sla_details")
+  securityRequirements String?              @map("security_requirements")
+  riskLevel            AssetCriticality     @default(medium)
+  status               SupplierStatus       @default(active)
+  responsibleId        String?              @map("responsible_id") @db.Uuid
+  lastAssessmentDate   DateTime?            @map("last_assessment_date") @db.Date
+  nextAssessmentDate   DateTime?            @map("next_assessment_date") @db.Date
+  notes                String?
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  tenant               Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project              Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible          User?                @relation("SupplierResponsible", fields: [responsibleId], references: [id])
+  assessments          SupplierAssessment[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -1367,24 +1684,24 @@ model Supplier {
 }
 
 model SupplierAssessment {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String    @map("tenant_id") @db.Uuid
-  supplierId        String    @map("supplier_id") @db.Uuid
-  assessmentDate    DateTime  @map("assessment_date") @db.Date
-  assessorId        String?   @map("assessor_id") @db.Uuid
-  overallScore      Decimal?  @map("overall_score") @db.Decimal(5, 2)
-  securityScore     Decimal?  @map("security_score") @db.Decimal(5, 2)
-  complianceScore   Decimal?  @map("compliance_score") @db.Decimal(5, 2)
-  serviceScore      Decimal?  @map("service_score") @db.Decimal(5, 2)
-  findings          String?
-  recommendations   String?
-  status            String    @default("completed") // planned | in_progress | completed
-  nextAssessmentDate DateTime? @map("next_assessment_date") @db.Date
-  notes             String?
-  createdAt         DateTime  @default(now()) @map("created_at")
-  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  supplier          Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  assessor          User?     @relation("SupplierAssessor", fields: [assessorId], references: [id])
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String           @map("tenant_id") @db.Uuid
+  supplierId         String           @map("supplier_id") @db.Uuid
+  assessmentDate     DateTime         @map("assessment_date") @db.Date
+  assessorId         String?          @map("assessor_id") @db.Uuid
+  overallScore       Decimal?         @map("overall_score") @db.Decimal(5, 2)
+  securityScore      Decimal?         @map("security_score") @db.Decimal(5, 2)
+  complianceScore    Decimal?         @map("compliance_score") @db.Decimal(5, 2)
+  serviceScore       Decimal?         @map("service_score") @db.Decimal(5, 2)
+  findings           String?
+  recommendations    String?
+  status             AssessmentStatus @default(completed)
+  nextAssessmentDate DateTime?        @map("next_assessment_date") @db.Date
+  notes              String?
+  createdAt          DateTime         @default(now()) @map("created_at")
+  tenant             Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier           Supplier         @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  assessor           User?            @relation("SupplierAssessor", fields: [assessorId], references: [id])
 
   @@index([tenantId])
   @@index([supplierId])
@@ -1394,39 +1711,40 @@ model SupplierAssessment {
 // ==================== CHANGE REQUESTS (ISO 6.3) ====================
 
 model ChangeRequest {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String    @map("tenant_id") @db.Uuid
-  projectId         String    @map("project_id") @db.Uuid
-  code              String
-  title             String
-  description       String?
-  type              String    // process | technology | organizational | documentation | control | scope | other
-  reason            String?
-  impactAnalysis    String?   @map("impact_analysis")
-  riskAssessment    String?   @map("risk_assessment")
-  rollbackPlan      String?   @map("rollback_plan")
-  priority          String    @default("medium") // low | medium | high | urgent
-  requestedById     String    @map("requested_by_id") @db.Uuid
-  assignedToId      String?   @map("assigned_to_id") @db.Uuid
-  approvedById      String?   @map("approved_by_id") @db.Uuid
-  approvedAt        DateTime? @map("approved_at")
-  implementedAt     DateTime? @map("implemented_at")
-  verifiedAt        DateTime? @map("verified_at")
-  rejectedAt        DateTime? @map("rejected_at")
-  plannedDate       DateTime? @map("planned_date") @db.Date
-  status            String    @default("requested") // requested | under_review | approved | in_progress | implemented | verified | rejected | cancelled
-  affectedAreas     String?   @map("affected_areas")
-  notes             String?
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  tenant            Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  requestedBy       User      @relation("ChangeRequester", fields: [requestedById], references: [id])
-  assignedTo        User?     @relation("ChangeAssignee", fields: [assignedToId], references: [id])
-  approvedBy        User?     @relation("ChangeApprover", fields: [approvedById], references: [id])
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String        @map("tenant_id") @db.Uuid
+  projectId      String        @map("project_id") @db.Uuid
+  code           String
+  title          String
+  description    String?
+  type           ChangeType
+  reason         String?
+  impactAnalysis String?       @map("impact_analysis")
+  riskAssessment String?       @map("risk_assessment")
+  rollbackPlan   String?       @map("rollback_plan")
+  priority       PriorityLevel @default(medium)
+  requestedById  String        @map("requested_by_id") @db.Uuid
+  assignedToId   String?       @map("assigned_to_id") @db.Uuid
+  approvedById   String?       @map("approved_by_id") @db.Uuid
+  approvedAt     DateTime?     @map("approved_at")
+  implementedAt  DateTime?     @map("implemented_at")
+  verifiedAt     DateTime?     @map("verified_at")
+  rejectedAt     DateTime?     @map("rejected_at")
+  plannedDate    DateTime?     @map("planned_date") @db.Date
+  status         ChangeStatus  @default(requested)
+  affectedAreas  String?       @map("affected_areas")
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requestedBy    User          @relation("ChangeRequester", fields: [requestedById], references: [id])
+  assignedTo     User?         @relation("ChangeAssignee", fields: [assignedToId], references: [id])
+  approvedBy     User?         @relation("ChangeApprover", fields: [approvedById], references: [id])
 
   @@unique([tenantId, code])
   @@index([tenantId])
   @@index([projectId])
+  @@index([requestedById])
   @@map("change_requests")
 }

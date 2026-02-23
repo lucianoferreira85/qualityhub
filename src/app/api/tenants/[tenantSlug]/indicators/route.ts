@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, requireFeature, parsePaginationParams, paginatedResponse } from "@/lib/api-helpers";
 import { createIndicatorSchema } from "@/lib/validations";
 
 export async function GET(
@@ -68,6 +68,7 @@ export async function POST(
     const { tenantSlug } = await params;
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "indicator", "create");
+    await requireFeature(ctx.tenantId, "indicators");
 
     const body = await request.json();
     const data = createIndicatorSchema.parse(body);

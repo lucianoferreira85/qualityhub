@@ -266,10 +266,8 @@ export default function ProjectDetailPage() {
   const handleRemoveStandard = async (standardId: string) => {
     setRemoveStandardId(null);
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/standards`, {
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/standards?id=${standardId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ standardId }),
       });
       fetchProject();
     } catch { /* ignore */ }

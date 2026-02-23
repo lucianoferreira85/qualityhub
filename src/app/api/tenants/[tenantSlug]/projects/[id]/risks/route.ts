@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, requireFeature } from "@/lib/api-helpers";
 import { createRiskSchema } from "@/lib/validations";
 import { generateCode, getRiskLevel } from "@/lib/utils";
 import { triggerRiskCritical } from "@/lib/email-triggers";
@@ -45,11 +45,12 @@ export async function POST(
     const { tenantSlug, id } = await params;
     const ctx = await getRequestContext(tenantSlug);
     requirePermission(ctx, "risk", "create");
+    await requireFeature(ctx.tenantId, "risks");
 
     const body = await request.json();
     const data = createRiskSchema.parse(body);
 
-    const count = await ctx.db.risk.count();
+    const count = await ctx.db.risk.count({ where: { projectId: id } });
     const code = generateCode("RSK", count + 1);
 
     const risk = await ctx.db.risk.create({
@@ -71,7 +72,7 @@ export async function POST(
     });
 
     const riskLevel = getRiskLevel(data.probability, data.impact);
-    if (riskLevel === "critical" || riskLevel === "very_high") {
+    if (riskLevel === "very_high") {
       triggerRiskCritical({
         tenantId: ctx.tenantId,
         tenantSlug,

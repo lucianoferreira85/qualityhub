@@ -177,8 +177,8 @@ export default function RisksPage() {
   const handleUpdateTreatmentStatus = async (riskId: string, treatmentId: string, status: string) => {
     try {
       await fetch(
-        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments`,
-        { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId, status }) }
+        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments?id=${treatmentId}`,
+        { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }
       );
       setLoading(true);
       fetchData();
@@ -189,8 +189,8 @@ export default function RisksPage() {
     if (!deleteTarget) return;
     try {
       await fetch(
-        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${deleteTarget.riskId}/treatments`,
-        { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId: deleteTarget.treatmentId }) }
+        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${deleteTarget.riskId}/treatments?id=${deleteTarget.treatmentId}`,
+        { method: "DELETE" }
       );
       setLoading(true);
       fetchData();

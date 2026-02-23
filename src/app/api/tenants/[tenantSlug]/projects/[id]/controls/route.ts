@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, NotFoundError, ValidationError } from "@/lib/api-helpers";
 import { z } from "zod";
 
 const createProjectControlSchema = z.object({
@@ -83,11 +83,11 @@ export async function DELETE(
     const project = await ctx.db.project.findFirst({ where: { id } });
     if (!project) throw new NotFoundError("Projeto");
 
-    const body = await request.json();
-    const { controlId } = body;
+    const url = new URL(request.url);
+    const controlId = url.searchParams.get("id");
 
     if (!controlId) {
-      return new Response(JSON.stringify({ error: "controlId é obrigatório" }), { status: 400 });
+      throw new ValidationError({ id: ["id do controle é obrigatório"] });
     }
 
     const existing = await ctx.db.projectControl.findFirst({

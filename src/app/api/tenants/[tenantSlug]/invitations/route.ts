@@ -1,10 +1,9 @@
 export const dynamic = 'force-dynamic';
 
-import { getRequestContext, handleApiError, successResponse, requirePermission } from "@/lib/api-helpers";
+import { getRequestContext, handleApiError, successResponse, requirePermission, PlanLimitError, NotFoundError, ForbiddenError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { createInvitationSchema } from "@/lib/validations";
 import { checkPlanLimit } from "@/lib/plan-limits";
-import { PlanLimitError } from "@/lib/api-helpers";
 import { sendInvitationEmail } from "@/lib/email";
 
 export async function GET(
@@ -85,6 +84,43 @@ export async function POST(
     }).catch(() => {}); // Fire-and-forget
 
     return successResponse(invitation, 201);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ tenantSlug: string }> }
+) {
+  try {
+    const { tenantSlug } = await params;
+    const ctx = await getRequestContext(tenantSlug);
+    requirePermission(ctx, "invitation", "delete");
+
+    const url = new URL(request.url);
+    const invitationId = url.searchParams.get("id");
+
+    if (!invitationId) {
+      throw new NotFoundError("Convite (id não fornecido)");
+    }
+
+    const invitation = await prisma.invitation.findFirst({
+      where: { id: invitationId, tenantId: ctx.tenantId },
+    });
+
+    if (!invitation) throw new NotFoundError("Convite");
+
+    if (invitation.status !== "pending") {
+      throw new ForbiddenError("Apenas convites pendentes podem ser revogados");
+    }
+
+    await prisma.invitation.update({
+      where: { id: invitationId },
+      data: { status: "revoked" },
+    });
+
+    return successResponse({ revoked: true });
   } catch (error) {
     return handleApiError(error);
   }

@@ -54,6 +54,7 @@ export async function POST(
     // Create history entry
     const entry = await ctx.db.riskHistory.create({
       data: {
+        tenantId: ctx.tenantId,
         riskId,
         probability: data.probability,
         impact: data.impact,

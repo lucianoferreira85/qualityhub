@@ -79,6 +79,7 @@ export async function PATCH(
     if (probChanged || impactChanged) {
       await ctx.db.riskHistory.create({
         data: {
+          tenantId: ctx.tenantId,
           riskId,
           probability: newProb,
           impact: newImpact,
