@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,10 +12,39 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil, Trash2, Crosshair } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, Crosshair } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { SecurityObjective } from "@/types";
+
+interface ObjectiveFormData {
+  title: string;
+  description: string;
+  category: string;
+  targetValue: string;
+  targetUnit: string;
+  currentValue: string;
+  deadline: string;
+  indicatorId: string;
+  frequency: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: ObjectiveFormData = {
+  title: "",
+  description: "",
+  category: "",
+  targetValue: "",
+  targetUnit: "",
+  currentValue: "",
+  deadline: "",
+  indicatorId: "",
+  frequency: "",
+  notes: "",
+  status: "defined",
+};
 
 const STATUSES: Record<string, { label: string; color: string }> = {
   defined: { label: "Definido", color: "bg-surface-tertiary text-foreground-secondary" },
@@ -65,22 +94,16 @@ export default function ObjectivesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formCategory, setFormCategory] = useState("");
-  const [formTargetValue, setFormTargetValue] = useState("");
-  const [formTargetUnit, setFormTargetUnit] = useState("");
-  const [formCurrentValue, setFormCurrentValue] = useState("");
-  const [formDeadline, setFormDeadline] = useState("");
-  const [formIndicatorId, setFormIndicatorId] = useState("");
-  const [formFrequency, setFormFrequency] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("defined");
+  const [form, setForm] = useState<ObjectiveFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const updateForm = <K extends keyof ObjectiveFormData>(field: K, value: ObjectiveFormData[K]) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -107,51 +130,43 @@ export default function ObjectivesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormCategory("");
-    setFormTargetValue("");
-    setFormTargetUnit("");
-    setFormCurrentValue("");
-    setFormDeadline("");
-    setFormIndicatorId("");
-    setFormFrequency("");
-    setFormNotes("");
-    setFormStatus("defined");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: SecurityObjective) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormCategory(item.category || "");
-    setFormTargetValue(item.targetValue != null ? String(item.targetValue) : "");
-    setFormTargetUnit(item.targetUnit || "");
-    setFormCurrentValue(item.currentValue != null ? String(item.currentValue) : "");
-    setFormDeadline(item.deadline ? new Date(item.deadline).toISOString().split("T")[0] : "");
-    setFormIndicatorId(item.indicatorId || "");
-    setFormFrequency(item.monitoringFrequency || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      category: item.category || "",
+      targetValue: item.targetValue != null ? String(Number(item.targetValue)) : "",
+      targetUnit: item.targetUnit || "",
+      currentValue: item.currentValue != null ? String(Number(item.currentValue)) : "",
+      deadline: item.deadline ? new Date(item.deadline).toISOString().split("T")[0] : "",
+      indicatorId: item.indicatorId || "",
+      frequency: item.monitoringFrequency || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.title.trim()) { toast.error("Título é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        category: formCategory || null,
-        targetValue: formTargetValue ? Number(formTargetValue) : null,
-        targetUnit: formTargetUnit || null,
-        currentValue: formCurrentValue ? Number(formCurrentValue) : null,
-        deadline: formDeadline || null,
-        indicatorId: formIndicatorId || null,
-        monitoringFrequency: formFrequency || null,
-        notes: formNotes || null,
-        status: formStatus,
+        title: form.title,
+        description: form.description || null,
+        category: form.category || null,
+        targetValue: form.targetValue ? Number(form.targetValue) : null,
+        targetUnit: form.targetUnit || null,
+        currentValue: form.currentValue ? Number(form.currentValue) : null,
+        deadline: form.deadline || null,
+        indicatorId: form.indicatorId || null,
+        monitoringFrequency: form.frequency || null,
+        notes: form.notes || null,
+        status: form.status,
         projectId,
       };
       const url = editingId
@@ -342,76 +357,71 @@ export default function ObjectivesPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Novo"} Objetivo</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Reduzir incidentes de segurança em 50%" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={CATEGORY_OPTIONS} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Frequência Monitoramento</label>
-                  <Select value={formFrequency} onChange={(e) => setFormFrequency(e.target.value)} options={FREQUENCY_OPTIONS} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Meta</label>
-                  <Input type="number" value={formTargetValue} onChange={(e) => setFormTargetValue(e.target.value)} placeholder="100" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Unidade</label>
-                  <Input value={formTargetUnit} onChange={(e) => setFormTargetUnit(e.target.value)} placeholder="%" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Valor Atual</label>
-                  <Input type="number" value={formCurrentValue} onChange={(e) => setFormCurrentValue(e.target.value)} placeholder="0" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
-                  <Input type="date" value={formDeadline} onChange={(e) => setFormDeadline(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Indicador</label>
-                  <Select value={formIndicatorId} onChange={(e) => setFormIndicatorId(e.target.value)} options={indicatorOptions} />
-                </div>
-              </div>
-              {editingId && (
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
-                </div>
-              )}
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Novo"} Objetivo`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Reduzir incidentes de segurança em 50%" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} className="h-16 resize-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select value={form.category} onChange={(e) => updateForm("category", e.target.value)} options={CATEGORY_OPTIONS} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Frequência Monitoramento</label>
+              <Select value={form.frequency} onChange={(e) => updateForm("frequency", e.target.value)} options={FREQUENCY_OPTIONS} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Meta</label>
+              <Input type="number" value={form.targetValue} onChange={(e) => updateForm("targetValue", e.target.value)} placeholder="100" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Unidade</label>
+              <Input value={form.targetUnit} onChange={(e) => updateForm("targetUnit", e.target.value)} placeholder="%" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Valor Atual</label>
+              <Input type="number" value={form.currentValue} onChange={(e) => updateForm("currentValue", e.target.value)} placeholder="0" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
+              <Input type="date" value={form.deadline} onChange={(e) => updateForm("deadline", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Indicador</label>
+              <Select value={form.indicatorId} onChange={(e) => updateForm("indicatorId", e.target.value)} options={indicatorOptions} />
+            </div>
+          </div>
+          {editingId && (
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+              <Select value={form.status} onChange={(e) => updateForm("status", e.target.value)} options={STATUS_OPTIONS} />
+            </div>
+          )}
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} className="h-16 resize-none" />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

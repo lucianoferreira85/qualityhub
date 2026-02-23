@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus, X, Pencil, Trash2, Server } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, Server } from "lucide-react";
 import { toast } from "sonner";
 import type { InformationAsset } from "@/types";
 
@@ -54,6 +55,33 @@ const CATEGORIES: Record<string, string> = {
   infrastructure: "Infraestrutura",
 };
 
+interface AssetFormData {
+  name: string;
+  description: string;
+  type: string;
+  category: string;
+  owner: string;
+  custodian: string;
+  location: string;
+  classification: string;
+  criticality: string;
+  businessValue: string;
+  acquisitionDate: string;
+  endOfLifeDate: string;
+  lastReviewDate: string;
+  nextReviewDate: string;
+  responsibleId: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: AssetFormData = {
+  name: "", description: "", type: "hardware", category: "", owner: "", custodian: "",
+  location: "", classification: "internal", criticality: "medium", businessValue: "",
+  acquisitionDate: "", endOfLifeDate: "", lastReviewDate: "", nextReviewDate: "",
+  responsibleId: "", notes: "", status: "active",
+};
+
 export default function AssetsPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -69,27 +97,15 @@ export default function AssetsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState("hardware");
-  const [formCategory, setFormCategory] = useState("");
-  const [formOwner, setFormOwner] = useState("");
-  const [formCustodian, setFormCustodian] = useState("");
-  const [formLocation, setFormLocation] = useState("");
-  const [formClassification, setFormClassification] = useState("internal");
-  const [formCriticality, setFormCriticality] = useState("medium");
-  const [formBusinessValue, setFormBusinessValue] = useState("");
-  const [formAcquisitionDate, setFormAcquisitionDate] = useState("");
-  const [formEndOfLifeDate, setFormEndOfLifeDate] = useState("");
-  const [formLastReviewDate, setFormLastReviewDate] = useState("");
-  const [formNextReviewDate, setFormNextReviewDate] = useState("");
-  const [formResponsibleId, setFormResponsibleId] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("active");
+  const [form, setForm] = useState<AssetFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  const updateForm = <K extends keyof AssetFormData>(key: K, value: AssetFormData[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -118,69 +134,55 @@ export default function AssetsPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormName("");
-    setFormDescription("");
-    setFormType("hardware");
-    setFormCategory("");
-    setFormOwner("");
-    setFormCustodian("");
-    setFormLocation("");
-    setFormClassification("internal");
-    setFormCriticality("medium");
-    setFormBusinessValue("");
-    setFormAcquisitionDate("");
-    setFormEndOfLifeDate("");
-    setFormLastReviewDate("");
-    setFormNextReviewDate("");
-    setFormResponsibleId("");
-    setFormNotes("");
-    setFormStatus("active");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: InformationAsset) => {
     setEditingId(item.id);
-    setFormName(item.name);
-    setFormDescription(item.description || "");
-    setFormType(item.type);
-    setFormCategory(item.category || "");
-    setFormOwner(item.owner || "");
-    setFormCustodian(item.custodian || "");
-    setFormLocation(item.location || "");
-    setFormClassification(item.classification);
-    setFormCriticality(item.criticality);
-    setFormBusinessValue(item.businessValue || "");
-    setFormAcquisitionDate(item.acquisitionDate ? new Date(item.acquisitionDate).toISOString().split("T")[0] : "");
-    setFormEndOfLifeDate(item.endOfLifeDate ? new Date(item.endOfLifeDate).toISOString().split("T")[0] : "");
-    setFormLastReviewDate(item.lastReviewDate ? new Date(item.lastReviewDate).toISOString().split("T")[0] : "");
-    setFormNextReviewDate(item.nextReviewDate ? new Date(item.nextReviewDate).toISOString().split("T")[0] : "");
-    setFormResponsibleId(item.responsibleId || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      name: item.name,
+      description: item.description || "",
+      type: item.type,
+      category: item.category || "",
+      owner: item.owner || "",
+      custodian: item.custodian || "",
+      location: item.location || "",
+      classification: item.classification,
+      criticality: item.criticality,
+      businessValue: item.businessValue || "",
+      acquisitionDate: item.acquisitionDate ? new Date(item.acquisitionDate).toISOString().split("T")[0] : "",
+      endOfLifeDate: item.endOfLifeDate ? new Date(item.endOfLifeDate).toISOString().split("T")[0] : "",
+      lastReviewDate: item.lastReviewDate ? new Date(item.lastReviewDate).toISOString().split("T")[0] : "",
+      nextReviewDate: item.nextReviewDate ? new Date(item.nextReviewDate).toISOString().split("T")[0] : "",
+      responsibleId: item.responsibleId || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("Nome é obrigatório"); return; }
+    if (!form.name.trim()) { toast.error("Nome é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        name: formName,
-        description: formDescription || null,
-        type: formType,
-        category: formCategory || null,
-        owner: formOwner || null,
-        custodian: formCustodian || null,
-        location: formLocation || null,
-        classification: formClassification,
-        criticality: formCriticality,
-        businessValue: formBusinessValue || null,
-        acquisitionDate: formAcquisitionDate || null,
-        endOfLifeDate: formEndOfLifeDate || null,
-        lastReviewDate: formLastReviewDate || null,
-        nextReviewDate: formNextReviewDate || null,
-        responsibleId: formResponsibleId || null,
-        notes: formNotes || null,
-        status: formStatus,
+        name: form.name,
+        description: form.description || null,
+        type: form.type,
+        category: form.category || null,
+        owner: form.owner || null,
+        custodian: form.custodian || null,
+        location: form.location || null,
+        classification: form.classification,
+        criticality: form.criticality,
+        businessValue: form.businessValue || null,
+        acquisitionDate: form.acquisitionDate || null,
+        endOfLifeDate: form.endOfLifeDate || null,
+        lastReviewDate: form.lastReviewDate || null,
+        nextReviewDate: form.nextReviewDate || null,
+        responsibleId: form.responsibleId || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/assets/${editingId}`
@@ -358,128 +360,123 @@ export default function AssetsPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Novo"} Ativo</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label>
-                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Ex: Servidor de produção" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <Select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Proprietário</label>
-                  <Input value={formOwner} onChange={(e) => setFormOwner(e.target.value)} placeholder="Nome do proprietário" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Custodiante</label>
-                  <Input value={formCustodian} onChange={(e) => setFormCustodian(e.target.value)} placeholder="Nome do custodiante" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Localização</label>
-                <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Ex: Datacenter principal" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação *</label>
-                  <Select
-                    value={formClassification}
-                    onChange={(e) => setFormClassification(e.target.value)}
-                    options={Object.entries(CLASSIFICATIONS).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Criticidade *</label>
-                  <Select
-                    value={formCriticality}
-                    onChange={(e) => setFormCriticality(e.target.value)}
-                    options={Object.entries(CRITICALITIES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Valor de Negócio</label>
-                <Input value={formBusinessValue} onChange={(e) => setFormBusinessValue(e.target.value)} placeholder="Ex: Suporta operações críticas de TI" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data de Aquisição</label>
-                  <Input type="date" value={formAcquisitionDate} onChange={(e) => setFormAcquisitionDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fim de Vida</label>
-                  <Input type="date" value={formEndOfLifeDate} onChange={(e) => setFormEndOfLifeDate(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Última Revisão</label>
-                  <Input type="date" value={formLastReviewDate} onChange={(e) => setFormLastReviewDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Próxima Revisão</label>
-                  <Input type="date" value={formNextReviewDate} onChange={(e) => setFormNextReviewDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
-                <Select
-                  value={formResponsibleId}
-                  onChange={(e) => setFormResponsibleId(e.target.value)}
-                  options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
-                />
-              </div>
-              {editingId && (
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <Select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value)}
-                    options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Novo"} Ativo`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label>
+            <Input value={form.name} onChange={(e) => updateForm("name", e.target.value)} placeholder="Ex: Servidor de produção" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
+              <Select
+                value={form.type}
+                onChange={(e) => updateForm("type", e.target.value)}
+                options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Proprietário</label>
+              <Input value={form.owner} onChange={(e) => updateForm("owner", e.target.value)} placeholder="Nome do proprietário" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Custodiante</label>
+              <Input value={form.custodian} onChange={(e) => updateForm("custodian", e.target.value)} placeholder="Nome do custodiante" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Localização</label>
+            <Input value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="Ex: Datacenter principal" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação *</label>
+              <Select
+                value={form.classification}
+                onChange={(e) => updateForm("classification", e.target.value)}
+                options={Object.entries(CLASSIFICATIONS).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Criticidade *</label>
+              <Select
+                value={form.criticality}
+                onChange={(e) => updateForm("criticality", e.target.value)}
+                options={Object.entries(CRITICALITIES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Valor de Negócio</label>
+            <Input value={form.businessValue} onChange={(e) => updateForm("businessValue", e.target.value)} placeholder="Ex: Suporta operações críticas de TI" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data de Aquisição</label>
+              <Input type="date" value={form.acquisitionDate} onChange={(e) => updateForm("acquisitionDate", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fim de Vida</label>
+              <Input type="date" value={form.endOfLifeDate} onChange={(e) => updateForm("endOfLifeDate", e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Última Revisão</label>
+              <Input type="date" value={form.lastReviewDate} onChange={(e) => updateForm("lastReviewDate", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Próxima Revisão</label>
+              <Input type="date" value={form.nextReviewDate} onChange={(e) => updateForm("nextReviewDate", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
+            <Select
+              value={form.responsibleId}
+              onChange={(e) => updateForm("responsibleId", e.target.value)}
+              options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+            />
+          </div>
+          {editingId && (
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+              <Select
+                value={form.status}
+                onChange={(e) => updateForm("status", e.target.value)}
+                options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={2} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

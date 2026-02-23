@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus, X, Pencil, Trash2, GitPullRequest } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, GitPullRequest } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { ChangeRequest } from "@/types";
@@ -45,6 +46,28 @@ const PRIORITIES: Record<string, { label: string; color: string }> = {
   urgent: { label: "Urgente", color: "bg-danger-bg text-danger-fg" },
 };
 
+interface ChangeFormData {
+  title: string;
+  description: string;
+  type: string;
+  reason: string;
+  impactAnalysis: string;
+  riskAssessment: string;
+  rollbackPlan: string;
+  priority: string;
+  assignedToId: string;
+  plannedDate: string;
+  affectedAreas: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: ChangeFormData = {
+  title: "", description: "", type: "process", reason: "", impactAnalysis: "",
+  riskAssessment: "", rollbackPlan: "", priority: "medium", assignedToId: "",
+  plannedDate: "", affectedAreas: "", notes: "", status: "requested",
+};
+
 export default function ChangesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -59,19 +82,9 @@ export default function ChangesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState("process");
-  const [formReason, setFormReason] = useState("");
-  const [formImpactAnalysis, setFormImpactAnalysis] = useState("");
-  const [formRiskAssessment, setFormRiskAssessment] = useState("");
-  const [formRollbackPlan, setFormRollbackPlan] = useState("");
-  const [formPriority, setFormPriority] = useState("medium");
-  const [formAssignedToId, setFormAssignedToId] = useState("");
-  const [formPlannedDate, setFormPlannedDate] = useState("");
-  const [formAffectedAreas, setFormAffectedAreas] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("requested");
+  const [form, setForm] = useState<ChangeFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof ChangeFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -103,57 +116,47 @@ export default function ChangesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormType("process");
-    setFormReason("");
-    setFormImpactAnalysis("");
-    setFormRiskAssessment("");
-    setFormRollbackPlan("");
-    setFormPriority("medium");
-    setFormAssignedToId("");
-    setFormPlannedDate("");
-    setFormAffectedAreas("");
-    setFormNotes("");
-    setFormStatus("requested");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: ChangeRequest) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormType(item.type);
-    setFormReason(item.reason || "");
-    setFormImpactAnalysis(item.impactAnalysis || "");
-    setFormRiskAssessment(item.riskAssessment || "");
-    setFormRollbackPlan(item.rollbackPlan || "");
-    setFormPriority(item.priority);
-    setFormAssignedToId(item.assignedToId || "");
-    setFormPlannedDate(item.plannedDate ? new Date(item.plannedDate).toISOString().split("T")[0] : "");
-    setFormAffectedAreas(item.affectedAreas || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      type: item.type,
+      reason: item.reason || "",
+      impactAnalysis: item.impactAnalysis || "",
+      riskAssessment: item.riskAssessment || "",
+      rollbackPlan: item.rollbackPlan || "",
+      priority: item.priority,
+      assignedToId: item.assignedToId || "",
+      plannedDate: item.plannedDate ? new Date(item.plannedDate).toISOString().split("T")[0] : "",
+      affectedAreas: item.affectedAreas || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.title.trim()) { toast.error("Titulo e obrigatorio"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        type: formType,
-        reason: formReason || null,
-        impactAnalysis: formImpactAnalysis || null,
-        riskAssessment: formRiskAssessment || null,
-        rollbackPlan: formRollbackPlan || null,
-        priority: formPriority,
-        assignedToId: formAssignedToId || null,
-        plannedDate: formPlannedDate || null,
-        affectedAreas: formAffectedAreas || null,
-        notes: formNotes || null,
-        status: formStatus,
+        title: form.title,
+        description: form.description || null,
+        type: form.type,
+        reason: form.reason || null,
+        impactAnalysis: form.impactAnalysis || null,
+        riskAssessment: form.riskAssessment || null,
+        rollbackPlan: form.rollbackPlan || null,
+        priority: form.priority,
+        assignedToId: form.assignedToId || null,
+        plannedDate: form.plannedDate || null,
+        affectedAreas: form.affectedAreas || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/changes/${editingId}`
@@ -323,98 +326,92 @@ export default function ChangesPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Solicitação de Mudança</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Migração do firewall para nova solução" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <Select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prioridade</label>
-                  <Select
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value)}
-                    options={Object.entries(PRIORITIES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Justificativa</label>
-                <Textarea value={formReason} onChange={(e) => setFormReason(e.target.value)} rows={2} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Análise de Impacto</label>
-                <Textarea value={formImpactAnalysis} onChange={(e) => setFormImpactAnalysis(e.target.value)} rows={2} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Avaliação de Riscos</label>
-                <Textarea value={formRiskAssessment} onChange={(e) => setFormRiskAssessment(e.target.value)} rows={2} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Rollback</label>
-                <Textarea value={formRollbackPlan} onChange={(e) => setFormRollbackPlan(e.target.value)} rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
-                  <Select
-                    value={formAssignedToId}
-                    onChange={(e) => setFormAssignedToId(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Planejada</label>
-                  <Input type="date" value={formPlannedDate} onChange={(e) => setFormPlannedDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Áreas Afetadas</label>
-                <Textarea value={formAffectedAreas} onChange={(e) => setFormAffectedAreas(e.target.value)} rows={2} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
-              </div>
-              {editingId && (
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <Select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value)}
-                    options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              )}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Nova"} Solicitação de Mudança`}
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Migração do firewall para nova solução" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
+              <Select
+                value={form.type}
+                onChange={(e) => updateForm("type", e.target.value)}
+                options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prioridade</label>
+              <Select
+                value={form.priority}
+                onChange={(e) => updateForm("priority", e.target.value)}
+                options={Object.entries(PRIORITIES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Justificativa</label>
+            <Textarea value={form.reason} onChange={(e) => updateForm("reason", e.target.value)} rows={2} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Análise de Impacto</label>
+            <Textarea value={form.impactAnalysis} onChange={(e) => updateForm("impactAnalysis", e.target.value)} rows={2} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Avaliação de Riscos</label>
+            <Textarea value={form.riskAssessment} onChange={(e) => updateForm("riskAssessment", e.target.value)} rows={2} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Rollback</label>
+            <Textarea value={form.rollbackPlan} onChange={(e) => updateForm("rollbackPlan", e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
+              <Select
+                value={form.assignedToId}
+                onChange={(e) => updateForm("assignedToId", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Planejada</label>
+              <Input type="date" value={form.plannedDate} onChange={(e) => updateForm("plannedDate", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Áreas Afetadas</label>
+            <Textarea value={form.affectedAreas} onChange={(e) => updateForm("affectedAreas", e.target.value)} rows={2} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={2} />
+          </div>
+          {editingId && (
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+              <Select
+                value={form.status}
+                onChange={(e) => updateForm("status", e.target.value)}
+                options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

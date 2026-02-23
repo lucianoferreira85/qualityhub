@@ -10,9 +10,10 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil, Trash2, Globe, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Globe, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { SgsiScope } from "@/types";
@@ -29,6 +30,28 @@ const STATUS_OPTIONS = [
   { value: "approved", label: "Aprovado" },
 ];
 
+interface ScopeFormData {
+  title: string;
+  description: string;
+  boundaries: string;
+  exclusions: string;
+  justification: string;
+  interfaces: string;
+  status: string;
+  version: string;
+}
+
+const INITIAL_FORM: ScopeFormData = {
+  title: "",
+  description: "",
+  boundaries: "",
+  exclusions: "",
+  justification: "",
+  interfaces: "",
+  status: "draft",
+  version: "1.0",
+};
+
 export default function ScopePage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -39,19 +62,15 @@ export default function ScopePage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formBoundaries, setFormBoundaries] = useState("");
-  const [formExclusions, setFormExclusions] = useState("");
-  const [formJustification, setFormJustification] = useState("");
-  const [formInterfaces, setFormInterfaces] = useState("");
-  const [formStatus, setFormStatus] = useState("draft");
-  const [formVersion, setFormVersion] = useState("1.0");
+  const [form, setForm] = useState<ScopeFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const updateForm = (field: keyof ScopeFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -73,42 +92,37 @@ export default function ScopePage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormBoundaries("");
-    setFormExclusions("");
-    setFormJustification("");
-    setFormInterfaces("");
-    setFormStatus("draft");
-    setFormVersion("1.0");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: SgsiScope) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormBoundaries(item.boundaries || "");
-    setFormExclusions(item.exclusions || "");
-    setFormJustification(item.justification || "");
-    setFormInterfaces(item.interfaces || "");
-    setFormStatus(item.status);
-    setFormVersion(item.version);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      boundaries: item.boundaries || "",
+      exclusions: item.exclusions || "",
+      justification: item.justification || "",
+      interfaces: item.interfaces || "",
+      status: item.status,
+      version: item.version,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.title.trim()) { toast.error("Título é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        boundaries: formBoundaries || null,
-        exclusions: formExclusions || null,
-        justification: formJustification || null,
-        interfaces: formInterfaces || null,
-        status: formStatus,
-        version: formVersion,
+        title: form.title,
+        description: form.description || null,
+        boundaries: form.boundaries || null,
+        exclusions: form.exclusions || null,
+        justification: form.justification || null,
+        interfaces: form.interfaces || null,
+        status: form.status,
+        version: form.version,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/scope/${editingId}`
@@ -236,62 +250,57 @@ export default function ScopePage() {
         ))
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Definir"} Escopo</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                  <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Escopo do SGSI 2024" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Versão</label>
-                    <Input value={formVersion} onChange={(e) => setFormVersion(e.target.value)} placeholder="1.0" />
-                  </div>
-                </div>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Definir"} Escopo`}
+        className="max-w-2xl"
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+              <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Escopo do SGSI 2024" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+                <Select value={form.status} onChange={(e) => updateForm("status", e.target.value)} options={STATUS_OPTIONS} />
               </div>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-20 resize-none" placeholder="Descrição geral do escopo..." />
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Versão</label>
+                <Input value={form.version} onChange={(e) => updateForm("version", e.target.value)} placeholder="1.0" />
               </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Limites e Fronteiras</label>
-                <Textarea value={formBoundaries} onChange={(e) => setFormBoundaries(e.target.value)} className="h-20 resize-none" placeholder="Defina os limites organizacionais, físicos e tecnológicos..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Exclusões</label>
-                  <Textarea value={formExclusions} onChange={(e) => setFormExclusions(e.target.value)} className="h-20 resize-none" placeholder="Itens excluídos do escopo..." />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Justificativa</label>
-                  <Textarea value={formJustification} onChange={(e) => setFormJustification(e.target.value)} className="h-20 resize-none" placeholder="Justificativa para as exclusões..." />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Interfaces e Dependências</label>
-                <Textarea value={formInterfaces} onChange={(e) => setFormInterfaces(e.target.value)} className="h-16 resize-none" placeholder="Interfaces com partes externas, dependências..." />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} className="h-20 resize-none" placeholder="Descrição geral do escopo..." />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Limites e Fronteiras</label>
+            <Textarea value={form.boundaries} onChange={(e) => updateForm("boundaries", e.target.value)} className="h-20 resize-none" placeholder="Defina os limites organizacionais, físicos e tecnológicos..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Exclusões</label>
+              <Textarea value={form.exclusions} onChange={(e) => updateForm("exclusions", e.target.value)} className="h-20 resize-none" placeholder="Itens excluídos do escopo..." />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Justificativa</label>
+              <Textarea value={form.justification} onChange={(e) => updateForm("justification", e.target.value)} className="h-20 resize-none" placeholder="Justificativa para as exclusões..." />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Interfaces e Dependências</label>
+            <Textarea value={form.interfaces} onChange={(e) => updateForm("interfaces", e.target.value)} className="h-16 resize-none" placeholder="Interfaces com partes externas, dependências..." />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,10 +12,28 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil, Trash2, GraduationCap } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { Competence } from "@/types";
+
+interface CompetenceFormData {
+  role: string;
+  required: string;
+  level: string;
+  action: string;
+  type: string;
+  evidence: string;
+  dueDate: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: CompetenceFormData = {
+  role: "", required: "", level: "", action: "", type: "",
+  evidence: "", dueDate: "", notes: "", status: "identified",
+};
 
 const LEVELS: Record<string, { label: string; color: string }> = {
   none: { label: "Nenhum", color: "bg-danger-bg text-danger-fg" },
@@ -65,20 +83,16 @@ export default function CompetencesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formRole, setFormRole] = useState("");
-  const [formRequired, setFormRequired] = useState("");
-  const [formLevel, setFormLevel] = useState("");
-  const [formAction, setFormAction] = useState("");
-  const [formType, setFormType] = useState("");
-  const [formEvidence, setFormEvidence] = useState("");
-  const [formDueDate, setFormDueDate] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("identified");
+  const [form, setForm] = useState<CompetenceFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const updateForm = (field: keyof CompetenceFormData, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -104,45 +118,39 @@ export default function CompetencesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormRole("");
-    setFormRequired("");
-    setFormLevel("");
-    setFormAction("");
-    setFormType("");
-    setFormEvidence("");
-    setFormDueDate("");
-    setFormNotes("");
-    setFormStatus("identified");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: Competence) => {
     setEditingId(item.id);
-    setFormRole(item.role);
-    setFormRequired(item.requiredCompetence);
-    setFormLevel(item.currentLevel || "");
-    setFormAction(item.trainingAction || "");
-    setFormType(item.trainingType || "");
-    setFormEvidence(item.evidence || "");
-    setFormDueDate(item.dueDate ? new Date(item.dueDate).toISOString().split("T")[0] : "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      role: item.role,
+      required: item.requiredCompetence,
+      level: item.currentLevel || "",
+      action: item.trainingAction || "",
+      type: item.trainingType || "",
+      evidence: item.evidence || "",
+      dueDate: item.dueDate ? new Date(item.dueDate).toISOString().split("T")[0] : "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formRole.trim() || !formRequired.trim()) { toast.error("Função e competência são obrigatórios"); return; }
+    if (!form.role.trim() || !form.required.trim()) { toast.error("Função e competência são obrigatórios"); return; }
     setSaving(true);
     try {
       const payload = {
-        role: formRole,
-        requiredCompetence: formRequired,
-        currentLevel: formLevel || null,
-        trainingAction: formAction || null,
-        trainingType: formType || null,
-        evidence: formEvidence || null,
-        dueDate: formDueDate || null,
-        notes: formNotes || null,
-        status: formStatus,
+        role: form.role,
+        requiredCompetence: form.required,
+        currentLevel: form.level || null,
+        trainingAction: form.action || null,
+        trainingType: form.type || null,
+        evidence: form.evidence || null,
+        dueDate: form.dueDate || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/competences/${editingId}`
@@ -328,68 +336,63 @@ export default function CompetencesPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Competência</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Função/Cargo *</label>
-                  <Input value={formRole} onChange={(e) => setFormRole(e.target.value)} placeholder="Ex: Analista de SI" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível Atual</label>
-                  <Select value={formLevel} onChange={(e) => setFormLevel(e.target.value)} options={LEVEL_OPTIONS} />
-                </div>
-              </div>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Nova"} Competência`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Função/Cargo *</label>
+              <Input value={form.role} onChange={(e) => updateForm("role", e.target.value)} placeholder="Ex: Analista de SI" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível Atual</label>
+              <Select value={form.level} onChange={(e) => updateForm("level", e.target.value)} options={LEVEL_OPTIONS} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Competência Requerida *</label>
+            <Input value={form.required} onChange={(e) => updateForm("required", e.target.value)} placeholder="Ex: Gestão de Incidentes de Segurança" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ação de Treinamento</label>
+              <Input value={form.action} onChange={(e) => updateForm("action", e.target.value)} placeholder="Ex: Curso de resposta a incidentes" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo de Treinamento</label>
+              <Select value={form.type} onChange={(e) => updateForm("type", e.target.value)} options={TRAINING_TYPE_OPTIONS} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
+            <Input value={form.evidence} onChange={(e) => updateForm("evidence", e.target.value)} placeholder="Ex: Certificado, lista de presença..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
+              <Input type="date" value={form.dueDate} onChange={(e) => updateForm("dueDate", e.target.value)} />
+            </div>
+            {editingId && (
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Competência Requerida *</label>
-                <Input value={formRequired} onChange={(e) => setFormRequired(e.target.value)} placeholder="Ex: Gestão de Incidentes de Segurança" />
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+                <Select value={form.status} onChange={(e) => updateForm("status", e.target.value)} options={STATUS_OPTIONS} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ação de Treinamento</label>
-                  <Input value={formAction} onChange={(e) => setFormAction(e.target.value)} placeholder="Ex: Curso de resposta a incidentes" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo de Treinamento</label>
-                  <Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TRAINING_TYPE_OPTIONS} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
-                <Input value={formEvidence} onChange={(e) => setFormEvidence(e.target.value)} placeholder="Ex: Certificado, lista de presença..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
-                  <Input type="date" value={formDueDate} onChange={(e) => setFormDueDate(e.target.value)} />
-                </div>
-                {editingId && (
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} className="h-16 resize-none" />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

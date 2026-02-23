@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -13,7 +13,8 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, X, Pencil, Trash2, Truck } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { Supplier } from "@/types";
@@ -48,6 +49,33 @@ const CATEGORIES: Record<string, string> = {
   standard: "Padrão",
 };
 
+interface SupplierFormData {
+  name: string;
+  cnpj: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  type: string;
+  category: string;
+  servicesProvided: string;
+  dataAccess: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  slaDetails: string;
+  securityRequirements: string;
+  riskLevel: string;
+  responsibleId: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: SupplierFormData = {
+  name: "", cnpj: "", contactName: "", contactEmail: "", contactPhone: "",
+  type: "other", category: "", servicesProvided: "", dataAccess: "none",
+  contractStartDate: "", contractEndDate: "", slaDetails: "", securityRequirements: "",
+  riskLevel: "medium", responsibleId: "", notes: "", status: "active",
+};
+
 export default function SuppliersPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -62,27 +90,14 @@ export default function SuppliersPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formCnpj, setFormCnpj] = useState("");
-  const [formContactName, setFormContactName] = useState("");
-  const [formContactEmail, setFormContactEmail] = useState("");
-  const [formContactPhone, setFormContactPhone] = useState("");
-  const [formType, setFormType] = useState("other");
-  const [formCategory, setFormCategory] = useState("");
-  const [formServicesProvided, setFormServicesProvided] = useState("");
-  const [formDataAccess, setFormDataAccess] = useState("none");
-  const [formContractStartDate, setFormContractStartDate] = useState("");
-  const [formContractEndDate, setFormContractEndDate] = useState("");
-  const [formSlaDetails, setFormSlaDetails] = useState("");
-  const [formSecurityRequirements, setFormSecurityRequirements] = useState("");
-  const [formRiskLevel, setFormRiskLevel] = useState("medium");
-  const [formResponsibleId, setFormResponsibleId] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("active");
+  const [form, setForm] = useState<SupplierFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  const updateForm = (field: keyof SupplierFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -110,69 +125,55 @@ export default function SuppliersPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormName("");
-    setFormCnpj("");
-    setFormContactName("");
-    setFormContactEmail("");
-    setFormContactPhone("");
-    setFormType("other");
-    setFormCategory("");
-    setFormServicesProvided("");
-    setFormDataAccess("none");
-    setFormContractStartDate("");
-    setFormContractEndDate("");
-    setFormSlaDetails("");
-    setFormSecurityRequirements("");
-    setFormRiskLevel("medium");
-    setFormResponsibleId("");
-    setFormNotes("");
-    setFormStatus("active");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: Supplier) => {
     setEditingId(item.id);
-    setFormName(item.name);
-    setFormCnpj(item.cnpj || "");
-    setFormContactName(item.contactName || "");
-    setFormContactEmail(item.contactEmail || "");
-    setFormContactPhone(item.contactPhone || "");
-    setFormType(item.type);
-    setFormCategory(item.category || "");
-    setFormServicesProvided(item.servicesProvided || "");
-    setFormDataAccess(item.dataAccess || "none");
-    setFormContractStartDate(item.contractStartDate ? new Date(item.contractStartDate).toISOString().split("T")[0] : "");
-    setFormContractEndDate(item.contractEndDate ? new Date(item.contractEndDate).toISOString().split("T")[0] : "");
-    setFormSlaDetails(item.slaDetails || "");
-    setFormSecurityRequirements(item.securityRequirements || "");
-    setFormRiskLevel(item.riskLevel);
-    setFormResponsibleId(item.responsibleId || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      name: item.name,
+      cnpj: item.cnpj || "",
+      contactName: item.contactName || "",
+      contactEmail: item.contactEmail || "",
+      contactPhone: item.contactPhone || "",
+      type: item.type,
+      category: item.category || "",
+      servicesProvided: item.servicesProvided || "",
+      dataAccess: item.dataAccess || "none",
+      contractStartDate: item.contractStartDate ? new Date(item.contractStartDate).toISOString().split("T")[0] : "",
+      contractEndDate: item.contractEndDate ? new Date(item.contractEndDate).toISOString().split("T")[0] : "",
+      slaDetails: item.slaDetails || "",
+      securityRequirements: item.securityRequirements || "",
+      riskLevel: item.riskLevel,
+      responsibleId: item.responsibleId || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("Nome é obrigatório"); return; }
+    if (!form.name.trim()) { toast.error("Nome é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        name: formName,
-        cnpj: formCnpj || null,
-        contactName: formContactName || null,
-        contactEmail: formContactEmail || null,
-        contactPhone: formContactPhone || null,
-        type: formType,
-        category: formCategory || null,
-        servicesProvided: formServicesProvided || null,
-        dataAccess: formDataAccess || null,
-        contractStartDate: formContractStartDate || null,
-        contractEndDate: formContractEndDate || null,
-        slaDetails: formSlaDetails || null,
-        securityRequirements: formSecurityRequirements || null,
-        riskLevel: formRiskLevel,
-        responsibleId: formResponsibleId || null,
-        notes: formNotes || null,
-        status: formStatus,
+        name: form.name,
+        cnpj: form.cnpj || null,
+        contactName: form.contactName || null,
+        contactEmail: form.contactEmail || null,
+        contactPhone: form.contactPhone || null,
+        type: form.type,
+        category: form.category || null,
+        servicesProvided: form.servicesProvided || null,
+        dataAccess: form.dataAccess || null,
+        contractStartDate: form.contractStartDate || null,
+        contractEndDate: form.contractEndDate || null,
+        slaDetails: form.slaDetails || null,
+        securityRequirements: form.securityRequirements || null,
+        riskLevel: form.riskLevel,
+        responsibleId: form.responsibleId || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/suppliers/${editingId}`
@@ -345,130 +346,125 @@ export default function SuppliersPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Novo"} Fornecedor</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label>
-                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Ex: AWS, Microsoft Azure" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">CNPJ</label>
-                <Input value={formCnpj} onChange={(e) => setFormCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Nome</label>
-                  <Input value={formContactName} onChange={(e) => setFormContactName(e.target.value)} placeholder="Nome do contato" />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Email</label>
-                  <Input type="email" value={formContactEmail} onChange={(e) => setFormContactEmail(e.target.value)} placeholder="email@fornecedor.com" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Telefone</label>
-                <Input value={formContactPhone} onChange={(e) => setFormContactPhone(e.target.value)} placeholder="(00) 00000-0000" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <Select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Serviços Fornecidos</label>
-                <Textarea value={formServicesProvided} onChange={(e) => setFormServicesProvided(e.target.value)} rows={2} placeholder="Descreva os serviços prestados" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Acesso a Dados</label>
-                <Select
-                  value={formDataAccess}
-                  onChange={(e) => setFormDataAccess(e.target.value)}
-                  options={[
-                    { value: "none", label: "Nenhum" },
-                    { value: "limited", label: "Limitado" },
-                    { value: "full", label: "Total" },
-                  ]}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Início do Contrato</label>
-                  <Input type="date" value={formContractStartDate} onChange={(e) => setFormContractStartDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fim do Contrato</label>
-                  <Input type="date" value={formContractEndDate} onChange={(e) => setFormContractEndDate(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detalhes do SLA</label>
-                <Textarea value={formSlaDetails} onChange={(e) => setFormSlaDetails(e.target.value)} rows={2} placeholder="SLA acordado com o fornecedor" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos de Segurança</label>
-                <Textarea value={formSecurityRequirements} onChange={(e) => setFormSecurityRequirements(e.target.value)} rows={2} placeholder="Requisitos de segurança exigidos" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível de Risco</label>
-                  <Select
-                    value={formRiskLevel}
-                    onChange={(e) => setFormRiskLevel(e.target.value)}
-                    options={Object.entries(RISK_LEVELS).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
-                  <Select
-                    value={formResponsibleId}
-                    onChange={(e) => setFormResponsibleId(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
-                  />
-                </div>
-              </div>
-              {editingId && (
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <Select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value)}
-                    options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              )}
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Novo"} Fornecedor`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label>
+            <Input value={form.name} onChange={(e) => updateForm("name", e.target.value)} placeholder="Ex: AWS, Microsoft Azure" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">CNPJ</label>
+            <Input value={form.cnpj} onChange={(e) => updateForm("cnpj", e.target.value)} placeholder="00.000.000/0000-00" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Nome</label>
+              <Input value={form.contactName} onChange={(e) => updateForm("contactName", e.target.value)} placeholder="Nome do contato" />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Email</label>
+              <Input type="email" value={form.contactEmail} onChange={(e) => updateForm("contactEmail", e.target.value)} placeholder="email@fornecedor.com" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Contato - Telefone</label>
+            <Input value={form.contactPhone} onChange={(e) => updateForm("contactPhone", e.target.value)} placeholder="(00) 00000-0000" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
+              <Select
+                value={form.type}
+                onChange={(e) => updateForm("type", e.target.value)}
+                options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Serviços Fornecidos</label>
+            <Textarea value={form.servicesProvided} onChange={(e) => updateForm("servicesProvided", e.target.value)} rows={2} placeholder="Descreva os serviços prestados" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Acesso a Dados</label>
+            <Select
+              value={form.dataAccess}
+              onChange={(e) => updateForm("dataAccess", e.target.value)}
+              options={[
+                { value: "none", label: "Nenhum" },
+                { value: "limited", label: "Limitado" },
+                { value: "full", label: "Total" },
+              ]}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Início do Contrato</label>
+              <Input type="date" value={form.contractStartDate} onChange={(e) => updateForm("contractStartDate", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fim do Contrato</label>
+              <Input type="date" value={form.contractEndDate} onChange={(e) => updateForm("contractEndDate", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detalhes do SLA</label>
+            <Textarea value={form.slaDetails} onChange={(e) => updateForm("slaDetails", e.target.value)} rows={2} placeholder="SLA acordado com o fornecedor" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos de Segurança</label>
+            <Textarea value={form.securityRequirements} onChange={(e) => updateForm("securityRequirements", e.target.value)} rows={2} placeholder="Requisitos de segurança exigidos" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível de Risco</label>
+              <Select
+                value={form.riskLevel}
+                onChange={(e) => updateForm("riskLevel", e.target.value)}
+                options={Object.entries(RISK_LEVELS).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
+              <Select
+                value={form.responsibleId}
+                onChange={(e) => updateForm("responsibleId", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+              />
+            </div>
+          </div>
+          {editingId && (
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+              <Select
+                value={form.status}
+                onChange={(e) => updateForm("status", e.target.value)}
+                options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={2} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

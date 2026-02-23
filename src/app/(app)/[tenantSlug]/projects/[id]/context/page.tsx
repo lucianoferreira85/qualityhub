@@ -9,11 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
-
+import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { OrganizationContext } from "@/types";
 
@@ -45,6 +45,22 @@ const IMPACT_CONFIG: Record<string, { label: string; color: string }> = {
   low: { label: "Baixo", color: "bg-success-bg text-success-fg" },
 };
 
+interface ContextFormData {
+  type: string;
+  title: string;
+  description: string;
+  category: string;
+  impact: string;
+}
+
+const INITIAL_FORM: ContextFormData = {
+  type: "strength",
+  title: "",
+  description: "",
+  category: "",
+  impact: "",
+};
+
 export default function ProjectContextPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -55,15 +71,14 @@ export default function ProjectContextPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formType, setFormType] = useState<string>("strength");
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formCategory, setFormCategory] = useState("");
-  const [formImpact, setFormImpact] = useState("");
+  const [form, setForm] = useState<ContextFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const updateForm = (field: keyof ContextFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -85,41 +100,40 @@ export default function ProjectContextPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormCategory("");
-    setFormImpact("");
+    setForm(INITIAL_FORM);
   };
 
   const openCreate = (type: string) => {
     resetForm();
-    setFormType(type);
+    setForm({ ...INITIAL_FORM, type });
     setShowForm(true);
   };
 
   const openEdit = (item: OrganizationContext) => {
     setEditingId(item.id);
-    setFormType(item.type);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormCategory(item.category || "");
-    setFormImpact(item.impact || "");
+    setForm({
+      type: item.type,
+      title: item.title,
+      description: item.description || "",
+      category: item.category || "",
+      impact: item.impact || "",
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) {
+    if (!form.title.trim()) {
       toast.error("Título é obrigatório");
       return;
     }
     setSaving(true);
     try {
       const payload = {
-        type: formType,
-        title: formTitle,
-        description: formDescription || null,
-        category: formCategory || null,
-        impact: formImpact || null,
+        type: form.type,
+        title: form.title,
+        description: form.description || null,
+        category: form.category || null,
+        impact: form.impact || null,
         projectId,
       };
 
@@ -241,60 +255,50 @@ export default function ProjectContextPage() {
         ))}
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">
-                  {editingId ? "Editar" : "Novo"} - {SWOT_CONFIG[formType as keyof typeof SWOT_CONFIG]?.label}
-                </h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  className="h-20 resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    options={CATEGORY_OPTIONS}
-                    placeholder="Selecionar..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto</label>
-                  <Select
-                    value={formImpact}
-                    onChange={(e) => setFormImpact(e.target.value)}
-                    options={IMPACT_OPTIONS}
-                    placeholder="Selecionar..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Novo"} - ${SWOT_CONFIG[form.type as keyof typeof SWOT_CONFIG]?.label}`}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => updateForm("description", e.target.value)}
+              className="h-20 resize-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                options={CATEGORY_OPTIONS}
+                placeholder="Selecionar..."
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto</label>
+              <Select
+                value={form.impact}
+                onChange={(e) => updateForm("impact", e.target.value)}
+                options={IMPACT_OPTIONS}
+                placeholder="Selecionar..."
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

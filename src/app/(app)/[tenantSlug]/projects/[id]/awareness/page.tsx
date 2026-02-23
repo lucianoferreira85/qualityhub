@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
+import { Modal } from "@/components/ui/modal";
 import { Plus, X, Pencil, Trash2, Megaphone, ChevronDown, ChevronUp, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -47,6 +48,26 @@ const STATUS_OPTIONS = Object.entries(STATUSES).map(([k, v]) => ({ value: k, lab
 
 const PARTICIPANT_STATUS_OPTIONS = Object.entries(PARTICIPANT_STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
 
+interface AwarenessFormData {
+  title: string;
+  description: string;
+  type: string;
+  audience: string;
+  startDate: string;
+  endDate: string;
+  duration: string;
+  location: string;
+  instructor: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: AwarenessFormData = {
+  title: "", description: "", type: "training", audience: "",
+  startDate: "", endDate: "", duration: "", location: "",
+  instructor: "", notes: "", status: "planned",
+};
+
 export default function AwarenessPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -61,17 +82,7 @@ export default function AwarenessPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState("training");
-  const [formAudience, setFormAudience] = useState("");
-  const [formStartDate, setFormStartDate] = useState("");
-  const [formEndDate, setFormEndDate] = useState("");
-  const [formDuration, setFormDuration] = useState("");
-  const [formLocation, setFormLocation] = useState("");
-  const [formInstructor, setFormInstructor] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("planned");
+  const [form, setForm] = useState<AwarenessFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showAddParticipant, setShowAddParticipant] = useState(false);
@@ -82,6 +93,10 @@ export default function AwarenessPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const updateForm = (field: keyof AwarenessFormData, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -114,29 +129,38 @@ export default function AwarenessPage() {
   };
 
   const resetForm = () => {
-    setShowForm(false); setEditingId(null); setFormTitle(""); setFormDescription(""); setFormType("training");
-    setFormAudience(""); setFormStartDate(""); setFormEndDate(""); setFormDuration(""); setFormLocation("");
-    setFormInstructor(""); setFormNotes(""); setFormStatus("planned");
+    setShowForm(false);
+    setEditingId(null);
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: AwarenessCampaign) => {
-    setEditingId(item.id); setFormTitle(item.title); setFormDescription(item.description || ""); setFormType(item.type);
-    setFormAudience(item.targetAudience || ""); setFormStartDate(new Date(item.startDate).toISOString().split("T")[0]);
-    setFormEndDate(item.endDate ? new Date(item.endDate).toISOString().split("T")[0] : "");
-    setFormDuration(item.duration ? String(item.duration) : ""); setFormLocation(item.location || "");
-    setFormInstructor(item.instructor || ""); setFormNotes(item.notes || ""); setFormStatus(item.status);
+    setEditingId(item.id);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      type: item.type,
+      audience: item.targetAudience || "",
+      startDate: new Date(item.startDate).toISOString().split("T")[0],
+      endDate: item.endDate ? new Date(item.endDate).toISOString().split("T")[0] : "",
+      duration: item.duration ? String(item.duration) : "",
+      location: item.location || "",
+      instructor: item.instructor || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim() || !formStartDate) { toast.error("Título e data de início são obrigatórios"); return; }
+    if (!form.title.trim() || !form.startDate) { toast.error("Título e data de início são obrigatórios"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle, description: formDescription || null, type: formType, targetAudience: formAudience || null,
-        startDate: formStartDate, endDate: formEndDate || null, duration: formDuration ? Number(formDuration) : null,
-        location: formLocation || null, instructor: formInstructor || null, notes: formNotes || null,
-        status: formStatus, projectId,
+        title: form.title, description: form.description || null, type: form.type, targetAudience: form.audience || null,
+        startDate: form.startDate, endDate: form.endDate || null, duration: form.duration ? Number(form.duration) : null,
+        location: form.location || null, instructor: form.instructor || null, notes: form.notes || null,
+        status: form.status, projectId,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/awareness/${editingId}`
@@ -377,72 +401,67 @@ export default function AwarenessPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Campanha</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Treinamento de Phishing Q1 2026" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TYPE_OPTIONS} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Público-alvo</label>
-                  <Input value={formAudience} onChange={(e) => setFormAudience(e.target.value)} placeholder="Ex: Todos os colaboradores" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Início *</label>
-                  <Input type="date" value={formStartDate} onChange={(e) => setFormStartDate(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Fim</label>
-                  <Input type="date" value={formEndDate} onChange={(e) => setFormEndDate(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Duração (min)</label>
-                  <Input type="number" value={formDuration} onChange={(e) => setFormDuration(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Local</label>
-                  <Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="Ex: Sala de treinamento" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Instrutor</label>
-                <Input value={formInstructor} onChange={(e) => setFormInstructor(e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
-              </div>
-              {editingId && (
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
-                </div>
-              )}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Nova"} Campanha`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Treinamento de Phishing Q1 2026" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
+              <Select value={form.type} onChange={(e) => updateForm("type", e.target.value)} options={TYPE_OPTIONS} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Público-alvo</label>
+              <Input value={form.audience} onChange={(e) => updateForm("audience", e.target.value)} placeholder="Ex: Todos os colaboradores" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Início *</label>
+              <Input type="date" value={form.startDate} onChange={(e) => updateForm("startDate", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Fim</label>
+              <Input type="date" value={form.endDate} onChange={(e) => updateForm("endDate", e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Duração (min)</label>
+              <Input type="number" value={form.duration} onChange={(e) => updateForm("duration", e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Local</label>
+              <Input value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="Ex: Sala de treinamento" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Instrutor</label>
+            <Input value={form.instructor} onChange={(e) => updateForm("instructor", e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} className="h-16 resize-none" />
+          </div>
+          {editingId && (
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+              <Select value={form.status} onChange={(e) => updateForm("status", e.target.value)} options={STATUS_OPTIONS} />
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

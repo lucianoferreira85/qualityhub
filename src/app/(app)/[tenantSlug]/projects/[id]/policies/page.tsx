@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
-import { Plus, X, Pencil, Trash2, ScrollText, CheckCircle2, Send, ShieldCheck, Globe, Archive } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, ScrollText, CheckCircle2, Send, ShieldCheck, Globe, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { Policy } from "@/types";
@@ -45,6 +46,24 @@ const FORM_CATEGORY_OPTIONS = [
   ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v })),
 ];
 
+interface PolicyFormData {
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: PolicyFormData = {
+  title: "",
+  description: "",
+  content: "",
+  category: "",
+  notes: "",
+  status: "draft",
+};
+
 export default function PoliciesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -58,12 +77,9 @@ export default function PoliciesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formContent, setFormContent] = useState("");
-  const [formCategory, setFormCategory] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("draft");
+  const [form, setForm] = useState<PolicyFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof PolicyFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -96,36 +112,33 @@ export default function PoliciesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormContent("");
-    setFormCategory("");
-    setFormNotes("");
-    setFormStatus("draft");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: Policy) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormContent(item.content || "");
-    setFormCategory(item.category || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      content: item.content || "",
+      category: item.category || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.title.trim()) { toast.error("Título é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        content: formContent || null,
-        category: formCategory || null,
-        notes: formNotes || null,
-        status: formStatus,
+        title: form.title,
+        description: form.description || null,
+        content: form.content || null,
+        category: form.category || null,
+        notes: form.notes || null,
+        status: form.status,
         projectId,
       };
       const url = editingId
@@ -340,44 +353,39 @@ export default function PoliciesPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Política</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Política de Segurança da Informação" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                <Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={FORM_CATEGORY_OPTIONS} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Conteúdo</label>
-                <Textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="h-32 resize-none" placeholder="Texto completo da política..." />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={editingId ? "Editar Política" : "Nova Política"}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Política de Segurança da Informação" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+            <Select value={form.category} onChange={(e) => updateForm("category", e.target.value)} options={FORM_CATEGORY_OPTIONS} />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} className="h-16 resize-none" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Conteúdo</label>
+            <Textarea value={form.content} onChange={(e) => updateForm("content", e.target.value)} className="h-32 resize-none" placeholder="Texto completo da política..." />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} className="h-16 resize-none" />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

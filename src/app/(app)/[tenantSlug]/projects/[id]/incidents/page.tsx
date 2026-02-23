@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus, X, Pencil, Trash2, ShieldAlert } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { SecurityIncident } from "@/types";
@@ -51,6 +52,32 @@ const CATEGORIES: Record<string, string> = {
   multiple: "Múltiplas",
 };
 
+interface IncidentFormData {
+  title: string;
+  description: string;
+  type: string;
+  severity: string;
+  category: string;
+  detectedAt: string;
+  assignedToId: string;
+  affectedAssets: string;
+  affectedSystems: string;
+  impactDescription: string;
+  rootCause: string;
+  containmentActions: string;
+  correctiveActions: string;
+  lessonsLearned: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: IncidentFormData = {
+  title: "", description: "", type: "other", severity: "medium", category: "",
+  detectedAt: "", assignedToId: "", affectedAssets: "", affectedSystems: "",
+  impactDescription: "", rootCause: "", containmentActions: "", correctiveActions: "",
+  lessonsLearned: "", notes: "", status: "reported",
+};
+
 export default function IncidentsPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -65,26 +92,15 @@ export default function IncidentsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formType, setFormType] = useState("other");
-  const [formSeverity, setFormSeverity] = useState("medium");
-  const [formCategory, setFormCategory] = useState("");
-  const [formDetectedAt, setFormDetectedAt] = useState("");
-  const [formAssignedToId, setFormAssignedToId] = useState("");
-  const [formAffectedAssets, setFormAffectedAssets] = useState("");
-  const [formAffectedSystems, setFormAffectedSystems] = useState("");
-  const [formImpactDescription, setFormImpactDescription] = useState("");
-  const [formRootCause, setFormRootCause] = useState("");
-  const [formContainmentActions, setFormContainmentActions] = useState("");
-  const [formCorrectiveActions, setFormCorrectiveActions] = useState("");
-  const [formLessonsLearned, setFormLessonsLearned] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("reported");
+  const [form, setForm] = useState<IncidentFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  const updateForm = <K extends keyof IncidentFormData>(key: K, value: IncidentFormData[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -112,67 +128,54 @@ export default function IncidentsPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormType("other");
-    setFormSeverity("medium");
-    setFormCategory("");
-    setFormDetectedAt("");
-    setFormAssignedToId("");
-    setFormAffectedAssets("");
-    setFormAffectedSystems("");
-    setFormImpactDescription("");
-    setFormRootCause("");
-    setFormContainmentActions("");
-    setFormCorrectiveActions("");
-    setFormLessonsLearned("");
-    setFormNotes("");
-    setFormStatus("reported");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: SecurityIncident) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormType(item.type);
-    setFormSeverity(item.severity);
-    setFormCategory(item.category || "");
-    setFormDetectedAt(item.detectedAt ? new Date(item.detectedAt).toISOString().slice(0, 16) : "");
-    setFormAssignedToId(item.assignedToId || "");
-    setFormAffectedAssets(item.affectedAssets || "");
-    setFormAffectedSystems(item.affectedSystems || "");
-    setFormImpactDescription(item.impactDescription || "");
-    setFormRootCause(item.rootCause || "");
-    setFormContainmentActions(item.containmentActions || "");
-    setFormCorrectiveActions(item.correctiveActions || "");
-    setFormLessonsLearned(item.lessonsLearned || "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      type: item.type,
+      severity: item.severity,
+      category: item.category || "",
+      detectedAt: item.detectedAt ? new Date(item.detectedAt).toISOString().slice(0, 16) : "",
+      assignedToId: item.assignedToId || "",
+      affectedAssets: item.affectedAssets || "",
+      affectedSystems: item.affectedSystems || "",
+      impactDescription: item.impactDescription || "",
+      rootCause: item.rootCause || "",
+      containmentActions: item.containmentActions || "",
+      correctiveActions: item.correctiveActions || "",
+      lessonsLearned: item.lessonsLearned || "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
-    if (!formDetectedAt) { toast.error("Data de detecção é obrigatória"); return; }
+    if (!form.title.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.detectedAt) { toast.error("Data de detecção é obrigatória"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        type: formType,
-        severity: formSeverity,
-        category: formCategory || null,
-        detectedAt: formDetectedAt || null,
-        assignedToId: formAssignedToId || null,
-        affectedAssets: formAffectedAssets || null,
-        affectedSystems: formAffectedSystems || null,
-        impactDescription: formImpactDescription || null,
-        rootCause: formRootCause || null,
-        containmentActions: formContainmentActions || null,
-        correctiveActions: formCorrectiveActions || null,
-        lessonsLearned: formLessonsLearned || null,
-        notes: formNotes || null,
-        status: formStatus,
+        title: form.title,
+        description: form.description || null,
+        type: form.type,
+        severity: form.severity,
+        category: form.category || null,
+        detectedAt: form.detectedAt || null,
+        assignedToId: form.assignedToId || null,
+        affectedAssets: form.affectedAssets || null,
+        affectedSystems: form.affectedSystems || null,
+        impactDescription: form.impactDescription || null,
+        rootCause: form.rootCause || null,
+        containmentActions: form.containmentActions || null,
+        correctiveActions: form.correctiveActions || null,
+        lessonsLearned: form.lessonsLearned || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/incidents/${editingId}`
@@ -340,116 +343,111 @@ export default function IncidentsPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Novo"} Incidente</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Novo"} Incidente`}
+        className="max-h-[90vh] overflow-y-auto"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Tentativa de acesso não autorizado ao servidor" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
+              <Select
+                value={form.type}
+                onChange={(e) => updateForm("type", e.target.value)}
+                options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Severidade *</label>
+              <Select
+                value={form.severity}
+                onChange={(e) => updateForm("severity", e.target.value)}
+                options={Object.entries(SEVERITIES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detectado Em *</label>
+              <Input type="datetime-local" value={form.detectedAt} onChange={(e) => updateForm("detectedAt", e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Atribuído A</label>
+            <Select
+              value={form.assignedToId}
+              onChange={(e) => updateForm("assignedToId", e.target.value)}
+              options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+            />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ativos Afetados</label>
+            <Textarea value={form.affectedAssets} onChange={(e) => updateForm("affectedAssets", e.target.value)} rows={2} placeholder="Ex: Servidor de banco de dados, laptop do colaborador" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Sistemas Afetados</label>
+            <Textarea value={form.affectedSystems} onChange={(e) => updateForm("affectedSystems", e.target.value)} rows={2} placeholder="Ex: ERP, sistema de e-mail" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição do Impacto</label>
+            <Textarea value={form.impactDescription} onChange={(e) => updateForm("impactDescription", e.target.value)} rows={2} placeholder="Descreva o impacto do incidente" />
+          </div>
+          {editingId && (
+            <>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Tentativa de acesso não autorizado ao servidor" />
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Causa Raiz</label>
+                <Textarea value={form.rootCause} onChange={(e) => updateForm("rootCause", e.target.value)} rows={2} placeholder="Análise da causa raiz do incidente" />
               </div>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <Select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value)}
-                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Severidade *</label>
-                  <Select
-                    value={formSeverity}
-                    onChange={(e) => setFormSeverity(e.target.value)}
-                    options={Object.entries(SEVERITIES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detectado Em *</label>
-                  <Input type="datetime-local" value={formDetectedAt} onChange={(e) => setFormDetectedAt(e.target.value)} />
-                </div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações de Contenção</label>
+                <Textarea value={form.containmentActions} onChange={(e) => updateForm("containmentActions", e.target.value)} rows={2} placeholder="Ações tomadas para conter o incidente" />
               </div>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Atribuído A</label>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações Corretivas</label>
+                <Textarea value={form.correctiveActions} onChange={(e) => updateForm("correctiveActions", e.target.value)} rows={2} placeholder="Ações corretivas implementadas" />
+              </div>
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Lições Aprendidas</label>
+                <Textarea value={form.lessonsLearned} onChange={(e) => updateForm("lessonsLearned", e.target.value)} rows={2} placeholder="O que foi aprendido com este incidente" />
+              </div>
+              <div>
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
                 <Select
-                  value={formAssignedToId}
-                  onChange={(e) => setFormAssignedToId(e.target.value)}
-                  options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+                  value={form.status}
+                  onChange={(e) => updateForm("status", e.target.value)}
+                  options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
                 />
               </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ativos Afetados</label>
-                <Textarea value={formAffectedAssets} onChange={(e) => setFormAffectedAssets(e.target.value)} rows={2} placeholder="Ex: Servidor de banco de dados, laptop do colaborador" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Sistemas Afetados</label>
-                <Textarea value={formAffectedSystems} onChange={(e) => setFormAffectedSystems(e.target.value)} rows={2} placeholder="Ex: ERP, sistema de e-mail" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição do Impacto</label>
-                <Textarea value={formImpactDescription} onChange={(e) => setFormImpactDescription(e.target.value)} rows={2} placeholder="Descreva o impacto do incidente" />
-              </div>
-              {editingId && (
-                <>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Causa Raiz</label>
-                    <Textarea value={formRootCause} onChange={(e) => setFormRootCause(e.target.value)} rows={2} placeholder="Análise da causa raiz do incidente" />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações de Contenção</label>
-                    <Textarea value={formContainmentActions} onChange={(e) => setFormContainmentActions(e.target.value)} rows={2} placeholder="Ações tomadas para conter o incidente" />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações Corretivas</label>
-                    <Textarea value={formCorrectiveActions} onChange={(e) => setFormCorrectiveActions(e.target.value)} rows={2} placeholder="Ações corretivas implementadas" />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Lições Aprendidas</label>
-                    <Textarea value={formLessonsLearned} onChange={(e) => setFormLessonsLearned(e.target.value)} rows={2} placeholder="O que foi aprendido com este incidente" />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <Select
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value)}
-                      options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
-                    />
-                  </div>
-                </>
-              )}
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={2} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -11,8 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
+import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus, X, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { InterestedParty } from "@/types";
 
@@ -65,6 +66,30 @@ const STRATEGY_CONFIG: Record<string, { label: string }> = {
 
 const STRATEGY_OPTIONS = Object.entries(STRATEGY_CONFIG).map(([value, { label }]) => ({ value, label }));
 
+interface PartyFormData {
+  name: string;
+  type: string;
+  category: string;
+  needs: string;
+  requirements: string;
+  influence: string;
+  interest: string;
+  strategy: string;
+  monitoring: string;
+}
+
+const INITIAL_FORM: PartyFormData = {
+  name: "",
+  type: "internal",
+  category: "",
+  needs: "",
+  requirements: "",
+  influence: "",
+  interest: "",
+  strategy: "",
+  monitoring: "",
+};
+
 export default function ProjectInterestedPartiesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -76,19 +101,14 @@ export default function ProjectInterestedPartiesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formType, setFormType] = useState("internal");
-  const [formCategory, setFormCategory] = useState("");
-  const [formNeeds, setFormNeeds] = useState("");
-  const [formRequirements, setFormRequirements] = useState("");
-  const [formInfluence, setFormInfluence] = useState("");
-  const [formInterest, setFormInterest] = useState("");
-  const [formStrategy, setFormStrategy] = useState("");
-  const [formMonitoring, setFormMonitoring] = useState("");
+  const [form, setForm] = useState<PartyFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  const updateForm = (field: keyof PartyFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -114,44 +134,38 @@ export default function ProjectInterestedPartiesPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormName("");
-    setFormType("internal");
-    setFormCategory("");
-    setFormNeeds("");
-    setFormRequirements("");
-    setFormInfluence("");
-    setFormInterest("");
-    setFormStrategy("");
-    setFormMonitoring("");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: InterestedParty) => {
     setEditingId(item.id);
-    setFormName(item.name);
-    setFormType(item.type);
-    setFormCategory(item.category || "");
-    setFormNeeds(item.needsExpectations || "");
-    setFormRequirements(item.requirements || "");
-    setFormInfluence(item.influence || "");
-    setFormInterest(item.interest || "");
-    setFormStrategy(item.strategy || "");
-    setFormMonitoring(item.monitoringMethod || "");
+    setForm({
+      name: item.name,
+      type: item.type,
+      category: item.category || "",
+      needs: item.needsExpectations || "",
+      requirements: item.requirements || "",
+      influence: item.influence || "",
+      interest: item.interest || "",
+      strategy: item.strategy || "",
+      monitoring: item.monitoringMethod || "",
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formName.trim()) { toast.error("Nome é obrigatório"); return; }
+    if (!form.name.trim()) { toast.error("Nome é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        name: formName, type: formType,
-        category: formCategory || null,
-        needsExpectations: formNeeds || null,
-        requirements: formRequirements || null,
-        influence: formInfluence || null,
-        interest: formInterest || null,
-        strategy: formStrategy || null,
-        monitoringMethod: formMonitoring || null,
+        name: form.name, type: form.type,
+        category: form.category || null,
+        needsExpectations: form.needs || null,
+        requirements: form.requirements || null,
+        influence: form.influence || null,
+        interest: form.interest || null,
+        strategy: form.strategy || null,
+        monitoringMethod: form.monitoring || null,
         projectId,
       };
       const url = editingId
@@ -230,34 +244,29 @@ export default function ProjectInterestedPartiesPage() {
         )}
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Parte Interessada</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label><Input value={formName} onChange={(e) => setFormName(e.target.value)} /></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label><Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TYPE_OPTIONS} /></div>
-              </div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label><Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={CATEGORY_OPTIONS} placeholder="Selecionar..." /></div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Necessidades</label><Textarea value={formNeeds} onChange={(e) => setFormNeeds(e.target.value)} className="min-h-[64px]" /></div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos</label><Textarea value={formRequirements} onChange={(e) => setFormRequirements(e.target.value)} className="min-h-[64px]" /></div>
-              <div className="grid grid-cols-3 gap-4">
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Influência</label><Select value={formInfluence} onChange={(e) => setFormInfluence(e.target.value)} options={INFLUENCE_OPTIONS} placeholder="Sel..." /></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Interesse</label><Select value={formInterest} onChange={(e) => setFormInterest(e.target.value)} options={INTEREST_OPTIONS} placeholder="Sel..." /></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Estratégia</label><Select value={formStrategy} onChange={(e) => setFormStrategy(e.target.value)} options={STRATEGY_OPTIONS} placeholder="Sel..." /></div>
-              </div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Método de Monitoramento</label><Input value={formMonitoring} onChange={(e) => setFormMonitoring(e.target.value)} /></div>
-              <div className="flex justify-end gap-3 pt-2"><Button variant="outline" onClick={resetForm}>Cancelar</Button><Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button></div>
-            </CardContent>
-          </Card>
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Nova"} Parte Interessada`}
+        className="max-w-2xl"
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label><Input value={form.name} onChange={(e) => updateForm("name", e.target.value)} /></div>
+            <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label><Select value={form.type} onChange={(e) => updateForm("type", e.target.value)} options={TYPE_OPTIONS} /></div>
+          </div>
+          <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label><Select value={form.category} onChange={(e) => updateForm("category", e.target.value)} options={CATEGORY_OPTIONS} placeholder="Selecionar..." /></div>
+          <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Necessidades</label><Textarea value={form.needs} onChange={(e) => updateForm("needs", e.target.value)} className="min-h-[64px]" /></div>
+          <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos</label><Textarea value={form.requirements} onChange={(e) => updateForm("requirements", e.target.value)} className="min-h-[64px]" /></div>
+          <div className="grid grid-cols-3 gap-4">
+            <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Influência</label><Select value={form.influence} onChange={(e) => updateForm("influence", e.target.value)} options={INFLUENCE_OPTIONS} placeholder="Sel..." /></div>
+            <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Interesse</label><Select value={form.interest} onChange={(e) => updateForm("interest", e.target.value)} options={INTEREST_OPTIONS} placeholder="Sel..." /></div>
+            <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Estratégia</label><Select value={form.strategy} onChange={(e) => updateForm("strategy", e.target.value)} options={STRATEGY_OPTIONS} placeholder="Sel..." /></div>
+          </div>
+          <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Método de Monitoramento</label><Input value={form.monitoring} onChange={(e) => updateForm("monitoring", e.target.value)} /></div>
+          <div className="flex justify-end gap-3 pt-2"><Button variant="outline" onClick={resetForm}>Cancelar</Button><Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button></div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

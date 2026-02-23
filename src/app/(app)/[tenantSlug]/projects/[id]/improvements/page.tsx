@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Plus, X, Pencil, Trash2, Lightbulb, ExternalLink } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
+import { Plus, Pencil, Trash2, Lightbulb, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import type { ImprovementOpportunity } from "@/types";
@@ -53,6 +54,27 @@ const PRIORITIES: Record<string, { label: string; color: string }> = {
   critical: { label: "Crítica", color: "bg-danger-bg text-danger-fg" },
 };
 
+interface ImprovementFormData {
+  title: string;
+  description: string;
+  source: string;
+  category: string;
+  priority: string;
+  expectedImpact: string;
+  actualImpact: string;
+  responsibleId: string;
+  actionPlanId: string;
+  dueDate: string;
+  notes: string;
+  status: string;
+}
+
+const INITIAL_FORM: ImprovementFormData = {
+  title: "", description: "", source: "other", category: "", priority: "medium",
+  expectedImpact: "", actualImpact: "", responsibleId: "", actionPlanId: "",
+  dueDate: "", notes: "", status: "identified",
+};
+
 export default function ImprovementsPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -68,18 +90,9 @@ export default function ImprovementsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formTitle, setFormTitle] = useState("");
-  const [formDescription, setFormDescription] = useState("");
-  const [formSource, setFormSource] = useState("other");
-  const [formCategory, setFormCategory] = useState("");
-  const [formPriority, setFormPriority] = useState("medium");
-  const [formExpectedImpact, setFormExpectedImpact] = useState("");
-  const [formActualImpact, setFormActualImpact] = useState("");
-  const [formResponsibleId, setFormResponsibleId] = useState("");
-  const [formActionPlanId, setFormActionPlanId] = useState("");
-  const [formDueDate, setFormDueDate] = useState("");
-  const [formNotes, setFormNotes] = useState("");
-  const [formStatus, setFormStatus] = useState("identified");
+  const [form, setForm] = useState<ImprovementFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof ImprovementFormData, value: string) =>
+    setForm(prev => ({ ...prev, [field]: value }));
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -113,54 +126,45 @@ export default function ImprovementsPage() {
   const resetForm = () => {
     setShowForm(false);
     setEditingId(null);
-    setFormTitle("");
-    setFormDescription("");
-    setFormSource("other");
-    setFormCategory("");
-    setFormPriority("medium");
-    setFormExpectedImpact("");
-    setFormActualImpact("");
-    setFormResponsibleId("");
-    setFormActionPlanId("");
-    setFormDueDate("");
-    setFormNotes("");
-    setFormStatus("identified");
+    setForm(INITIAL_FORM);
   };
 
   const openEdit = (item: ImprovementOpportunity) => {
     setEditingId(item.id);
-    setFormTitle(item.title);
-    setFormDescription(item.description || "");
-    setFormSource(item.source);
-    setFormCategory(item.category || "");
-    setFormPriority(item.priority);
-    setFormExpectedImpact(item.expectedImpact || "");
-    setFormActualImpact(item.actualImpact || "");
-    setFormResponsibleId(item.responsibleId || "");
-    setFormActionPlanId(item.actionPlanId || "");
-    setFormDueDate(item.dueDate ? new Date(item.dueDate).toISOString().split("T")[0] : "");
-    setFormNotes(item.notes || "");
-    setFormStatus(item.status);
+    setForm({
+      title: item.title,
+      description: item.description || "",
+      source: item.source,
+      category: item.category || "",
+      priority: item.priority,
+      expectedImpact: item.expectedImpact || "",
+      actualImpact: item.actualImpact || "",
+      responsibleId: item.responsibleId || "",
+      actionPlanId: item.actionPlanId || "",
+      dueDate: item.dueDate ? new Date(item.dueDate).toISOString().split("T")[0] : "",
+      notes: item.notes || "",
+      status: item.status,
+    });
     setShowForm(true);
   };
 
   const handleSave = async () => {
-    if (!formTitle.trim()) { toast.error("Título é obrigatório"); return; }
+    if (!form.title.trim()) { toast.error("Título é obrigatório"); return; }
     setSaving(true);
     try {
       const payload = {
-        title: formTitle,
-        description: formDescription || null,
-        source: formSource,
-        category: formCategory || null,
-        priority: formPriority,
-        expectedImpact: formExpectedImpact || null,
-        actualImpact: formActualImpact || null,
-        responsibleId: formResponsibleId || null,
-        actionPlanId: formActionPlanId || null,
-        dueDate: formDueDate || null,
-        notes: formNotes || null,
-        status: formStatus,
+        title: form.title,
+        description: form.description || null,
+        source: form.source,
+        category: form.category || null,
+        priority: form.priority,
+        expectedImpact: form.expectedImpact || null,
+        actualImpact: form.actualImpact || null,
+        responsibleId: form.responsibleId || null,
+        actionPlanId: form.actionPlanId || null,
+        dueDate: form.dueDate || null,
+        notes: form.notes || null,
+        status: form.status,
       };
       const url = editingId
         ? `/api/tenants/${tenant.slug}/projects/${projectId}/improvements/${editingId}`
@@ -342,106 +346,100 @@ export default function ImprovementsPage() {
         </Card>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">{editingId ? "Editar" : "Nova"} Oportunidade</h2>
-                <button onClick={resetForm} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
+      <Modal
+        open={showForm}
+        onOpenChange={(open) => { if (!open) resetForm(); }}
+        title={`${editingId ? "Editar" : "Nova"} Oportunidade`}
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
+            <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="Ex: Automatizar processo de backup" />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
+            <Textarea value={form.description} onChange={(e) => updateForm("description", e.target.value)} rows={2} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fonte *</label>
+              <Select
+                value={form.source}
+                onChange={(e) => updateForm("source", e.target.value)}
+                options={Object.entries(SOURCES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
+              <Select
+                value={form.category}
+                onChange={(e) => updateForm("category", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prioridade</label>
+              <Select
+                value={form.priority}
+                onChange={(e) => updateForm("priority", e.target.value)}
+                options={Object.entries(PRIORITIES).map(([k, v]) => ({ value: k, label: v.label }))}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
+              <Input type="date" value={form.dueDate} onChange={(e) => updateForm("dueDate", e.target.value)} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
+              <Select
+                value={form.responsibleId}
+                onChange={(e) => updateForm("responsibleId", e.target.value)}
+                options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+              />
+            </div>
+            <div>
+              <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Ação</label>
+              <Select
+                value={form.actionPlanId}
+                onChange={(e) => updateForm("actionPlanId", e.target.value)}
+                options={[{ value: "", label: "Nenhum" }, ...actionPlans.map((ap) => ({ value: ap.id, label: `${ap.code} - ${ap.title}` }))]}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto Esperado</label>
+            <Input value={form.expectedImpact} onChange={(e) => updateForm("expectedImpact", e.target.value)} placeholder="Ex: Redução de 50% no tempo de recuperação" />
+          </div>
+          {editingId && (
+            <>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Título *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Ex: Automatizar processo de backup" />
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto Real</label>
+                <Input value={form.actualImpact} onChange={(e) => updateForm("actualImpact", e.target.value)} placeholder="Resultado efetivo da implementação" />
               </div>
               <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} />
+                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
+                <Select
+                  value={form.status}
+                  onChange={(e) => updateForm("status", e.target.value)}
+                  options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Fonte *</label>
-                  <Select
-                    value={formSource}
-                    onChange={(e) => setFormSource(e.target.value)}
-                    options={Object.entries(SOURCES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <Select
-                    value={formCategory}
-                    onChange={(e) => setFormCategory(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prioridade</label>
-                  <Select
-                    value={formPriority}
-                    onChange={(e) => setFormPriority(e.target.value)}
-                    options={Object.entries(PRIORITIES).map(([k, v]) => ({ value: k, label: v.label }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Prazo</label>
-                  <Input type="date" value={formDueDate} onChange={(e) => setFormDueDate(e.target.value)} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
-                  <Select
-                    value={formResponsibleId}
-                    onChange={(e) => setFormResponsibleId(e.target.value)}
-                    options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
-                  />
-                </div>
-                <div>
-                  <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Ação</label>
-                  <Select
-                    value={formActionPlanId}
-                    onChange={(e) => setFormActionPlanId(e.target.value)}
-                    options={[{ value: "", label: "Nenhum" }, ...actionPlans.map((ap) => ({ value: ap.id, label: `${ap.code} - ${ap.title}` }))]}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto Esperado</label>
-                <Input value={formExpectedImpact} onChange={(e) => setFormExpectedImpact(e.target.value)} placeholder="Ex: Redução de 50% no tempo de recuperação" />
-              </div>
-              {editingId && (
-                <>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto Real</label>
-                    <Input value={formActualImpact} onChange={(e) => setFormActualImpact(e.target.value)} placeholder="Resultado efetivo da implementação" />
-                  </div>
-                  <div>
-                    <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <Select
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value)}
-                      options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
-                    />
-                  </div>
-                </>
-              )}
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={resetForm}>Cancelar</Button>
-                <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
-              </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Textarea value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} rows={2} />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetForm}>Cancelar</Button>
+            <Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}
