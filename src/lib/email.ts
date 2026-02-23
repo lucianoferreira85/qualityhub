@@ -160,6 +160,55 @@ export async function sendNcAssignedEmail({
   }
 }
 
+// ==================== Action Plan Assigned ====================
+
+export async function sendActionAssignedEmail({
+  to,
+  actionCode,
+  actionTitle,
+  actionType,
+  tenantSlug,
+  actionId,
+}: {
+  to: string;
+  actionCode: string;
+  actionTitle: string;
+  actionType: string;
+  tenantSlug: string;
+  actionId: string;
+}) {
+  const typeLabels: Record<string, string> = {
+    corrective: "Corretiva",
+    preventive: "Preventiva",
+    improvement: "Melhoria",
+    containment: "Contenção",
+  };
+  const url = `${baseUrl}/${tenantSlug}/action-plans/${actionId}`;
+  try {
+    await getResend().emails.send({
+      from: `QualityHub <${fromEmail}>`,
+      to,
+      subject: `Ação Atribuída: ${actionCode} — QualityHub`,
+      html: emailWrapper(
+        "Plano de Ação Atribuído",
+        `<p style="color: #616161; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+          Você foi designado como responsável pelo seguinte plano de ação:
+        </p>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+          ${infoRow("Código", actionCode)}
+          ${infoRow("Título", actionTitle)}
+          ${infoRow("Tipo", typeLabels[actionType] || actionType)}
+        </table>
+        ${ctaButton("Ver Plano de Ação", url)}`
+      ),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Failed to send action assigned:", error);
+    return { success: false, error };
+  }
+}
+
 // ==================== Action Plan Due ====================
 
 export async function sendActionPlanDueEmail({

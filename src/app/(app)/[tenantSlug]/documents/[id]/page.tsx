@@ -574,8 +574,8 @@ export default function DocumentDetailPage() {
                 tenantSlug={tenant.slug}
                 folder="documents"
                 existingUrl={editFileUrl || null}
-                existingFileName={editFileUrl ? "Arquivo anexado" : null}
-                onUpload={(result) => setEditFileUrl(result.url)}
+                existingFileName={editFileUrl ? (editFileUrl.split("/").pop() || "Arquivo anexado").replace(/^\d+_/, "") : null}
+                onUpload={(result) => setEditFileUrl(result.path)}
                 onRemove={() => setEditFileUrl("")}
               />
             </div>
@@ -699,7 +699,7 @@ export default function DocumentDetailPage() {
                 <div className="flex items-center gap-3 p-3 rounded-card border border-stroke-secondary bg-surface-secondary">
                   <FileText className="h-5 w-5 text-brand flex-shrink-0" />
                   <span className="flex-1 text-body-2 text-foreground-primary truncate">
-                    {doc.fileUrl.split("/").pop() || "Arquivo"}
+                    {(doc.fileUrl.split("/").pop() || "Arquivo").replace(/^\d+_/, "")}
                   </span>
                   <a
                     href={`/api/tenants/${tenant.slug}/files/${doc.fileUrl}`}

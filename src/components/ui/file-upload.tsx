@@ -61,7 +61,7 @@ export function FileUpload({
         }
 
         const { data } = await res.json();
-        setUploadedFile({ fileName: data.fileName, url: data.url });
+        setUploadedFile({ fileName: data.fileName, url: data.path });
         onUpload(data);
         toast.success("Arquivo enviado com sucesso");
       } catch (err) {
@@ -91,6 +91,11 @@ export function FileUpload({
   };
 
   if (uploadedFile) {
+    // If the url is a storage path (not a full URL), use the proxy route
+    const viewUrl = uploadedFile.url.startsWith("http")
+      ? uploadedFile.url
+      : `/api/tenants/${tenantSlug}/files/${uploadedFile.url}`;
+
     return (
       <div className="flex items-center gap-3 p-3 rounded-card border border-stroke-secondary bg-surface-secondary">
         <FileText className="h-5 w-5 text-brand flex-shrink-0" />
@@ -102,7 +107,7 @@ export function FileUpload({
         <div className="flex items-center gap-2 flex-shrink-0">
           {uploadedFile.url && (
             <a
-              href={uploadedFile.url}
+              href={viewUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-caption-1 text-brand hover:underline"

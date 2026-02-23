@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, getPlanPriceIds } from "@/lib/stripe";
 
 // Helper to safely extract billing period from a Stripe subscription object.
 // The Stripe API version may or may not include current_period_start/end
@@ -49,22 +49,17 @@ export async function POST(request: Request) {
 
         if (session.mode === "subscription" && session.subscription && session.metadata?.tenantId) {
           const tenantId = session.metadata.tenantId;
+          const planSlug = session.metadata.planSlug;
           const subscriptionId = typeof session.subscription === "string"
             ? session.subscription
             : session.subscription.id;
 
           const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
-          const priceId = stripeSubscription.items.data[0]?.price.id;
           const period = extractBillingPeriod(stripeSubscription as unknown as Record<string, unknown>);
 
-          const plan = await prisma.plan.findFirst({
-            where: {
-              features: {
-                path: ["stripePriceId"],
-                equals: priceId,
-              },
-            },
-          });
+          const plan = planSlug
+            ? await prisma.plan.findFirst({ where: { slug: planSlug } })
+            : null;
 
           if (plan) {
             await prisma.subscription.upsert({
@@ -123,9 +118,28 @@ export async function POST(request: Request) {
             console.warn(`Stripe status desconhecido: ${subscription.status}`);
           }
 
+          // Detect plan changes (upgrade/downgrade) by mapping priceId → plan slug
+          const currentPriceId = subscription.items.data[0]?.price.id;
+          let planUpdate: { planId: string } | Record<string, never> = {};
+          if (currentPriceId) {
+            const priceIds = getPlanPriceIds();
+            const slugByPrice = Object.entries(priceIds).find(
+              ([, pid]) => pid === currentPriceId
+            );
+            if (slugByPrice) {
+              const newPlan = await prisma.plan.findFirst({
+                where: { slug: slugByPrice[0] },
+              });
+              if (newPlan && newPlan.id !== existingSub.planId) {
+                planUpdate = { planId: newPlan.id };
+              }
+            }
+          }
+
           await prisma.subscription.update({
             where: { id: existingSub.id },
             data: {
+              ...planUpdate,
               status: mappedStatus ?? "past_due",
               cancelAtPeriodEnd: subscription.cancel_at_period_end,
               currentPeriodStart: period.currentPeriodStart,

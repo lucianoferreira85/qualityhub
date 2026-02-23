@@ -4,6 +4,7 @@ import {
   sendAuditScheduledEmail,
   sendDocumentReviewEmail,
   sendRiskCriticalEmail,
+  sendActionAssignedEmail,
 } from "@/lib/email";
 
 /**
@@ -163,7 +164,6 @@ export function triggerDocumentReview({
 
 export function triggerActionAssigned({
   tenantId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   tenantSlug,
   responsibleId,
   actionId,
@@ -197,6 +197,15 @@ export function triggerActionAssigned({
           entityType: "actionPlan",
           entityId: actionId,
         },
+      });
+
+      await sendActionAssignedEmail({
+        to: user.email,
+        actionCode,
+        actionTitle,
+        actionType,
+        tenantSlug,
+        actionId,
       });
     } catch (err) {
       console.error("[Trigger] Action assigned failed:", err);

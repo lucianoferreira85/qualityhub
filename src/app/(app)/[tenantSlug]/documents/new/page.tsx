@@ -214,7 +214,7 @@ export default function NewDocumentPage() {
               <FileUpload
                 tenantSlug={tenant.slug}
                 folder="documents"
-                onUpload={(result) => updateForm("fileUrl", result.url)}
+                onUpload={(result) => updateForm("fileUrl", result.path)}
                 onRemove={() => updateForm("fileUrl", "")}
               />
             </div>

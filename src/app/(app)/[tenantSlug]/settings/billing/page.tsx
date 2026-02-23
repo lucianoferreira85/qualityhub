@@ -16,6 +16,7 @@ import {
   Check,
   X,
   ExternalLink,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -50,15 +51,16 @@ interface SubscriptionData {
 }
 
 const PLAN_PRICES: Record<string, { monthly: string; label: string }> = {
-  starter: { monthly: "R$ 97", label: "Starter" },
-  professional: { monthly: "R$ 297", label: "Professional" },
-  enterprise: { monthly: "R$ 797", label: "Enterprise" },
+  starter: { monthly: "R$ 197", label: "Starter" },
+  professional: { monthly: "R$ 497", label: "Professional" },
+  enterprise: { monthly: "R$ 997", label: "Enterprise" },
 };
 
 const SUB_STATUS_LABELS: Record<string, string> = {
   trialing: "Em teste",
   active: "Ativa",
   past_due: "Pagamento pendente",
+  cancelled: "Cancelada",
   canceled: "Cancelada",
   unpaid: "Não paga",
 };
@@ -67,6 +69,7 @@ const SUB_STATUS_COLORS: Record<string, string> = {
   trialing: "bg-info-bg text-info-fg",
   active: "bg-success-bg text-success-fg",
   past_due: "bg-warning-bg text-warning-fg",
+  cancelled: "bg-gray-200 text-gray-500",
   canceled: "bg-gray-200 text-gray-500",
   unpaid: "bg-danger-bg text-danger-fg",
 };
@@ -189,6 +192,25 @@ export default function BillingPage() {
           Gerencie sua assinatura e veja o uso atual
         </p>
       </div>
+
+      {/* Trial Banner */}
+      {tenant.status === "trial" && (
+        <Card className="border-brand bg-brand-light/20">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-brand flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-body-1 font-medium text-foreground-primary">
+                  Você está no período de teste gratuito
+                </p>
+                <p className="text-body-2 text-foreground-secondary mt-0.5">
+                  Seu trial inclui acesso ao plano Professional. Escolha um plano abaixo para continuar após o período de teste.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Subscription Card */}
       {!loadingSub && subscription && (
