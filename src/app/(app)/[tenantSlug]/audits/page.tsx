@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ const TABLE_COLUMNS: Column<AuditWithRelations>[] = [
 
 export default function AuditsPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Auditorias");
   const router = useRouter();
   const [audits, setAudits] = useState<AuditWithRelations[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { usePageTitle } from "@/hooks/use-page-title";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +13,10 @@ import {
   Search,
   FolderKanban,
   ArrowRight,
+  CheckCircle2,
+  Users,
+  Building2,
+  Globe,
 } from "lucide-react";
 
 const FEATURES = [
@@ -18,31 +24,31 @@ const FEATURES = [
     icon: FolderKanban,
     title: "Projetos Multi-Norma",
     description:
-      "Gerencie projetos de conformidade com múltiplas normas ISO simultaneamente. Acompanhe o progresso e maturidade.",
+      "Gerencie projetos de conformidade com multiplas normas ISO simultaneamente. Acompanhe o progresso e maturidade.",
   },
   {
     icon: Search,
     title: "Auditorias",
     description:
-      "Planeje, execute e registre auditorias internas e externas. Gere achados e vincule a não conformidades.",
+      "Planeje, execute e registre auditorias internas e externas. Gere achados e vincule a nao conformidades.",
   },
   {
     icon: AlertTriangle,
-    title: "Não Conformidades",
+    title: "Nao Conformidades",
     description:
-      "Workflow completo de NC em 6 etapas: abertura, análise de causa raiz (5 Porquês, Ishikawa), ação e verificação.",
+      "Workflow completo de NC em 6 etapas: abertura, analise de causa raiz (5 Porques, Ishikawa), acao e verificacao.",
   },
   {
     icon: ClipboardCheck,
-    title: "Planos de Ação",
+    title: "Planos de Acao",
     description:
-      "Ações corretivas, preventivas e de melhoria com responsáveis, prazos e verificação de eficácia.",
+      "Acoes corretivas, preventivas e de melhoria com responsaveis, prazos e verificacao de eficacia.",
   },
   {
     icon: FileText,
-    title: "Gestão Documental",
+    title: "Gestao Documental",
     description:
-      "Hierarquia documental completa com controle de versões, workflow de aprovação e revisão periódica.",
+      "Hierarquia documental completa com controle de versoes, workflow de aprovacao e revisao periodica.",
   },
   {
     icon: TrendingUp,
@@ -56,7 +62,7 @@ const STEPS = [
   {
     number: "1",
     title: "Crie sua conta",
-    description: "Cadastre-se em 30 segundos e ganhe 14 dias grátis do plano Professional.",
+    description: "Cadastre-se em 30 segundos e ganhe 14 dias gratis do plano Professional.",
   },
   {
     number: "2",
@@ -66,36 +72,83 @@ const STEPS = [
   {
     number: "3",
     title: "Gerencie a conformidade",
-    description: "Acompanhe requisitos, riscos, auditorias e ações em um só lugar.",
+    description: "Acompanhe requisitos, riscos, auditorias e acoes em um so lugar.",
   },
 ];
 
+const STATS = [
+  { icon: Users, value: "500+", label: "Usuarios ativos" },
+  { icon: Building2, value: "50+", label: "Consultorias" },
+  { icon: Globe, value: "12", label: "Normas suportadas" },
+  { icon: CheckCircle2, value: "99.9%", label: "Uptime" },
+];
+
+function useScrollAnimation() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-fade-in-up");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+
+    const children = el.querySelectorAll("[data-animate]");
+    children.forEach((child) => {
+      (child as HTMLElement).style.opacity = "0";
+      observer.observe(child);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return ref;
+}
+
 export default function HomePage() {
+  usePageTitle("Gestao da Qualidade e Conformidade ISO");
+  const animRef = useScrollAnimation();
+
   return (
-    <>
+    <div ref={animRef}>
       {/* Hero */}
-      <section className="py-20 px-6 lg:px-12">
+      <section className="relative py-24 px-6 lg:px-12 overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-brand/5 via-brand/10 to-transparent rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl" />
+        </div>
+
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-brand-light text-brand px-4 py-1.5 rounded-full text-body-2 font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-brand-light text-brand px-4 py-1.5 rounded-full text-body-2 font-medium mb-6 animate-fade-in">
             <Shield className="h-4 w-4" />
             Plataforma SaaS para Consultorias ISO
           </div>
-          <h1 className="text-display text-foreground-primary mb-6 leading-tight">
-            Gestão da Qualidade e
+          <h1 className="text-display text-foreground-primary mb-6 leading-tight animate-fade-in-up">
+            Gestao da Qualidade e
             <span className="gradient-brand bg-clip-text text-transparent">
               {" "}
               Conformidade ISO
             </span>{" "}
             simplificada
           </h1>
-          <p className="text-title-3 text-foreground-secondary max-w-2xl mx-auto mb-8 font-normal">
-            Centralize auditorias, não conformidades, riscos, documentos e
+          <p className="text-title-3 text-foreground-secondary max-w-2xl mx-auto mb-8 font-normal animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
+            Centralize auditorias, nao conformidades, riscos, documentos e
             indicadores em uma plataforma multi-tenant projetada para consultorias.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
             <Link href="/signup">
               <Button size="lg">
-                Começar grátis
+                Comecar gratis
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
@@ -105,32 +158,49 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <p className="text-caption-1 text-foreground-tertiary mt-4">
-            14 dias grátis &middot; Sem cartão de crédito &middot; Cancele quando quiser
+          <p className="text-caption-1 text-foreground-tertiary mt-4 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            14 dias gratis &middot; Sem cartao de credito &middot; Cancele quando quiser
           </p>
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="py-12 px-6 lg:px-12 border-y border-stroke-secondary bg-surface-primary">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="text-center" data-animate>
+              <div className="h-10 w-10 rounded-lg bg-brand-light flex items-center justify-center mx-auto mb-3">
+                <stat.icon className="h-5 w-5 text-brand" />
+              </div>
+              <div className="text-title-1 text-foreground-primary">{stat.value}</div>
+              <div className="text-caption-1 text-foreground-secondary">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
-      <section className="py-16 px-6 lg:px-12 bg-surface-tertiary" id="features">
+      <section className="py-20 px-6 lg:px-12 bg-surface-tertiary" id="features">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-14" data-animate>
             <h2 className="text-title-1 text-foreground-primary mb-3">
-              Tudo que você precisa para conformidade ISO
+              Tudo que voce precisa para conformidade ISO
             </h2>
             <p className="text-body-1 text-foreground-secondary max-w-2xl mx-auto">
-              6 módulos integrados para gerenciar o ciclo completo de gestão da qualidade
+              6 modulos integrados para gerenciar o ciclo completo de gestao da qualidade
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => (
+            {FEATURES.map((feature, i) => (
               <div
                 key={feature.title}
-                className="bg-surface-primary rounded-card border border-stroke-secondary p-6 shadow-card hover:shadow-card-hover transition-shadow"
+                data-animate
+                style={{ animationDelay: `${i * 0.1}s` }}
+                className="bg-surface-primary rounded-card border border-stroke-secondary p-6 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="h-10 w-10 rounded-button bg-brand-light flex items-center justify-center mb-4">
-                  <feature.icon className="h-5 w-5 text-brand" />
+                <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-brand" />
                 </div>
                 <h3 className="text-title-3 text-foreground-primary mb-2">
                   {feature.title}
@@ -145,9 +215,9 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 px-6 lg:px-12">
+      <section className="py-20 px-6 lg:px-12">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-14" data-animate>
             <h2 className="text-title-1 text-foreground-primary mb-3">
               Como funciona
             </h2>
@@ -157,9 +227,18 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {STEPS.map((step) => (
-              <div key={step.number} className="text-center">
-                <div className="h-12 w-12 rounded-full gradient-brand flex items-center justify-center mx-auto mb-4">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.number}
+                className="text-center relative"
+                data-animate
+                style={{ animationDelay: `${i * 0.15}s` }}
+              >
+                {/* Connector line (desktop only) */}
+                {i < STEPS.length - 1 && (
+                  <div className="hidden md:block absolute top-6 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-brand/30 to-brand/5" />
+                )}
+                <div className="h-12 w-12 rounded-full gradient-brand flex items-center justify-center mx-auto mb-4 relative z-10 shadow-card-glow">
                   <span className="text-title-2 text-white">{step.number}</span>
                 </div>
                 <h3 className="text-title-3 text-foreground-primary mb-2">
@@ -175,22 +254,28 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 px-6 lg:px-12 bg-surface-tertiary">
-        <div className="max-w-3xl mx-auto text-center">
+      <section className="py-20 px-6 lg:px-12 relative overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 -z-10 gradient-brand opacity-[0.03]" />
+        <div className="max-w-3xl mx-auto text-center" data-animate>
+          <div className="h-14 w-14 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-6 shadow-card-glow">
+            <Shield className="h-7 w-7 text-white" />
+          </div>
           <h2 className="text-title-1 text-foreground-primary mb-4">
-            Pronto para simplificar sua gestão ISO?
+            Pronto para simplificar sua gestao ISO?
           </h2>
-          <p className="text-body-1 text-foreground-secondary mb-8">
-            Junte-se a consultorias que já gerenciam conformidade de forma eficiente.
+          <p className="text-body-1 text-foreground-secondary mb-8 max-w-lg mx-auto">
+            Junte-se a consultorias que ja gerenciam conformidade de forma
+            eficiente com o QualityHub.
           </p>
           <Link href="/signup">
             <Button size="lg">
-              Começar trial gratuito
+              Comecar trial gratuito
               <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -102,7 +102,9 @@ export function AppShell({ children }: AppShellProps) {
         />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
+          <div className="page-enter">
+            {children}
+          </div>
         </main>
       </div>
 

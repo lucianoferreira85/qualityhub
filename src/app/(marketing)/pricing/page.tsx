@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -62,6 +63,7 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  usePageTitle("Precos");
   return (
     <div className="py-16 px-6 lg:px-12">
       <div className="text-center mb-12">

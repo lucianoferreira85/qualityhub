@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ const TABLE_COLUMNS: Column<DocWithRelations>[] = [
 
 export default function DocumentsPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Documentos");
   const router = useRouter();
   const [documents, setDocuments] = useState<DocWithRelations[]>([]);
   const [loading, setLoading] = useState(true);

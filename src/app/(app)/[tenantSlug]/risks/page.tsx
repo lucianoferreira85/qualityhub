@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,7 @@ const TABLE_COLUMNS: Column<RiskItem>[] = [
 
 export default function RisksPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Riscos");
   const router = useRouter();
   const [risks, setRisks] = useState<RiskItem[]>([]);
   const [loading, setLoading] = useState(true);

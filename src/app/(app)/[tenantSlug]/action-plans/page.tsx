@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,7 @@ const TABLE_COLUMNS: Column<ApWithRelations>[] = [
 
 export default function ActionPlansPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Planos de Acao");
   const router = useRouter();
   const [plans, setPlans] = useState<ApWithRelations[]>([]);
   const [loading, setLoading] = useState(true);

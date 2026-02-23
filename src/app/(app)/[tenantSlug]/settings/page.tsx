@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ const SETTINGS_TABS = [
 
 export default function SettingsPage() {
   const { tenant, can, plan } = useTenant();
+  usePageTitle("Configuracoes");
   const router = useRouter();
   const pathname = usePathname();
 

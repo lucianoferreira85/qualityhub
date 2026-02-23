@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ const TABLE_COLUMNS: Column<ConsultingClient>[] = [
 
 export default function ClientsPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Clientes");
   const router = useRouter();
   const [clients, setClients] = useState<ConsultingClient[]>([]);
   const [search, setSearch] = useState("");

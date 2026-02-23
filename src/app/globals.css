@@ -70,11 +70,23 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body {
     @apply bg-surface-tertiary text-foreground-primary font-sans;
+  }
+
+  /* Better focus-visible for keyboard navigation */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-surface-primary;
+  }
+
+  /* Remove focus ring for mouse clicks */
+  *:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
   }
 }
 
@@ -94,6 +106,26 @@
   .gradient-danger {
     background: linear-gradient(135deg, #DC2626 0%, #F97316 100%);
   }
+
+  .gradient-warning {
+    background: linear-gradient(135deg, #F59E0B 0%, #EAB308 100%);
+  }
+
+  /* Page content fade-in animation */
+  .page-enter {
+    animation: page-fade-in 0.25s ease-out;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 ::-webkit-scrollbar {
@@ -107,6 +139,11 @@
 
 ::-webkit-scrollbar-thumb {
   @apply bg-stroke-primary rounded-full;
+  transition: background-color 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-foreground-tertiary;
 }
 
 ::selection {

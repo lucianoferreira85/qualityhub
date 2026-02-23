@@ -124,7 +124,10 @@ function DataTable<T extends { id?: string }>({
               onClick={onRowClick ? () => onRowClick(item) : undefined}
               className={cn(
                 "border-b border-stroke-secondary last:border-b-0 transition-colors",
-                onRowClick && "cursor-pointer hover:bg-surface-secondary/50"
+                index % 2 === 1 && "bg-surface-secondary/30",
+                onRowClick
+                  ? "cursor-pointer hover:bg-brand-light/40 dark:hover:bg-brand-light/10"
+                  : "hover:bg-surface-secondary/50"
               )}
             >
               {columns.map((col) => (

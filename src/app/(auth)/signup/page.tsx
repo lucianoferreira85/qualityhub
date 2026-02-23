@@ -6,8 +6,10 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Shield } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 export default function SignupPage() {
+  usePageTitle("Criar conta");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,79 +38,97 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-tertiary p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-surface-primary rounded-card shadow-card border border-stroke-secondary p-8">
-          <div className="flex flex-col items-center mb-8">
-            <div className="h-14 w-14 rounded-2xl gradient-brand flex items-center justify-center mb-4">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <h1 className="text-title-1 text-foreground-primary">Criar conta</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Comece seu trial gratuito de 14 dias
-            </p>
+    <div className="w-full max-w-md">
+      {/* Mobile logo */}
+      <div className="flex flex-col items-center mb-8 lg:hidden">
+        <div className="h-14 w-14 rounded-2xl gradient-brand flex items-center justify-center mb-4 shadow-card-glow">
+          <Shield className="h-7 w-7 text-white" />
+        </div>
+      </div>
+
+      <div className="bg-surface-primary rounded-card shadow-card border border-stroke-secondary p-8">
+        <div className="mb-8">
+          <h1 className="text-title-1 text-foreground-primary">Criar conta</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Comece seu trial gratuito de 14 dias
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-body-1 font-medium text-foreground-primary mb-1.5">
+              Nome completo
+            </label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Seu nome completo"
+              required
+              autoComplete="name"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-body-1 font-medium text-foreground-primary mb-1">
-                Nome completo
-              </label>
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome completo"
-                required
-              />
+          <div>
+            <label className="block text-body-1 font-medium text-foreground-primary mb-1.5">
+              E-mail
+            </label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div>
+            <label className="block text-body-1 font-medium text-foreground-primary mb-1.5">
+              Senha
+            </label>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Minimo 8 caracteres"
+              required
+              minLength={8}
+              autoComplete="new-password"
+            />
+          </div>
+
+          {error && (
+            <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
+              {error}
             </div>
+          )}
 
-            <div>
-              <label className="block text-body-1 font-medium text-foreground-primary mb-1">
-                E-mail
-              </label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
+          <Button type="submit" loading={loading} className="w-full">
+            Criar conta gratis
+          </Button>
 
-            <div>
-              <label className="block text-body-1 font-medium text-foreground-primary mb-1">
-                Senha
-              </label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
-                required
-                minLength={8}
-              />
-            </div>
-
-            {error && (
-              <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
-                {error}
-              </div>
-            )}
-
-            <Button type="submit" loading={loading} className="w-full">
-              Criar conta grátis
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <Link
-              href="/login"
-              className="text-body-1 text-brand hover:text-brand-hover transition-colors"
-            >
-              Já tem conta? Fazer login
+          <p className="text-caption-1 text-foreground-tertiary text-center">
+            Ao criar conta, voce concorda com os{" "}
+            <Link href="/terms" className="text-brand hover:underline">
+              Termos de uso
+            </Link>{" "}
+            e{" "}
+            <Link href="/privacy" className="text-brand hover:underline">
+              Politica de privacidade
             </Link>
-          </div>
+            .
+          </p>
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-stroke-secondary text-center">
+          <span className="text-body-2 text-foreground-secondary">Ja tem conta? </span>
+          <Link
+            href="/login"
+            className="text-body-2 text-brand font-medium hover:text-brand-hover transition-colors"
+          >
+            Fazer login
+          </Link>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; label: str
 
 export default function NotificationsPage() {
   const { tenant } = useTenant();
+  usePageTitle("Notificacoes");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);

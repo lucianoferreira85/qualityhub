@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CardSkeleton } from "@/components/ui/skeleton";
@@ -145,6 +146,7 @@ const PERIOD_OPTIONS = [
 
 export default function DashboardPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Dashboard");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);

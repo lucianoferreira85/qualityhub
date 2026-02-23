@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,6 +110,7 @@ const TABLE_COLUMNS: Column<IndicatorWithRelations>[] = [
 
 export default function IndicatorsPage() {
   const { tenant, can } = useTenant();
+  usePageTitle("Indicadores");
   const router = useRouter();
   const [indicators, setIndicators] = useState<IndicatorWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
