@@ -6,6 +6,8 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Building2, BookOpen, X } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -120,11 +122,11 @@ export default function NewProjectPage() {
               <label className="block text-body-1 font-medium text-foreground-primary mb-1">
                 Descrição
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descreva o escopo e objetivos do projeto..."
-                className="w-full h-24 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
+                rows={3}
               />
             </div>
 
@@ -138,18 +140,15 @@ export default function NewProjectPage() {
               {loadingData ? (
                 <div className="h-10 w-full bg-surface-tertiary rounded-input animate-pulse" />
               ) : (
-                <select
+                <Select
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">Nenhum cliente selecionado</option>
-                  {clients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Nenhum cliente selecionado"
+                  options={clients.map((client) => ({
+                    value: client.id,
+                    label: client.name,
+                  }))}
+                />
               )}
             </div>
 

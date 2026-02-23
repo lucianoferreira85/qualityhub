@@ -6,13 +6,15 @@ import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft,
   ClipboardList,
   Plus,
   X,
-  ChevronDown,
   Trash2,
 } from "lucide-react";
 
@@ -81,6 +83,9 @@ export default function RequirementsPage() {
   const [projectStandards, setProjectStandards] = useState<{ id: string; code: string; name: string }[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState("");
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
   const fetchRequirements = () => {
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/requirements`)
       .then((r) => r.json())
@@ -116,6 +121,9 @@ export default function RequirementsPage() {
     ...c.children,
   ]).filter((c) => !existingClauseIds.has(c.id));
 
+  const standardSelectOptions = projectStandards.map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }));
+  const clauseSelectOptions = flatClauses.map((c) => ({ value: c.id, label: `${c.code} - ${c.title}` }));
+
   const handleAdd = async () => {
     if (!selectedClauseId) return;
     setAdding(true);
@@ -138,7 +146,6 @@ export default function RequirementsPage() {
   };
 
   const handleRemove = async (reqId: string) => {
-    if (!confirm("Remover esta cláusula do projeto?")) return;
     setRequirements((prev) => prev.filter((r) => r.id !== reqId));
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/requirements`, {
@@ -246,31 +253,21 @@ export default function RequirementsPage() {
                 {projectStandards.length > 1 && (
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Norma</label>
-                    <select
+                    <Select
                       value={selectedStandardId}
                       onChange={(e) => setSelectedStandardId(e.target.value)}
-                      className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    >
-                      {projectStandards.map((s) => (
-                        <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                      ))}
-                    </select>
+                      options={standardSelectOptions}
+                    />
                   </div>
                 )}
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Clausula</label>
-                  <select
+                  <Select
                     value={selectedClauseId}
                     onChange={(e) => setSelectedClauseId(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="">Selecionar clausula...</option>
-                    {flatClauses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.code} - {c.title}
-                      </option>
-                    ))}
-                  </select>
+                    options={clauseSelectOptions}
+                    placeholder="Selecionar clausula..."
+                  />
                 </div>
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>
@@ -288,7 +285,7 @@ export default function RequirementsPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-surface-primary rounded-card animate-pulse" />
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : requirements.length === 0 ? (
@@ -332,18 +329,12 @@ export default function RequirementsPage() {
                       </td>
                       <td className="py-3 px-4">
                         {can("requirement", "update") ? (
-                          <div className="relative">
-                            <select
-                              value={req.status}
-                              onChange={(e) => handleStatusChange(req.id, e.target.value)}
-                              className="h-8 w-full appearance-none rounded border border-stroke-primary bg-surface-primary pl-2 pr-7 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-                            >
-                              {STATUS_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-foreground-tertiary pointer-events-none" />
-                          </div>
+                          <Select
+                            value={req.status}
+                            onChange={(e) => handleStatusChange(req.id, e.target.value)}
+                            options={STATUS_OPTIONS}
+                            className="h-8 text-caption-1"
+                          />
                         ) : (
                           <Badge variant={getReqStatusColor(req.status)}>
                             {getReqStatusLabel(req.status)}
@@ -371,7 +362,7 @@ export default function RequirementsPage() {
                       {can("requirement", "delete") && (
                         <td className="py-3 px-4 text-right">
                           <button
-                            onClick={() => handleRemove(req.id)}
+                            onClick={() => { setItemToDelete(req.id); setShowDeleteConfirm(true); }}
                             className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg transition-colors"
                             title="Remover cláusula"
                           >
@@ -387,6 +378,22 @@ export default function RequirementsPage() {
           </CardContent>
         </Card>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Remover cláusula"
+        description="Tem certeza que deseja remover esta cláusula do projeto? Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        variant="danger"
+        onConfirm={() => {
+          if (itemToDelete) {
+            handleRemove(itemToDelete);
+          }
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+      />
     </div>
   );
 }

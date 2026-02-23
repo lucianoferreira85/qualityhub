@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
+
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, X, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { OrganizationContext } from "@/types";
@@ -19,13 +24,19 @@ const SWOT_CONFIG = {
   threat: { label: "Ameaças", color: "bg-warning-bg", textColor: "text-warning-fg", borderColor: "border-warning/30" },
 } as const;
 
-const CATEGORIES = [
+const CATEGORY_OPTIONS = [
   { value: "financial", label: "Financeiro" },
   { value: "technological", label: "Tecnológico" },
   { value: "legal", label: "Legal" },
   { value: "market", label: "Mercado" },
   { value: "organizational", label: "Organizacional" },
   { value: "human_resources", label: "Recursos Humanos" },
+];
+
+const IMPACT_OPTIONS = [
+  { value: "high", label: "Alto" },
+  { value: "medium", label: "Médio" },
+  { value: "low", label: "Baixo" },
 ];
 
 const IMPACT_CONFIG: Record<string, { label: string; color: string }> = {
@@ -50,6 +61,9 @@ export default function ProjectContextPage() {
   const [formCategory, setFormCategory] = useState("");
   const [formImpact, setFormImpact] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -130,14 +144,17 @@ export default function ProjectContextPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este item?")) return;
+  const handleDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await fetch(`/api/tenants/${tenant.slug}/contexts/${id}`, { method: "DELETE" });
+      await fetch(`/api/tenants/${tenant.slug}/contexts/${deleteTargetId}`, { method: "DELETE" });
       toast.success("Excluído");
       fetchData();
     } catch {
       toast.error("Erro ao excluir");
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeleteTargetId(null);
     }
   };
 
@@ -175,7 +192,7 @@ export default function ProjectContextPage() {
             <CardContent className="p-4">
               {loading ? (
                 <div className="space-y-2">
-                  {[1, 2].map((i) => <div key={i} className="h-12 bg-surface-tertiary rounded animate-pulse" />)}
+                  {[1, 2].map((i) => <CardSkeleton key={i} lines={2} />)}
                 </div>
               ) : getItemsByType(type).length === 0 ? (
                 <p className="text-body-2 text-foreground-tertiary py-4 text-center">Nenhum item</p>
@@ -191,7 +208,7 @@ export default function ProjectContextPage() {
                         <div className="flex items-center gap-2 mt-1.5">
                           {item.category && (
                             <Badge className="text-caption-2">
-                              {CATEGORIES.find((c) => c.value === item.category)?.label || item.category}
+                              {CATEGORY_OPTIONS.find((c) => c.value === item.category)?.label || item.category}
                             </Badge>
                           )}
                           {item.impact && (
@@ -209,7 +226,7 @@ export default function ProjectContextPage() {
                             </button>
                           )}
                           {can("context", "delete") && (
-                            <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                            <button onClick={() => { setDeleteTargetId(item.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -244,28 +261,30 @@ export default function ProjectContextPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea
+                <Textarea
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary placeholder:text-foreground-tertiary focus:outline-none focus:ring-2 focus:ring-brand resize-none"
+                  className="h-20 resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
+                  <Select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    options={CATEGORY_OPTIONS}
+                    placeholder="Selecionar..."
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Impacto</label>
-                  <select value={formImpact} onChange={(e) => setFormImpact(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    <option value="high">Alto</option>
-                    <option value="medium">Médio</option>
-                    <option value="low">Baixo</option>
-                  </select>
+                  <Select
+                    value={formImpact}
+                    onChange={(e) => setFormImpact(e.target.value)}
+                    options={IMPACT_OPTIONS}
+                    placeholder="Selecionar..."
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-2">
@@ -276,6 +295,14 @@ export default function ProjectContextPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir este item?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

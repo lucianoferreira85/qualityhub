@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Plus, X, Pencil, Trash2, Crosshair } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -37,6 +41,18 @@ const FREQUENCIES: Record<string, string> = {
   annual: "Anual",
 };
 
+const CATEGORY_OPTIONS = [
+  { value: "", label: "Selecionar..." },
+  ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v })),
+];
+
+const FREQUENCY_OPTIONS = [
+  { value: "", label: "Selecionar..." },
+  ...Object.entries(FREQUENCIES).map(([k, v]) => ({ value: k, label: v })),
+];
+
+const STATUS_OPTIONS = Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
+
 export default function ObjectivesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -61,6 +77,10 @@ export default function ObjectivesPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("defined");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -150,14 +170,25 @@ export default function ObjectivesPage() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este objetivo?")) return;
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/objectives/${id}`, { method: "DELETE" });
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/objectives/${itemToDelete}`, { method: "DELETE" });
       toast.success("Excluído");
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
   };
+
+  const indicatorOptions = [
+    { value: "", label: "Nenhum" },
+    ...indicators.map((i) => ({ value: i.id, label: `${i.name} (${i.unit})` })),
+  ];
 
   const stats = {
     total: objectives.length,
@@ -220,7 +251,7 @@ export default function ObjectivesPage() {
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : objectives.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -296,7 +327,7 @@ export default function ObjectivesPage() {
                             </button>
                           )}
                           {can("securityObjective", "delete") && (
-                            <button onClick={() => handleDelete(obj.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                            <button onClick={() => { setItemToDelete(obj.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -327,22 +358,16 @@ export default function ObjectivesPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={CATEGORY_OPTIONS} />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Frequência Monitoramento</label>
-                  <select value={formFrequency} onChange={(e) => setFormFrequency(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(FREQUENCIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formFrequency} onChange={(e) => setFormFrequency(e.target.value)} options={FREQUENCY_OPTIONS} />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -366,23 +391,18 @@ export default function ObjectivesPage() {
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Indicador</label>
-                  <select value={formIndicatorId} onChange={(e) => setFormIndicatorId(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Nenhum</option>
-                    {indicators.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
-                  </select>
+                  <Select value={formIndicatorId} onChange={(e) => setFormIndicatorId(e.target.value)} options={indicatorOptions} />
                 </div>
               </div>
               {editingId && (
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
                 </div>
               )}
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -392,6 +412,15 @@ export default function ObjectivesPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir objetivo"
+        description="Tem certeza que deseja excluir este objetivo? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

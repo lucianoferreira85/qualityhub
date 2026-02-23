@@ -6,10 +6,13 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, FileText, FolderKanban, User, Calendar, Tag, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
-import { getStatusColor, getStatusLabel, getDocumentTypeLabel, getDocumentTypeColor, formatDate } from "@/lib/utils";
+import { getStatusLabel, getDocumentTypeLabel, formatDate } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
 import type { Document } from "@/types";
@@ -136,24 +139,16 @@ export default function DocumentsPage() {
         />
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <select
+          <Select
             value={filterType}
             onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {DOCUMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-          <select
+            options={DOCUMENT_TYPES}
+          />
+          <Select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {DOCUMENT_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+            options={DOCUMENT_STATUSES}
+          />
           {hasFilters && (
             <Button
               variant="ghost"
@@ -170,29 +165,19 @@ export default function DocumentsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-1/4" />
-                  <div className="h-5 bg-surface-tertiary rounded w-3/4" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <FileText className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search || hasFilters ? "Nenhum documento encontrado" : "Nenhum documento registrado"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search || hasFilters ? "Tente ajustar os filtros ou termos de busca" : "Adicione o primeiro documento para começar"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title={search || hasFilters
+            ? "Nenhum documento encontrado"
+            : "Nenhum documento registrado"}
+          description={search || hasFilters
+            ? "Tente ajustar os filtros ou termos de busca"
+            : "Adicione o primeiro documento para começar"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((doc) => (
@@ -208,9 +193,7 @@ export default function DocumentsPage() {
                         {doc.title}
                       </h3>
                     </div>
-                    <Badge variant={getDocumentTypeColor(doc.type)} className="flex-shrink-0">
-                      {getDocumentTypeLabel(doc.type)}
-                    </Badge>
+                    <StatusBadge status={doc.type} type="documentType" className="flex-shrink-0" />
                   </div>
 
                   <div className="space-y-2 mb-3">
@@ -235,9 +218,7 @@ export default function DocumentsPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                    <Badge variant={getStatusColor(doc.status)}>
-                      {getStatusLabel(doc.status)}
-                    </Badge>
+                    <StatusBadge status={doc.status} />
                     <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
                       <span className="font-mono">v{doc.version}</span>
                       {doc.author && (

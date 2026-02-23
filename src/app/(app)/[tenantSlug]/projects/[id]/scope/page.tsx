@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Plus, X, Pencil, Trash2, Globe, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -18,6 +22,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   approved: { label: "Aprovado", color: "bg-success-bg text-success-fg" },
   under_review: { label: "Em Revisão", color: "bg-warning-bg text-warning-fg" },
 };
+
+const STATUS_OPTIONS = [
+  { value: "draft", label: "Rascunho" },
+  { value: "under_review", label: "Em Revisão" },
+  { value: "approved", label: "Aprovado" },
+];
 
 export default function ScopePage() {
   const params = useParams();
@@ -38,6 +48,10 @@ export default function ScopePage() {
   const [formStatus, setFormStatus] = useState("draft");
   const [formVersion, setFormVersion] = useState("1.0");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -112,13 +126,19 @@ export default function ScopePage() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este escopo?")) return;
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/scope/${id}`, { method: "DELETE" });
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/scope/${itemToDelete}`, { method: "DELETE" });
       toast.success("Excluído");
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
   };
 
   return (
@@ -142,7 +162,7 @@ export default function ScopePage() {
       </div>
 
       {loading ? (
-        [1, 2].map((i) => <Card key={i}><CardContent className="p-4"><div className="animate-pulse h-24 bg-surface-tertiary rounded" /></CardContent></Card>)
+        [1, 2].map((i) => <CardSkeleton key={i} />)
       ) : scopes.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -168,7 +188,7 @@ export default function ScopePage() {
                     </button>
                   )}
                   {can("sgsiScope", "delete") && (
-                    <button onClick={() => handleDelete(scope.id)} className="p-2 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                    <button onClick={() => { setItemToDelete(scope.id); setShowDeleteConfirm(true); }} className="p-2 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   )}
@@ -234,11 +254,7 @@ export default function ScopePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                      <option value="draft">Rascunho</option>
-                      <option value="under_review">Em Revisão</option>
-                      <option value="approved">Aprovado</option>
-                    </select>
+                    <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
                   </div>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Versão</label>
@@ -248,25 +264,25 @@ export default function ScopePage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Descrição geral do escopo..." />
+                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-20 resize-none" placeholder="Descrição geral do escopo..." />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Limites e Fronteiras</label>
-                <textarea value={formBoundaries} onChange={(e) => setFormBoundaries(e.target.value)} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Defina os limites organizacionais, físicos e tecnológicos..." />
+                <Textarea value={formBoundaries} onChange={(e) => setFormBoundaries(e.target.value)} className="h-20 resize-none" placeholder="Defina os limites organizacionais, físicos e tecnológicos..." />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Exclusões</label>
-                  <textarea value={formExclusions} onChange={(e) => setFormExclusions(e.target.value)} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Itens excluídos do escopo..." />
+                  <Textarea value={formExclusions} onChange={(e) => setFormExclusions(e.target.value)} className="h-20 resize-none" placeholder="Itens excluídos do escopo..." />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Justificativa</label>
-                  <textarea value={formJustification} onChange={(e) => setFormJustification(e.target.value)} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Justificativa para as exclusões..." />
+                  <Textarea value={formJustification} onChange={(e) => setFormJustification(e.target.value)} className="h-20 resize-none" placeholder="Justificativa para as exclusões..." />
                 </div>
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Interfaces e Dependências</label>
-                <textarea value={formInterfaces} onChange={(e) => setFormInterfaces(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Interfaces com partes externas, dependências..." />
+                <Textarea value={formInterfaces} onChange={(e) => setFormInterfaces(e.target.value)} className="h-16 resize-none" placeholder="Interfaces com partes externas, dependências..." />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -276,6 +292,15 @@ export default function ScopePage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir escopo"
+        description="Tem certeza que deseja excluir este escopo? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -139,36 +141,36 @@ export default function ActivityLogPage() {
               <label className="block text-caption-1 text-foreground-secondary mb-1">
                 Ação
               </label>
-              <select
+              <Select
                 value={actionFilter}
                 onChange={(e) => setActionFilter(e.target.value)}
-                className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-              >
-                <option value="">Todas</option>
-                <option value="create">Criação</option>
-                <option value="update">Atualização</option>
-                <option value="delete">Exclusão</option>
-                <option value="status_change">Mudança de Status</option>
-                <option value="upload">Upload</option>
-              </select>
+                options={[
+                  { value: "", label: "Todas" },
+                  { value: "create", label: "Criação" },
+                  { value: "update", label: "Atualização" },
+                  { value: "delete", label: "Exclusão" },
+                  { value: "status_change", label: "Mudança de Status" },
+                  { value: "upload", label: "Upload" },
+                ]}
+              />
             </div>
             <div>
               <label className="block text-caption-1 text-foreground-secondary mb-1">
                 Entidade
               </label>
-              <select
+              <Select
                 value={entityFilter}
                 onChange={(e) => setEntityFilter(e.target.value)}
-                className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-              >
-                <option value="">Todas</option>
-                <option value="nonconformity">Não Conformidade</option>
-                <option value="actionPlan">Plano de Ação</option>
-                <option value="audit">Auditoria</option>
-                <option value="document">Documento</option>
-                <option value="project">Projeto</option>
-                <option value="risk">Risco</option>
-              </select>
+                options={[
+                  { value: "", label: "Todas" },
+                  { value: "nonconformity", label: "Não Conformidade" },
+                  { value: "actionPlan", label: "Plano de Ação" },
+                  { value: "audit", label: "Auditoria" },
+                  { value: "document", label: "Documento" },
+                  { value: "project", label: "Projeto" },
+                  { value: "risk", label: "Risco" },
+                ]}
+              />
             </div>
           </div>
         </CardContent>
@@ -178,17 +180,7 @@ export default function ActivityLogPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="animate-pulse flex items-center gap-3">
-                  <div className="h-10 w-10 bg-surface-tertiary rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-surface-tertiary rounded w-2/3" />
-                    <div className="h-3 bg-surface-tertiary rounded w-1/3" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} lines={2} />
           ))}
         </div>
       ) : logs.length === 0 ? (

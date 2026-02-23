@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Plus, X, Pencil, Trash2, ScrollText, CheckCircle2, Send, ShieldCheck, Globe, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -31,6 +35,16 @@ const CATEGORIES: Record<string, string> = {
   other: "Outro",
 };
 
+const CATEGORY_OPTIONS = [
+  { value: "", label: "Todas categorias" },
+  ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v })),
+];
+
+const FORM_CATEGORY_OPTIONS = [
+  { value: "", label: "Selecionar..." },
+  ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v })),
+];
+
 export default function PoliciesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -51,6 +65,10 @@ export default function PoliciesPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("draft");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -148,13 +166,19 @@ export default function PoliciesPage() {
     } catch (err) { toast.error(err instanceof Error ? err.message : "Erro"); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta política?")) return;
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/policies/${id}`, { method: "DELETE" });
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/policies/${itemToDelete}`, { method: "DELETE" });
       toast.success("Excluído");
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
   };
 
   const stats = {
@@ -214,15 +238,16 @@ export default function PoliciesPage() {
             </button>
           ))}
         </div>
-        <select value={filterCategory} onChange={(e) => { setFilterCategory(e.target.value); setLoading(true); }}
-          className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand">
-          <option value="">Todas categorias</option>
-          {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        <Select
+          value={filterCategory}
+          onChange={(e) => { setFilterCategory(e.target.value); setLoading(true); }}
+          options={CATEGORY_OPTIONS}
+          className="h-8 !w-auto text-caption-1"
+        />
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : policies.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -256,7 +281,7 @@ export default function PoliciesPage() {
                         </button>
                       )}
                       {can("policy", "delete") && (
-                        <button onClick={() => handleDelete(pol.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                        <button onClick={() => { setItemToDelete(pol.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -331,22 +356,19 @@ export default function PoliciesPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                  <option value="">Selecionar...</option>
-                  {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
+                <Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={FORM_CATEGORY_OPTIONS} />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Conteúdo</label>
-                <textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="w-full h-32 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Texto completo da política..." />
+                <Textarea value={formContent} onChange={(e) => setFormContent(e.target.value)} className="h-32 resize-none" placeholder="Texto completo da política..." />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -356,6 +378,15 @@ export default function PoliciesPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir política"
+        description="Tem certeza que deseja excluir esta política? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Plus, X, Pencil, Trash2, Megaphone, ChevronDown, ChevronUp, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -36,6 +40,12 @@ const PARTICIPANT_STATUSES: Record<string, { label: string; color: string }> = {
   completed: { label: "Concluído", color: "bg-success-bg text-success-fg" },
   absent: { label: "Ausente", color: "bg-danger-bg text-danger-fg" },
 };
+
+const TYPE_OPTIONS = Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }));
+
+const STATUS_OPTIONS = Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
+
+const PARTICIPANT_STATUS_OPTIONS = Object.entries(PARTICIPANT_STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
 
 export default function AwarenessPage() {
   const params = useParams();
@@ -68,6 +78,10 @@ export default function AwarenessPage() {
   const [partName, setPartName] = useState("");
   const [partEmail, setPartEmail] = useState("");
   const [addingPart, setAddingPart] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -135,10 +149,16 @@ export default function AwarenessPage() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta campanha?")) return;
-    try { await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/awareness/${id}`, { method: "DELETE" }); toast.success("Excluído"); fetchData(); }
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
+    try { await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/awareness/${itemToDelete}`, { method: "DELETE" }); toast.success("Excluído"); fetchData(); }
     catch { toast.error("Erro ao excluir"); }
+    finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
   };
 
   const handleAddParticipant = async (campaignId: string) => {
@@ -227,7 +247,7 @@ export default function AwarenessPage() {
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : campaigns.length === 0 ? (
         <Card><CardContent className="py-12 text-center">
           <Megaphone className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
@@ -257,7 +277,7 @@ export default function AwarenessPage() {
                         <button onClick={() => openEdit(camp)} className="p-1.5 rounded hover:bg-surface-tertiary text-foreground-tertiary hover:text-foreground-primary"><Pencil className="h-3.5 w-3.5" /></button>
                       )}
                       {can("awarenessCampaign", "delete") && (
-                        <button onClick={() => handleDelete(camp.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => { setItemToDelete(camp.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg"><Trash2 className="h-3.5 w-3.5" /></button>
                       )}
                     </div>
                   </div>
@@ -304,7 +324,7 @@ export default function AwarenessPage() {
                         </div>
                       )}
                       {loadingParticipants ? (
-                        <div className="animate-pulse h-16 bg-surface-tertiary rounded" />
+                        <CardSkeleton lines={2} />
                       ) : participants.length === 0 ? (
                         <p className="text-body-2 text-foreground-tertiary text-center py-3">Nenhum participante</p>
                       ) : (
@@ -325,10 +345,12 @@ export default function AwarenessPage() {
                                 <td className="px-3 py-2 text-foreground-secondary">{p.user?.email || p.externalEmail || "—"}</td>
                                 <td className="px-3 py-2">
                                   {can("awarenessCampaign", "update") ? (
-                                    <select value={p.status} onChange={(e) => handleUpdateParticipant(camp.id, p.id, e.target.value)}
-                                      className="h-7 rounded border border-stroke-primary bg-surface-primary px-1 text-caption-1 focus:outline-none focus:ring-1 focus:ring-brand">
-                                      {Object.entries(PARTICIPANT_STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                                    </select>
+                                    <Select
+                                      value={p.status}
+                                      onChange={(e) => handleUpdateParticipant(camp.id, p.id, e.target.value)}
+                                      options={PARTICIPANT_STATUS_OPTIONS}
+                                      className="h-7 !text-caption-1"
+                                    />
                                   ) : (
                                     <Badge variant={PARTICIPANT_STATUSES[p.status]?.color}>{PARTICIPANT_STATUSES[p.status]?.label}</Badge>
                                   )}
@@ -372,9 +394,7 @@ export default function AwarenessPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <select value={formType} onChange={(e) => setFormType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TYPE_OPTIONS} />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Público-alvo</label>
@@ -407,14 +427,12 @@ export default function AwarenessPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="h-16 resize-none" />
               </div>
               {editingId && (
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
                 </div>
               )}
               <div className="flex justify-end gap-3 pt-2">
@@ -425,6 +443,15 @@ export default function AwarenessPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir campanha"
+        description="Tem certeza que deseja excluir esta campanha? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

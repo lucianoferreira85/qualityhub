@@ -6,10 +6,13 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Cog, FolderKanban, User, TrendingUp, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
-import { getProcessStatusLabel, getProcessStatusColor } from "@/lib/utils";
+import { getProcessStatusLabel } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
 
@@ -126,24 +129,16 @@ export default function ProcessesPage() {
         />
         <div className="flex items-center gap-2 flex-wrap">
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <select
+          <Select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {PROCESS_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-          <select
+            options={PROCESS_STATUSES}
+          />
+          <Select
             value={filterCategory}
             onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {PROCESS_CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
-          </select>
+            options={PROCESS_CATEGORIES}
+          />
           {(filterStatus || filterCategory) && (
             <Button
               variant="ghost"
@@ -172,33 +167,23 @@ export default function ProcessesPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-1/4" />
-                  <div className="h-5 bg-surface-tertiary rounded w-3/4" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <Cog className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search || filterStatus || filterCategory
-                ? "Nenhum processo encontrado"
-                : "Nenhum processo registrado"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search || filterStatus || filterCategory
-                ? "Tente ajustar os filtros ou termos de busca"
-                : "Crie o primeiro processo para começar"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Cog}
+          title={
+            search || filterStatus || filterCategory
+              ? "Nenhum processo encontrado"
+              : "Nenhum processo registrado"
+          }
+          description={
+            search || filterStatus || filterCategory
+              ? "Tente ajustar os filtros ou termos de busca"
+              : "Crie o primeiro processo para começar"
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((proc) => (
@@ -214,9 +199,7 @@ export default function ProcessesPage() {
                         {proc.name}
                       </h3>
                     </div>
-                    <Badge variant={getProcessStatusColor(proc.status)} className="flex-shrink-0">
-                      {getProcessStatusLabel(proc.status)}
-                    </Badge>
+                    <StatusBadge status={proc.status} type="processStatus" className="flex-shrink-0" />
                   </div>
 
                   <div className="space-y-2 mb-3">

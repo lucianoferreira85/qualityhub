@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { getFrequencyLabel } from "@/lib/utils";
@@ -143,15 +146,11 @@ export default function IndicatorsPage() {
         />
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <select
+          <Select
             value={filterFrequency}
             onChange={(e) => { setFilterFrequency(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {FREQUENCIES.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+            options={FREQUENCIES}
+          />
           {filterFrequency && (
             <Button
               variant="ghost"
@@ -168,29 +167,15 @@ export default function IndicatorsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-2/3" />
-                  <div className="h-8 bg-surface-tertiary rounded w-1/3" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <TrendingUp className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search || filterFrequency ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search || filterFrequency ? "Tente ajustar os filtros ou termos de busca" : "Configure indicadores para monitorar o desempenho"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={TrendingUp}
+          title={search || filterFrequency ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
+          description={search || filterFrequency ? "Tente ajustar os filtros ou termos de busca" : "Configure indicadores para monitorar o desempenho"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((ind) => {

@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Plus, X, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import type { InterestedParty } from "@/types";
@@ -16,6 +20,11 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   internal: { label: "Interno", color: "bg-brand-light text-brand" },
   external: { label: "Externo", color: "bg-warning-bg text-warning-fg" },
 };
+
+const TYPE_OPTIONS = [
+  { value: "internal", label: "Interno" },
+  { value: "external", label: "Externo" },
+];
 
 const CATEGORIES = [
   { value: "employee", label: "Colaborador" },
@@ -27,11 +36,25 @@ const CATEGORIES = [
   { value: "partner", label: "Parceiro" },
 ];
 
+const CATEGORY_OPTIONS = CATEGORIES.map((c) => ({ value: c.value, label: c.label }));
+
 const LEVELS: Record<string, { label: string; color: string }> = {
   high: { label: "Alto", color: "bg-danger-bg text-danger-fg" },
   medium: { label: "Médio", color: "bg-warning-bg text-warning-fg" },
   low: { label: "Baixo", color: "bg-success-bg text-success-fg" },
 };
+
+const INFLUENCE_OPTIONS = [
+  { value: "high", label: "Alta" },
+  { value: "medium", label: "Média" },
+  { value: "low", label: "Baixa" },
+];
+
+const INTEREST_OPTIONS = [
+  { value: "high", label: "Alto" },
+  { value: "medium", label: "Médio" },
+  { value: "low", label: "Baixo" },
+];
 
 const STRATEGY_CONFIG: Record<string, { label: string }> = {
   manage_closely: { label: "Gerenciar de Perto" },
@@ -39,6 +62,8 @@ const STRATEGY_CONFIG: Record<string, { label: string }> = {
   keep_informed: { label: "Manter Informado" },
   monitor: { label: "Monitorar" },
 };
+
+const STRATEGY_OPTIONS = Object.entries(STRATEGY_CONFIG).map(([value, { label }]) => ({ value, label }));
 
 export default function ProjectInterestedPartiesPage() {
   const params = useParams();
@@ -61,6 +86,9 @@ export default function ProjectInterestedPartiesPage() {
   const [formStrategy, setFormStrategy] = useState("");
   const [formMonitoring, setFormMonitoring] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     Promise.all([
@@ -139,7 +167,6 @@ export default function ProjectInterestedPartiesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir?")) return;
     try { await fetch(`/api/tenants/${tenant.slug}/interested-parties/${id}`, { method: "DELETE" }); toast.success("Excluído"); fetchData(); }
     catch { toast.error("Erro ao excluir"); }
   };
@@ -171,7 +198,7 @@ export default function ProjectInterestedPartiesPage() {
 
       <div className="space-y-3">
         {loading ? (
-          [1, 2, 3].map((i) => <Card key={i}><CardContent className="p-4"><div className="animate-pulse h-12 bg-surface-tertiary rounded" /></CardContent></Card>)
+          [1, 2, 3].map((i) => <CardSkeleton key={i} />)
         ) : filtered.length === 0 ? (
           <Card><CardContent className="py-8 text-center"><p className="text-body-1 text-foreground-tertiary">Nenhuma parte interessada</p></CardContent></Card>
         ) : (
@@ -194,7 +221,7 @@ export default function ProjectInterestedPartiesPage() {
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {can("interestedParty", "update") && <button onClick={() => openEdit(party)} className="p-2 rounded hover:bg-surface-tertiary text-foreground-tertiary hover:text-foreground-primary"><Pencil className="h-4 w-4" /></button>}
-                    {can("interestedParty", "delete") && <button onClick={() => handleDelete(party.id)} className="p-2 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg"><Trash2 className="h-4 w-4" /></button>}
+                    {can("interestedParty", "delete") && <button onClick={() => { setItemToDelete(party.id); setShowDeleteConfirm(true); }} className="p-2 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg"><Trash2 className="h-4 w-4" /></button>}
                   </div>
                 </div>
               </CardContent>
@@ -215,15 +242,15 @@ export default function ProjectInterestedPartiesPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Nome *</label><Input value={formName} onChange={(e) => setFormName(e.target.value)} /></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label><select value={formType} onChange={(e) => setFormType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"><option value="internal">Interno</option><option value="external">Externo</option></select></div>
+                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label><Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TYPE_OPTIONS} /></div>
               </div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label><select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"><option value="">Selecionar...</option>{CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Necessidades</label><textarea value={formNeeds} onChange={(e) => setFormNeeds(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" /></div>
-              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos</label><textarea value={formRequirements} onChange={(e) => setFormRequirements(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" /></div>
+              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label><Select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} options={CATEGORY_OPTIONS} placeholder="Selecionar..." /></div>
+              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Necessidades</label><Textarea value={formNeeds} onChange={(e) => setFormNeeds(e.target.value)} className="min-h-[64px]" /></div>
+              <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos</label><Textarea value={formRequirements} onChange={(e) => setFormRequirements(e.target.value)} className="min-h-[64px]" /></div>
               <div className="grid grid-cols-3 gap-4">
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Influência</label><select value={formInfluence} onChange={(e) => setFormInfluence(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"><option value="">Sel...</option><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Interesse</label><select value={formInterest} onChange={(e) => setFormInterest(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"><option value="">Sel...</option><option value="high">Alto</option><option value="medium">Médio</option><option value="low">Baixo</option></select></div>
-                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Estratégia</label><select value={formStrategy} onChange={(e) => setFormStrategy(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"><option value="">Sel...</option>{Object.entries(STRATEGY_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
+                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Influência</label><Select value={formInfluence} onChange={(e) => setFormInfluence(e.target.value)} options={INFLUENCE_OPTIONS} placeholder="Sel..." /></div>
+                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Interesse</label><Select value={formInterest} onChange={(e) => setFormInterest(e.target.value)} options={INTEREST_OPTIONS} placeholder="Sel..." /></div>
+                <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Estratégia</label><Select value={formStrategy} onChange={(e) => setFormStrategy(e.target.value)} options={STRATEGY_OPTIONS} placeholder="Sel..." /></div>
               </div>
               <div><label className="block text-body-2 font-medium text-foreground-primary mb-1">Método de Monitoramento</label><Input value={formMonitoring} onChange={(e) => setFormMonitoring(e.target.value)} /></div>
               <div className="flex justify-end gap-3 pt-2"><Button variant="outline" onClick={resetForm}>Cancelar</Button><Button onClick={handleSave} loading={saving}>{editingId ? "Salvar" : "Criar"}</Button></div>
@@ -231,6 +258,22 @@ export default function ProjectInterestedPartiesPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir parte interessada"
+        description="Tem certeza que deseja excluir esta parte interessada? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => {
+          if (itemToDelete) {
+            handleDelete(itemToDelete);
+          }
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+      />
     </div>
   );
 }

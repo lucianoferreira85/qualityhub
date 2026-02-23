@@ -6,6 +6,10 @@ import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit2, Trash2, Save, X, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -58,6 +62,7 @@ export default function ManagementReviewDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [editStatus, setEditStatus] = useState("");
   const [editActualDate, setEditActualDate] = useState("");
@@ -114,7 +119,6 @@ export default function ManagementReviewDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Excluir esta analise critica?")) return;
     try {
       await fetch(`/api/tenants/${tenant.slug}/management-reviews/${reviewId}`, {
         method: "DELETE",
@@ -140,7 +144,7 @@ export default function ManagementReviewDetailPage() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-surface-primary rounded-card animate-pulse" />
+          <CardSkeleton key={i} />
         ))}
       </div>
     );
@@ -183,12 +187,20 @@ export default function ManagementReviewDetailPage() {
             </Button>
           )}
           {can("managementReview", "delete") && (
-            <Button variant="outline" onClick={handleDelete} className="text-danger-fg hover:bg-danger-bg">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-danger-fg hover:bg-danger-bg">
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir esta análise crítica?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+      />
 
       {/* Info card */}
       <Card>
@@ -201,15 +213,11 @@ export default function ManagementReviewDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <select
+                  <Select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                    options={STATUS_OPTIONS}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Realizada</label>
@@ -223,11 +231,10 @@ export default function ManagementReviewDetailPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ata / Observacoes</label>
-                <textarea
+                <Textarea
                   value={editMinutes}
                   onChange={(e) => setEditMinutes(e.target.value)}
                   rows={6}
-                  className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"
                   placeholder="Registre a ata da reuniao..."
                 />
               </div>

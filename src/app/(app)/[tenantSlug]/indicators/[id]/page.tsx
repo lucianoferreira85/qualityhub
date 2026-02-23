@@ -7,6 +7,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -374,15 +375,11 @@ export default function IndicatorDetailPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Frequência</label>
-                <select
+                <Select
                   value={editFrequency}
                   onChange={(e) => setEditFrequency(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {FREQUENCIES.map((f) => (
-                    <option key={f.value} value={f.value}>{f.label}</option>
-                  ))}
-                </select>
+                  options={FREQUENCIES}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Meta</label>

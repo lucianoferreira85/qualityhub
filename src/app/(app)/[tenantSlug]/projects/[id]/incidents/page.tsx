@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Plus, X, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -78,6 +82,9 @@ export default function IncidentsPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("reported");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -184,12 +191,15 @@ export default function IncidentsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este incidente de segurança?")) return;
+    setDeleting(true);
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/incidents/${id}`, { method: "DELETE" });
       toast.success("Excluído");
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally { setDeleting(false); }
   };
 
   const stats = {
@@ -252,26 +262,20 @@ export default function IncidentsPage() {
             </button>
           ))}
         </div>
-        <select
+        <Select
           value={filterSeverity}
           onChange={(e) => { setFilterSeverity(e.target.value); setLoading(true); }}
-          className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-        >
-          <option value="">Todas severidades</option>
-          {Object.entries(SEVERITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select
+          options={[{ value: "", label: "Todas severidades" }, ...Object.entries(SEVERITIES).map(([k, v]) => ({ value: k, label: v.label }))]}
+        />
+        <Select
           value={filterType}
           onChange={(e) => { setFilterType(e.target.value); setLoading(true); }}
-          className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-        >
-          <option value="">Todos tipos</option>
-          {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+          options={[{ value: "", label: "Todos tipos" }, ...Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v.label }))]}
+        />
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : incidents.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -322,7 +326,7 @@ export default function IncidentsPage() {
                           </button>
                         )}
                         {can("securityIncident", "delete") && (
-                          <button onClick={() => handleDelete(inc.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                          <button onClick={() => { setItemToDelete(inc.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -352,29 +356,34 @@ export default function IncidentsPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                <textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <select value={formType} onChange={(e) => setFormType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select
+                    value={formType}
+                    onChange={(e) => setFormType(e.target.value)}
+                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v.label }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Severidade *</label>
-                  <select value={formSeverity} onChange={(e) => setFormSeverity(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(SEVERITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select
+                    value={formSeverity}
+                    onChange={(e) => setFormSeverity(e.target.value)}
+                    options={Object.entries(SEVERITIES).map(([k, v]) => ({ value: k, label: v.label }))}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detectado Em *</label>
@@ -383,52 +392,55 @@ export default function IncidentsPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Atribuído A</label>
-                <select value={formAssignedToId} onChange={(e) => setFormAssignedToId(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                  <option value="">Selecionar...</option>
-                  {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                </select>
+                <Select
+                  value={formAssignedToId}
+                  onChange={(e) => setFormAssignedToId(e.target.value)}
+                  options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ativos Afetados</label>
-                <textarea value={formAffectedAssets} onChange={(e) => setFormAffectedAssets(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Ex: Servidor de banco de dados, laptop do colaborador" />
+                <Textarea value={formAffectedAssets} onChange={(e) => setFormAffectedAssets(e.target.value)} rows={2} placeholder="Ex: Servidor de banco de dados, laptop do colaborador" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Sistemas Afetados</label>
-                <textarea value={formAffectedSystems} onChange={(e) => setFormAffectedSystems(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Ex: ERP, sistema de e-mail" />
+                <Textarea value={formAffectedSystems} onChange={(e) => setFormAffectedSystems(e.target.value)} rows={2} placeholder="Ex: ERP, sistema de e-mail" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição do Impacto</label>
-                <textarea value={formImpactDescription} onChange={(e) => setFormImpactDescription(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Descreva o impacto do incidente" />
+                <Textarea value={formImpactDescription} onChange={(e) => setFormImpactDescription(e.target.value)} rows={2} placeholder="Descreva o impacto do incidente" />
               </div>
               {editingId && (
                 <>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Causa Raiz</label>
-                    <textarea value={formRootCause} onChange={(e) => setFormRootCause(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Análise da causa raiz do incidente" />
+                    <Textarea value={formRootCause} onChange={(e) => setFormRootCause(e.target.value)} rows={2} placeholder="Análise da causa raiz do incidente" />
                   </div>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações de Contenção</label>
-                    <textarea value={formContainmentActions} onChange={(e) => setFormContainmentActions(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Ações tomadas para conter o incidente" />
+                    <Textarea value={formContainmentActions} onChange={(e) => setFormContainmentActions(e.target.value)} rows={2} placeholder="Ações tomadas para conter o incidente" />
                   </div>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Ações Corretivas</label>
-                    <textarea value={formCorrectiveActions} onChange={(e) => setFormCorrectiveActions(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Ações corretivas implementadas" />
+                    <Textarea value={formCorrectiveActions} onChange={(e) => setFormCorrectiveActions(e.target.value)} rows={2} placeholder="Ações corretivas implementadas" />
                   </div>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Lições Aprendidas</label>
-                    <textarea value={formLessonsLearned} onChange={(e) => setFormLessonsLearned(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="O que foi aprendido com este incidente" />
+                    <Textarea value={formLessonsLearned} onChange={(e) => setFormLessonsLearned(e.target.value)} rows={2} placeholder="O que foi aprendido com este incidente" />
                   </div>
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                      {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
+                    <Select
+                      value={formStatus}
+                      onChange={(e) => setFormStatus(e.target.value)}
+                      options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+                    />
                   </div>
                 </>
               )}
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -438,6 +450,15 @@ export default function IncidentsPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir este incidente de segurança?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={() => handleDelete(itemToDelete!)}
+        loading={deleting}
+      />
     </div>
   );
 }

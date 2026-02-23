@@ -8,6 +8,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   ArrowLeft,
   Pencil,
@@ -23,13 +26,7 @@ import {
   Download,
 } from "lucide-react";
 import {
-  getStatusColor,
-  getStatusLabel,
   getAuditTypeLabel,
-  getConclusionLabel,
-  getConclusionColor,
-  getClassificationLabel,
-  getClassificationColor,
   formatDate,
 } from "@/lib/utils";
 import { toast } from "sonner";
@@ -277,10 +274,10 @@ export default function AuditDetailPage() {
         <div className="flex-1 min-w-0">
           <h1 className="text-title-1 text-foreground-primary">{audit.title}</h1>
           <div className="flex items-center gap-2 mt-1.5">
-            <Badge variant={getStatusColor(audit.status)}>{getStatusLabel(audit.status)}</Badge>
+            <StatusBadge status={audit.status} />
             <Badge variant="bg-info-bg text-info-fg">{getAuditTypeLabel(audit.type)}</Badge>
             {audit.conclusion && (
-              <Badge variant={getConclusionColor(audit.conclusion)}>{getConclusionLabel(audit.conclusion)}</Badge>
+              <StatusBadge status={audit.conclusion} type="conclusion" />
             )}
           </div>
         </div>
@@ -345,7 +342,7 @@ export default function AuditDetailPage() {
           </div>
           {audit.status === "cancelled" && (
             <div className="mt-3 pt-3 border-t border-stroke-secondary text-center">
-              <Badge variant={getStatusColor("cancelled")}>Cancelada</Badge>
+              <StatusBadge status="cancelled" />
             </div>
           )}
         </CardContent>
@@ -363,15 +360,11 @@ export default function AuditDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo</label>
-                <select value={editType} onChange={(e) => setEditType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                  {AUDIT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
+                <Select value={editType} onChange={(e) => setEditType(e.target.value)} options={AUDIT_TYPES} />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                  {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
+                <Select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} options={STATUSES} />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data início</label>
@@ -383,14 +376,12 @@ export default function AuditDetailPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Conclusão</label>
-                <select value={editConclusion} onChange={(e) => setEditConclusion(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                  {CONCLUSIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
+                <Select value={editConclusion} onChange={(e) => setEditConclusion(e.target.value)} options={CONCLUSIONS} />
               </div>
             </div>
             <div>
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-              <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
+              <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
             </div>
           </CardContent>
         </Card>
@@ -460,17 +451,15 @@ export default function AuditDetailPage() {
             <form onSubmit={handleAddFinding} className="mb-4 p-4 border border-stroke-secondary rounded-button space-y-3">
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação *</label>
-                <select value={findingClassification} onChange={(e) => setFindingClassification(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                  {CLASSIFICATIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                </select>
+                <Select value={findingClassification} onChange={(e) => setFindingClassification(e.target.value)} options={CLASSIFICATIONS} />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição *</label>
-                <textarea value={findingDescription} onChange={(e) => setFindingDescription(e.target.value)} required rows={2} placeholder="Descreva a constatação" className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
+                <Textarea value={findingDescription} onChange={(e) => setFindingDescription(e.target.value)} required rows={2} placeholder="Descreva a constatação" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
-                <textarea value={findingEvidence} onChange={(e) => setFindingEvidence(e.target.value)} rows={2} placeholder="Evidência objetiva" className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
+                <Textarea value={findingEvidence} onChange={(e) => setFindingEvidence(e.target.value)} rows={2} placeholder="Evidência objetiva" />
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddFinding(false)}>Cancelar</Button>
@@ -498,17 +487,15 @@ export default function AuditDetailPage() {
                     <div className="space-y-3">
                       <div>
                         <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação</label>
-                        <select value={editFindingClassification} onChange={(e) => setEditFindingClassification(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                          {CLASSIFICATIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                        </select>
+                        <Select value={editFindingClassification} onChange={(e) => setEditFindingClassification(e.target.value)} options={CLASSIFICATIONS} />
                       </div>
                       <div>
                         <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                        <textarea value={editFindingDescription} onChange={(e) => setEditFindingDescription(e.target.value)} rows={2} className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
+                        <Textarea value={editFindingDescription} onChange={(e) => setEditFindingDescription(e.target.value)} rows={2} />
                       </div>
                       <div>
                         <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
-                        <textarea value={editFindingEvidence} onChange={(e) => setEditFindingEvidence(e.target.value)} rows={2} className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none" />
+                        <Textarea value={editFindingEvidence} onChange={(e) => setEditFindingEvidence(e.target.value)} rows={2} />
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button type="button" variant="ghost" size="sm" onClick={() => setEditingFindingId(null)}>Cancelar</Button>
@@ -528,9 +515,7 @@ export default function AuditDetailPage() {
                       <div className="flex items-start justify-between gap-3 mb-1.5">
                         <p className="text-body-1 text-foreground-primary">{f.description}</p>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge variant={getClassificationColor(f.classification)}>
-                            {getClassificationLabel(f.classification)}
-                          </Badge>
+                          <StatusBadge status={f.classification} type="classification" />
                           {can("auditFinding", "update") && (
                             <Button variant="ghost" size="icon-sm" onClick={() => startEditFinding(f)} className="text-foreground-tertiary hover:text-foreground-primary">
                               <Pencil className="h-3 w-3" />

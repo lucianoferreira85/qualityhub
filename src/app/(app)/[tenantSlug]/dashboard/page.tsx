@@ -6,6 +6,8 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   FolderKanban,
   AlertTriangle,
@@ -22,13 +24,7 @@ import {
   Target,
   Timer,
 } from "lucide-react";
-import {
-  getStatusColor,
-  getStatusLabel,
-  getSeverityColor,
-  getSeverityLabel,
-  formatDate,
-} from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { TrendLineChart } from "@/components/charts/trend-line-chart";
 import { ProjectComparisonBar } from "@/components/charts/project-comparison-bar";
 import { CertificationReadiness } from "@/components/charts/certification-readiness";
@@ -359,14 +355,7 @@ export default function DashboardPage() {
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-1/3" />
-                  <div className="h-20 bg-surface-tertiary rounded" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : data && (data.totalProjects > 0 || data.totalAudits > 0) ? (
@@ -440,9 +429,7 @@ export default function DashboardPage() {
                       const pct = total > 0 ? Math.round((nc.count / total) * 100) : 0;
                       return (
                         <div key={nc.status} className="flex items-center gap-3">
-                          <Badge variant={getStatusColor(nc.status)} className="w-36 justify-center">
-                            {getStatusLabel(nc.status)}
-                          </Badge>
+                          <StatusBadge status={nc.status} className="w-36 justify-center" />
                           <div className="flex-1 h-5 bg-surface-tertiary rounded-full overflow-hidden">
                             <div
                               className="h-full bg-brand rounded-full transition-all"
@@ -545,9 +532,7 @@ export default function DashboardPage() {
                           <p className="text-body-1 font-medium text-foreground-primary truncate">
                             {p.name}
                           </p>
-                          <Badge variant={getStatusColor(p.status)}>
-                            {getStatusLabel(p.status)}
-                          </Badge>
+                          <StatusBadge status={p.status} />
                         </div>
                         <div className="flex items-center gap-4 text-caption-1 text-foreground-tertiary">
                           <span>{p.controls} controle{p.controls !== 1 ? "s" : ""}</span>
@@ -683,18 +668,14 @@ export default function DashboardPage() {
                             <span className="text-caption-1 text-foreground-tertiary font-mono">
                               {nc.code}
                             </span>
-                            <Badge variant={getSeverityColor(nc.severity)} className="text-caption-2">
-                              {getSeverityLabel(nc.severity)}
-                            </Badge>
+                            <StatusBadge status={nc.severity} type="severity" className="text-caption-2" />
                           </div>
                           <p className="text-body-2 text-foreground-primary truncate mt-0.5">
                             {nc.title}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                          <Badge variant={getStatusColor(nc.status)} className="text-caption-2">
-                            {getStatusLabel(nc.status)}
-                          </Badge>
+                          <StatusBadge status={nc.status} className="text-caption-2" />
                           <span className="text-caption-2 text-foreground-tertiary">
                             {formatDate(nc.createdAt)}
                           </span>
@@ -736,9 +717,7 @@ export default function DashboardPage() {
                               {ap.title}
                             </p>
                             <div className="flex items-center gap-2 mt-0.5">
-                              <Badge variant={getStatusColor(ap.status)} className="text-caption-2">
-                                {getStatusLabel(ap.status)}
-                              </Badge>
+                              <StatusBadge status={ap.status} className="text-caption-2" />
                               {ap.responsible && (
                                 <span className="text-caption-1 text-foreground-tertiary flex items-center gap-1">
                                   <User className="h-3 w-3" />
@@ -770,14 +749,7 @@ export default function DashboardPage() {
           {analyticsLoading ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {[1, 2].map((i) => (
-                <Card key={`analytics-skel-${i}`}>
-                  <CardContent className="p-5">
-                    <div className="animate-pulse space-y-3">
-                      <div className="h-4 bg-surface-tertiary rounded w-1/3" />
-                      <div className="h-[280px] bg-surface-tertiary rounded" />
-                    </div>
-                  </CardContent>
-                </Card>
+                <CardSkeleton key={`analytics-skel-${i}`} />
               ))}
             </div>
           ) : analytics && (

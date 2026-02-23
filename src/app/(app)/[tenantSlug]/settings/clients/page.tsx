@@ -6,6 +6,9 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Avatar } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Building2,
@@ -13,7 +16,6 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
-import { getInitials } from "@/lib/utils";
 
 interface Client {
   id: string;
@@ -106,25 +108,15 @@ export default function SettingsClientsPage() {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3 animate-pulse">
-                  <div className="w-10 h-10 bg-surface-tertiary rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-surface-tertiary rounded w-1/3" />
-                    <div className="h-3 bg-surface-tertiary rounded w-1/4" />
-                  </div>
-                </div>
+                <CardSkeleton key={i} lines={2} />
               ))}
             </div>
           ) : clients.length === 0 ? (
-            <div className="text-center py-8">
-              <Building2 className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
-              <p className="text-body-2 text-foreground-secondary">Nenhum cliente cadastrado</p>
-              <Link href={`/${tenant.slug}/clients/new`}>
-                <Button variant="outline" size="sm" className="mt-3">
-                  Cadastrar Primeiro Cliente
-                </Button>
-              </Link>
-            </div>
+            <EmptyState
+              icon={Building2}
+              title="Nenhum cliente cadastrado"
+              action={{ label: "Cadastrar Primeiro Cliente", href: `/${tenant.slug}/clients/new` }}
+            />
           ) : (
             <div className="space-y-1">
               {clients.map((client) => (
@@ -133,11 +125,7 @@ export default function SettingsClientsPage() {
                   href={`/${tenant.slug}/clients/${client.id}`}
                   className="flex items-center gap-3 p-3 rounded-card hover:bg-surface-secondary transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-brand-light text-brand flex items-center justify-center flex-shrink-0">
-                    <span className="text-body-2 font-medium">
-                      {getInitials(client.name)}
-                    </span>
-                  </div>
+                  <Avatar name={client.name} size="lg" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-body-1 font-medium text-foreground-primary truncate">

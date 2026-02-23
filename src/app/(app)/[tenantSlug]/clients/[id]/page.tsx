@@ -7,7 +7,9 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Avatar } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Pencil,
@@ -18,7 +20,6 @@ import {
   User,
   FolderKanban,
 } from "lucide-react";
-import { getInitials, getStatusColor, getStatusLabel } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ConsultingClient, Project } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -35,6 +36,16 @@ const SECTORS = [
   "Telecomunicações",
   "Logística",
   "Outro",
+];
+
+const SECTOR_OPTIONS = [
+  { value: "", label: "Nenhum" },
+  ...SECTORS.map((s) => ({ value: s, label: s })),
+];
+
+const CLIENT_STATUSES = [
+  { value: "active", label: "Ativo" },
+  { value: "inactive", label: "Inativo" },
 ];
 
 interface ClientWithProjects extends ConsultingClient {
@@ -173,24 +184,12 @@ export default function ClientDetailPage() {
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
-              <span className="text-body-1 font-medium text-white">
-                {getInitials(client.name)}
-              </span>
-            </div>
+            <Avatar name={client.name} size="lg" className="h-12 w-12 text-body-1" />
             <div>
               <h1 className="text-title-1 text-foreground-primary">
                 {client.name}
               </h1>
-              <Badge
-                variant={
-                  client.status === "active"
-                    ? "bg-success-bg text-success-fg"
-                    : "bg-gray-100 text-gray-500"
-                }
-              >
-                {client.status === "active" ? "Ativo" : "Inativo"}
-              </Badge>
+              <StatusBadge status={client.status} />
             </div>
           </div>
         </div>
@@ -297,29 +296,21 @@ export default function ClientDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Setor
                 </label>
-                <select
+                <Select
                   value={editSector}
                   onChange={(e) => setEditSector(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">Nenhum</option>
-                  {SECTORS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                  options={SECTOR_OPTIONS}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Status
                 </label>
-                <select
+                <Select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="active">Ativo</option>
-                  <option value="inactive">Inativo</option>
-                </select>
+                  options={CLIENT_STATUSES}
+                />
               </div>
             </div>
           </CardContent>
@@ -404,9 +395,7 @@ export default function ClientDetailPage() {
                       <span className="text-caption-1 text-foreground-tertiary">
                         {Number(project.progress)}%
                       </span>
-                      <Badge variant={getStatusColor(project.status)}>
-                        {getStatusLabel(project.status)}
-                      </Badge>
+                      <StatusBadge status={project.status} />
                     </div>
                   </div>
                 </Link>

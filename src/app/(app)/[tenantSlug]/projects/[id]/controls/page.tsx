@@ -6,13 +6,15 @@ import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft,
   Shield,
   Plus,
   X,
-  ChevronDown,
   Trash2,
 } from "lucide-react";
 
@@ -78,6 +80,9 @@ export default function ControlsPage() {
   const [projectStandards, setProjectStandards] = useState<{ id: string; code: string; name: string }[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState("");
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
   const fetchControls = () => {
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/controls`)
       .then((r) => r.json())
@@ -109,6 +114,9 @@ export default function ControlsPage() {
   const existingControlIds = new Set(controls.map((c) => c.control.id));
   const filteredControls = availableControls.filter((c) => !existingControlIds.has(c.id));
 
+  const standardSelectOptions = projectStandards.map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }));
+  const controlSelectOptions = filteredControls.map((c) => ({ value: c.id, label: `${c.code} - ${c.title}` }));
+
   const handleAdd = async () => {
     if (!selectedControlId) return;
     setAdding(true);
@@ -131,7 +139,6 @@ export default function ControlsPage() {
   };
 
   const handleRemove = async (ctrlId: string) => {
-    if (!confirm("Remover este controle do projeto?")) return;
     setControls((prev) => prev.filter((c) => c.id !== ctrlId));
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/controls`, {
@@ -243,31 +250,21 @@ export default function ControlsPage() {
                 {projectStandards.length > 1 && (
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Norma</label>
-                    <select
+                    <Select
                       value={selectedStandardId}
                       onChange={(e) => setSelectedStandardId(e.target.value)}
-                      className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                    >
-                      {projectStandards.map((s) => (
-                        <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-                      ))}
-                    </select>
+                      options={standardSelectOptions}
+                    />
                   </div>
                 )}
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Controle</label>
-                  <select
+                  <Select
                     value={selectedControlId}
                     onChange={(e) => setSelectedControlId(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="">Selecionar controle...</option>
-                    {filteredControls.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.code} - {c.title}
-                      </option>
-                    ))}
-                  </select>
+                    options={controlSelectOptions}
+                    placeholder="Selecionar controle..."
+                  />
                 </div>
                 <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>
@@ -285,7 +282,7 @@ export default function ControlsPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-surface-primary rounded-card animate-pulse" />
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : controls.length === 0 ? (
@@ -338,18 +335,12 @@ export default function ControlsPage() {
                           </td>
                           <td className="py-2.5 px-4">
                             {can("control", "update") ? (
-                              <div className="relative">
-                                <select
-                                  value={ctrl.status}
-                                  onChange={(e) => handleStatusChange(ctrl.id, e.target.value)}
-                                  className="h-8 w-full appearance-none rounded border border-stroke-primary bg-surface-primary pl-2 pr-7 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-                                >
-                                  {STATUS_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                  ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-foreground-tertiary pointer-events-none" />
-                              </div>
+                              <Select
+                                value={ctrl.status}
+                                onChange={(e) => handleStatusChange(ctrl.id, e.target.value)}
+                                options={STATUS_OPTIONS}
+                                className="h-8 text-caption-1"
+                              />
                             ) : (
                               <Badge variant={getCtrlStatusColor(ctrl.status)}>
                                 {getCtrlStatusLabel(ctrl.status)}
@@ -377,7 +368,7 @@ export default function ControlsPage() {
                           {can("control", "delete") && (
                             <td className="py-2.5 px-4 text-right">
                               <button
-                                onClick={() => handleRemove(ctrl.id)}
+                                onClick={() => { setItemToDelete(ctrl.id); setShowDeleteConfirm(true); }}
                                 className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg transition-colors"
                                 title="Remover controle"
                               >
@@ -395,6 +386,22 @@ export default function ControlsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Remover controle"
+        description="Tem certeza que deseja remover este controle do projeto? Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        variant="danger"
+        onConfirm={() => {
+          if (itemToDelete) {
+            handleRemove(itemToDelete);
+          }
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+      />
     </div>
   );
 }

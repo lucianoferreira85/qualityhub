@@ -5,11 +5,14 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Search, User, Calendar, FileSearch } from "lucide-react";
-import { getStatusColor, getStatusLabel, getAuditTypeLabel, formatDate } from "@/lib/utils";
+import { getAuditTypeLabel, formatDate } from "@/lib/utils";
 
 const AUDIT_TYPE_COLORS: Record<string, string> = {
   internal: "bg-info-bg text-info-fg",
@@ -90,29 +93,15 @@ export default function ProjectAuditsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-1/4" />
-                  <div className="h-5 bg-surface-tertiary rounded w-3/4" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <Search className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhuma auditoria encontrada" : "Nenhuma auditoria neste projeto"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Agende uma auditoria para este projeto"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Search}
+          title={search ? "Nenhuma auditoria encontrada" : "Nenhuma auditoria neste projeto"}
+          description={search ? "Tente ajustar os termos de busca" : "Agende uma auditoria para este projeto"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((audit) => (
@@ -139,9 +128,7 @@ export default function ProjectAuditsPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                    <Badge variant={getStatusColor(audit.status)}>
-                      {getStatusLabel(audit.status)}
-                    </Badge>
+                    <StatusBadge status={audit.status} />
                     <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
                       {audit.leadAuditor && (
                         <span className="flex items-center gap-1">

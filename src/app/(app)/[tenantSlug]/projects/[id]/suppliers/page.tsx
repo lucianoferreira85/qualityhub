@@ -6,8 +6,13 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Plus, X, Pencil, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -75,6 +80,9 @@ export default function SuppliersPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("active");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -183,12 +191,15 @@ export default function SuppliersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este fornecedor?")) return;
+    setDeleting(true);
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/suppliers/${id}`, { method: "DELETE" });
       toast.success("Excluído");
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally { setDeleting(false); }
   };
 
   const stats = {
@@ -249,34 +260,26 @@ export default function SuppliersPage() {
             </button>
           ))}
         </div>
-        <select
+        <Select
           value={filterType}
           onChange={(e) => { setFilterType(e.target.value); setLoading(true); }}
-          className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-        >
-          <option value="">Todos tipos</option>
-          {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <select
+          options={[{ value: "", label: "Todos tipos" }, ...Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))]}
+        />
+        <Select
           value={filterRiskLevel}
           onChange={(e) => { setFilterRiskLevel(e.target.value); setLoading(true); }}
-          className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-        >
-          <option value="">Todos riscos</option>
-          {Object.entries(RISK_LEVELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
+          options={[{ value: "", label: "Todos riscos" }, ...Object.entries(RISK_LEVELS).map(([k, v]) => ({ value: k, label: v.label }))]}
+        />
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : suppliers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Truck className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
-            <p className="text-body-1 text-foreground-primary mb-1">Nenhum fornecedor cadastrado</p>
-            <p className="text-body-2 text-foreground-secondary">Registre e avalie fornecedores críticos</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Truck}
+          title="Nenhum fornecedor cadastrado"
+          description="Registre e avalie fornecedores críticos"
+        />
       ) : (
         <Card>
           <div className="overflow-x-auto">
@@ -328,7 +331,7 @@ export default function SuppliersPage() {
                           </button>
                         )}
                         {can("supplier", "delete") && (
-                          <button onClick={() => handleDelete(sup.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                          <button onClick={() => { setItemToDelete(sup.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -377,29 +380,36 @@ export default function SuppliersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo *</label>
-                  <select value={formType} onChange={(e) => setFormType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select
+                    value={formType}
+                    onChange={(e) => setFormType(e.target.value)}
+                    options={Object.entries(TYPES).map(([k, v]) => ({ value: k, label: v }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria</label>
-                  <select value={formCategory} onChange={(e) => setFormCategory(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    options={[{ value: "", label: "Selecionar..." }, ...Object.entries(CATEGORIES).map(([k, v]) => ({ value: k, label: v }))]}
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Serviços Fornecidos</label>
-                <textarea value={formServicesProvided} onChange={(e) => setFormServicesProvided(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Descreva os serviços prestados" />
+                <Textarea value={formServicesProvided} onChange={(e) => setFormServicesProvided(e.target.value)} rows={2} placeholder="Descreva os serviços prestados" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Acesso a Dados</label>
-                <select value={formDataAccess} onChange={(e) => setFormDataAccess(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                  <option value="none">Nenhum</option>
-                  <option value="limited">Limitado</option>
-                  <option value="full">Total</option>
-                </select>
+                <Select
+                  value={formDataAccess}
+                  onChange={(e) => setFormDataAccess(e.target.value)}
+                  options={[
+                    { value: "none", label: "Nenhum" },
+                    { value: "limited", label: "Limitado" },
+                    { value: "full", label: "Total" },
+                  ]}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -413,38 +423,43 @@ export default function SuppliersPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Detalhes do SLA</label>
-                <textarea value={formSlaDetails} onChange={(e) => setFormSlaDetails(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="SLA acordado com o fornecedor" />
+                <Textarea value={formSlaDetails} onChange={(e) => setFormSlaDetails(e.target.value)} rows={2} placeholder="SLA acordado com o fornecedor" />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Requisitos de Segurança</label>
-                <textarea value={formSecurityRequirements} onChange={(e) => setFormSecurityRequirements(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Requisitos de segurança exigidos" />
+                <Textarea value={formSecurityRequirements} onChange={(e) => setFormSecurityRequirements(e.target.value)} rows={2} placeholder="Requisitos de segurança exigidos" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível de Risco</label>
-                  <select value={formRiskLevel} onChange={(e) => setFormRiskLevel(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(RISK_LEVELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select
+                    value={formRiskLevel}
+                    onChange={(e) => setFormRiskLevel(e.target.value)}
+                    options={Object.entries(RISK_LEVELS).map(([k, v]) => ({ value: k, label: v.label }))}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Responsável</label>
-                  <select value={formResponsibleId} onChange={(e) => setFormResponsibleId(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {members.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
+                  <Select
+                    value={formResponsibleId}
+                    onChange={(e) => setFormResponsibleId(e.target.value)}
+                    options={[{ value: "", label: "Selecionar..." }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+                  />
                 </div>
               </div>
               {editingId && (
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value)}
+                    options={Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }))}
+                  />
                 </div>
               )}
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} rows={2} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -454,6 +469,15 @@ export default function SuppliersPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir este fornecedor?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={() => handleDelete(itemToDelete!)}
+        loading={deleting}
+      />
     </div>
   );
 }

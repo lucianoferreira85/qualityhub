@@ -8,6 +8,12 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -21,7 +27,7 @@ import {
   Clock,
   ClipboardCheck,
 } from "lucide-react";
-import { getRiskLevelLabel, getStatusLabel, getStatusColor, formatDate } from "@/lib/utils";
+import { getRiskLevelLabel, formatDate } from "@/lib/utils";
 import { generateRiskReport } from "@/lib/pdf-reports/risk-report";
 import { toast } from "sonner";
 
@@ -84,6 +90,14 @@ const TREATMENT_STATUSES = [
   { value: "cancelled", label: "Cancelado" },
 ];
 
+const REVIEW_STATUS_OPTIONS = [
+  { value: "identified", label: "Identificado" },
+  { value: "analyzing", label: "Em Análise" },
+  { value: "treating", label: "Em Tratamento" },
+  { value: "monitoring", label: "Monitorando" },
+  { value: "closed", label: "Encerrado" },
+];
+
 function getRiskColor(level: string): string {
   const c: Record<string, string> = {
     low: "bg-success-bg text-success-fg",
@@ -119,6 +133,10 @@ export default function RisksPage() {
   const [expandedRisk, setExpandedRisk] = useState<string | null>(null);
   const [treatmentDesc, setTreatmentDesc] = useState("");
   const [addingTreatment, setAddingTreatment] = useState(false);
+
+  // Delete treatment confirm dialog
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ riskId: string; treatmentId: string } | null>(null);
 
   // Review modal
   const [reviewRisk, setReviewRisk] = useState<Risk | null>(null);
@@ -164,16 +182,20 @@ export default function RisksPage() {
     } catch { /* silently fail */ }
   };
 
-  const handleDeleteTreatment = async (riskId: string, treatmentId: string) => {
-    if (!confirm("Remover este tratamento?")) return;
+  const handleDeleteTreatment = async () => {
+    if (!deleteTarget) return;
     try {
       await fetch(
-        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${riskId}/treatments`,
-        { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId }) }
+        `/api/tenants/${tenant.slug}/projects/${projectId}/risks/${deleteTarget.riskId}/treatments`,
+        { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId: deleteTarget.treatmentId }) }
       );
       setLoading(true);
       fetchRisks();
     } catch { /* silently fail */ }
+    finally {
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+    }
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -399,19 +421,20 @@ export default function RisksPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descricao *</label>
-                <textarea
+                <Textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full min-h-[80px] rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
                   required
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Categoria *</label>
-                  <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                    {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
+                  <Select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    options={CATEGORIES}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Probabilidade * ({form.probability})</label>
@@ -427,10 +450,12 @@ export default function RisksPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tratamento</label>
-                  <select value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent">
-                    <option value="">Selecionar...</option>
-                    {TREATMENTS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
+                  <Select
+                    value={form.treatment}
+                    onChange={(e) => setForm({ ...form, treatment: e.target.value })}
+                    options={TREATMENTS}
+                    placeholder="Selecionar..."
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Plano de Tratamento</label>
@@ -450,16 +475,14 @@ export default function RisksPage() {
       {/* Risks list */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-surface-primary rounded-card animate-pulse" />)}
+          {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
         </div>
       ) : risks.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <AlertTriangle className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
-            <p className="text-body-1 text-foreground-primary mb-1">Nenhum risco registrado</p>
-            <p className="text-body-2 text-foreground-secondary">Identifique e avalie os riscos do projeto</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={AlertTriangle}
+          title="Nenhum risco registrado"
+          description="Identifique e avalie os riscos do projeto"
+        />
       ) : (
         <div className="space-y-3">
           {risks.map((risk) => {
@@ -482,7 +505,7 @@ export default function RisksPage() {
                       <p className="text-body-2 text-foreground-secondary line-clamp-2 mb-2">{risk.description}</p>
                       <div className="flex flex-wrap items-center gap-3">
                         <Badge variant={getRiskColor(risk.riskLevel)}>{getRiskLevelLabel(risk.riskLevel)}</Badge>
-                        <Badge variant={getStatusColor(risk.status)}>{getStatusLabel(risk.status)}</Badge>
+                        <StatusBadge status={risk.status} type="status" />
                         <span className="text-caption-1 text-foreground-tertiary">{getCategoryLabel(risk.category)}</span>
                         {risk.treatment && <span className="text-caption-1 text-foreground-tertiary">Tratamento: {getTreatmentLabel(risk.treatment)}</span>}
                         {risk.responsible && <span className="text-caption-1 text-foreground-tertiary">Resp: {risk.responsible.name}</span>}
@@ -537,16 +560,15 @@ export default function RisksPage() {
                               </p>
                             )}
                           </div>
-                          <select
+                          <Select
                             value={t.status}
                             onChange={(e) => handleUpdateTreatmentStatus(risk.id, t.id, e.target.value)}
                             disabled={!can("risk", "update")}
-                            className="h-7 text-caption-1 rounded border border-stroke-primary bg-surface-primary px-2 focus:outline-none focus:ring-1 focus:ring-brand"
-                          >
-                            {TREATMENT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                          </select>
+                            options={TREATMENT_STATUSES}
+                            className="h-7 text-caption-1 w-auto min-w-[140px]"
+                          />
                           {can("risk", "update") && (
-                            <button onClick={() => handleDeleteTreatment(risk.id, t.id)} className="text-foreground-tertiary hover:text-danger-fg p-1">
+                            <button onClick={() => { setDeleteTarget({ riskId: risk.id, treatmentId: t.id }); setShowDeleteConfirm(true); }} className="text-foreground-tertiary hover:text-danger-fg p-1">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -617,17 +639,20 @@ export default function RisksPage() {
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                <select value={reviewForm.status} onChange={(e) => setReviewForm({ ...reviewForm, status: e.target.value })} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                  <option value="identified">Identificado</option>
-                  <option value="analyzing">Em Análise</option>
-                  <option value="treating">Em Tratamento</option>
-                  <option value="monitoring">Monitorando</option>
-                  <option value="closed">Encerrado</option>
-                </select>
+                <Select
+                  value={reviewForm.status}
+                  onChange={(e) => setReviewForm({ ...reviewForm, status: e.target.value })}
+                  options={REVIEW_STATUS_OPTIONS}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Notas da Revisão</label>
-                <textarea value={reviewForm.reviewNotes} onChange={(e) => setReviewForm({ ...reviewForm, reviewNotes: e.target.value })} className="w-full h-20 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Observações sobre esta revisão..." />
+                <Textarea
+                  value={reviewForm.reviewNotes}
+                  onChange={(e) => setReviewForm({ ...reviewForm, reviewNotes: e.target.value })}
+                  className="h-20 resize-none"
+                  placeholder="Observações sobre esta revisão..."
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={() => setReviewRisk(null)}>Cancelar</Button>
@@ -637,6 +662,14 @@ export default function RisksPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Remover este tratamento?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDeleteTreatment}
+      />
     </div>
   );
 }

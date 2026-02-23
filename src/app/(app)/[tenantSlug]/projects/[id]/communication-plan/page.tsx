@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Plus, X, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import type { CommunicationPlan } from "@/types";
@@ -22,6 +26,8 @@ const FREQUENCIES: Record<string, string> = {
   on_event: "Por Evento",
 };
 
+const FREQUENCY_OPTIONS = Object.entries(FREQUENCIES).map(([value, label]) => ({ value, label }));
+
 const METHODS: Record<string, string> = {
   email: "E-mail",
   meeting: "Reunião",
@@ -32,10 +38,17 @@ const METHODS: Record<string, string> = {
   other: "Outro",
 };
 
+const METHOD_OPTIONS = Object.entries(METHODS).map(([value, label]) => ({ value, label }));
+
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   active: { label: "Ativo", color: "bg-success-bg text-success-fg" },
   inactive: { label: "Inativo", color: "bg-surface-tertiary text-foreground-secondary" },
 };
+
+const STATUS_OPTIONS = [
+  { value: "active", label: "Ativo" },
+  { value: "inactive", label: "Inativo" },
+];
 
 export default function CommunicationPlanPage() {
   const params = useParams();
@@ -55,6 +68,9 @@ export default function CommunicationPlanPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("active");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     const statusParam = filterStatus ? `?status=${filterStatus}` : "";
@@ -125,7 +141,6 @@ export default function CommunicationPlanPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este plano de comunicação?")) return;
     try {
       await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/communication-plan/${id}`, { method: "DELETE" });
       toast.success("Excluído");
@@ -166,7 +181,7 @@ export default function CommunicationPlanPage() {
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : plans.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -210,7 +225,7 @@ export default function CommunicationPlanPage() {
                           </button>
                         )}
                         {can("communicationPlan", "delete") && (
-                          <button onClick={() => handleDelete(plan.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                          <button onClick={() => { setItemToDelete(plan.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -245,29 +260,22 @@ export default function CommunicationPlanPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Frequência</label>
-                  <select value={formFrequency} onChange={(e) => setFormFrequency(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(FREQUENCIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formFrequency} onChange={(e) => setFormFrequency(e.target.value)} options={FREQUENCY_OPTIONS} />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Método</label>
-                  <select value={formMethod} onChange={(e) => setFormMethod(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    {Object.entries(METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formMethod} onChange={(e) => setFormMethod(e.target.value)} options={METHOD_OPTIONS} />
                 </div>
               </div>
               {editingId && (
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                  <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="active">Ativo</option>
-                    <option value="inactive">Inativo</option>
-                  </select>
+                  <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
                 </div>
               )}
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" placeholder="Notas adicionais..." />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="min-h-[64px]" placeholder="Notas adicionais..." />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -277,6 +285,22 @@ export default function CommunicationPlanPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir plano de comunicação"
+        description="Tem certeza que deseja excluir este plano de comunicação? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => {
+          if (itemToDelete) {
+            handleDelete(itemToDelete);
+          }
+          setShowDeleteConfirm(false);
+          setItemToDelete(null);
+        }}
+      />
     </div>
   );
 }

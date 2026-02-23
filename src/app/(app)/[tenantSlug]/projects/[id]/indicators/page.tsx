@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -104,29 +106,15 @@ export default function ProjectIndicatorsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-2/3" />
-                  <div className="h-8 bg-surface-tertiary rounded w-1/3" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <TrendingUp className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum indicador encontrado" : "Nenhum indicador neste projeto"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Configure indicadores para monitorar o projeto"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={TrendingUp}
+          title={search ? "Nenhum indicador encontrado" : "Nenhum indicador neste projeto"}
+          description={search ? "Tente ajustar os termos de busca" : "Configure indicadores para monitorar o projeto"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((ind) => {

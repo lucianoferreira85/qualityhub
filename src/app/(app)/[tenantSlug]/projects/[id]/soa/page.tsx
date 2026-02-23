@@ -6,7 +6,9 @@ import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import {
   ArrowLeft,
   FileSpreadsheet,
@@ -66,6 +68,8 @@ export default function SoaPage() {
   const [projectStandards, setProjectStandards] = useState<{ id: string; code: string; name: string }[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState("");
   const [generating, setGenerating] = useState(false);
+
+  const standardSelectOptions = projectStandards.map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }));
 
   const fetchEntries = () => {
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/soa`)
@@ -228,15 +232,11 @@ export default function SoaPage() {
       {/* Standard selector */}
       {projectStandards.length > 1 && (
         <div className="max-w-sm">
-          <select
+          <Select
             value={selectedStandardId}
             onChange={(e) => setSelectedStandardId(e.target.value)}
-            className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {projectStandards.map((s) => (
-              <option key={s.id} value={s.id}>{s.code} - {s.name}</option>
-            ))}
-          </select>
+            options={standardSelectOptions}
+          />
         </div>
       )}
 
@@ -280,7 +280,7 @@ export default function SoaPage() {
       {loading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-surface-primary rounded-card animate-pulse" />
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : allControls.length === 0 ? (
@@ -356,16 +356,13 @@ export default function SoaPage() {
                             <td className="py-2.5 px-4">
                               {entry && isApplicable ? (
                                 can("soaEntry", "create") ? (
-                                  <select
+                                  <Select
                                     value={entry.implementationStatus || ""}
                                     onChange={(e) => handleImplChange(control.id, e.target.value)}
-                                    className="h-8 w-full rounded border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-                                  >
-                                    <option value="">Selecionar...</option>
-                                    {IMPL_STATUS_OPTIONS.map((opt) => (
-                                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                  </select>
+                                    options={IMPL_STATUS_OPTIONS}
+                                    placeholder="Selecionar..."
+                                    className="h-8 text-caption-1"
+                                  />
                                 ) : (
                                   <Badge variant={getImplColor(entry.implementationStatus)}>
                                     {getImplLabel(entry.implementationStatus)}

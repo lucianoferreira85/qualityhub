@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getRiskLevel, getRiskLevelLabel } from "@/lib/utils";
@@ -27,6 +29,22 @@ const TREATMENTS = [
   { value: "mitigate", label: "Mitigar" },
   { value: "transfer", label: "Transferir" },
   { value: "avoid", label: "Evitar" },
+];
+
+const PROBABILITIES = [
+  { value: "1", label: "1 - Muito Baixa" },
+  { value: "2", label: "2 - Baixa" },
+  { value: "3", label: "3 - Média" },
+  { value: "4", label: "4 - Alta" },
+  { value: "5", label: "5 - Muito Alta" },
+];
+
+const IMPACTS = [
+  { value: "1", label: "1 - Muito Baixo" },
+  { value: "2", label: "2 - Baixo" },
+  { value: "3", label: "3 - Médio" },
+  { value: "4", label: "4 - Alto" },
+  { value: "5", label: "5 - Muito Alto" },
 ];
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -160,13 +178,12 @@ export default function NewRiskPage() {
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Descrição *
               </label>
-              <textarea
+              <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Detalhe o risco, causas potenciais, consequências..."
                 required
                 rows={4}
-                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
               />
             </div>
 
@@ -175,38 +192,27 @@ export default function NewRiskPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Projeto *
                 </label>
-                <select
+                <Select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
                   required
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">
-                    {loadingData ? "Carregando..." : "Selecione o projeto"}
-                  </option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={loadingData ? "Carregando..." : "Selecione o projeto"}
+                  options={projects.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                  }))}
+                />
               </div>
 
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Categoria *
                 </label>
-                <select
+                <Select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
+                  options={CATEGORIES}
+                />
               </div>
             </div>
           </CardContent>
@@ -234,34 +240,22 @@ export default function NewRiskPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Probabilidade (1-5) *
                 </label>
-                <select
-                  value={probability}
+                <Select
+                  value={String(probability)}
                   onChange={(e) => setProbability(Number(e.target.value))}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value={1}>1 - Muito Baixa</option>
-                  <option value={2}>2 - Baixa</option>
-                  <option value={3}>3 - Média</option>
-                  <option value={4}>4 - Alta</option>
-                  <option value={5}>5 - Muito Alta</option>
-                </select>
+                  options={PROBABILITIES}
+                />
               </div>
 
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Impacto (1-5) *
                 </label>
-                <select
-                  value={impact}
+                <Select
+                  value={String(impact)}
                   onChange={(e) => setImpact(Number(e.target.value))}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value={1}>1 - Muito Baixo</option>
-                  <option value={2}>2 - Baixo</option>
-                  <option value={3}>3 - Médio</option>
-                  <option value={4}>4 - Alto</option>
-                  <option value={5}>5 - Muito Alto</option>
-                </select>
+                  options={IMPACTS}
+                />
               </div>
             </div>
           </CardContent>
@@ -277,38 +271,27 @@ export default function NewRiskPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Tipo de Tratamento
                 </label>
-                <select
+                <Select
                   value={treatment}
                   onChange={(e) => setTreatment(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">Selecione...</option>
-                  {TREATMENTS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Selecione..."
+                  options={TREATMENTS}
+                />
               </div>
 
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Responsável
                 </label>
-                <select
+                <Select
                   value={responsibleId}
                   onChange={(e) => setResponsibleId(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">
-                    {loadingData ? "Carregando..." : "Selecione o responsável"}
-                  </option>
-                  {members.map((m) => (
-                    <option key={m.user.id} value={m.user.id}>
-                      {m.user.name}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={loadingData ? "Carregando..." : "Selecione o responsável"}
+                  options={members.map((m) => ({
+                    value: m.user.id,
+                    label: m.user.name,
+                  }))}
+                />
               </div>
             </div>
 
@@ -316,12 +299,11 @@ export default function NewRiskPage() {
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Plano de Tratamento
               </label>
-              <textarea
+              <Textarea
                 value={treatmentPlan}
                 onChange={(e) => setTreatmentPlan(e.target.value)}
                 placeholder="Descreva o plano de tratamento para este risco..."
                 rows={3}
-                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
               />
             </div>
           </CardContent>

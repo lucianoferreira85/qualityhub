@@ -6,6 +6,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { BarChart3, Target, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateGapAnalysisReport } from "@/lib/pdf-reports/gap-analysis-report";
@@ -156,7 +157,7 @@ export default function GapAnalysisPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}><CardContent className="p-5"><div className="animate-pulse space-y-2"><div className="h-3 bg-surface-tertiary rounded w-1/2" /><div className="h-8 bg-surface-tertiary rounded w-2/3" /></div></CardContent></Card>
+            <CardSkeleton key={i} lines={2} />
           ))}
         </div>
       ) : !data || data.overall.totalItems === 0 ? (

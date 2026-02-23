@@ -6,7 +6,11 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Avatar } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Plus,
@@ -20,7 +24,6 @@ import {
   getInvitationStatusLabel,
   getInvitationStatusColor,
   formatDate,
-  getInitials,
 } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -179,15 +182,11 @@ export default function MembersPage() {
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Papel *
                   </label>
-                  <select
+                  <Select
                     value={invRole}
                     onChange={(e) => setInvRole(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {ROLES.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                    options={ROLES}
+                  />
                 </div>
               </div>
               {error && (
@@ -220,20 +219,14 @@ export default function MembersPage() {
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3 animate-pulse">
-                  <div className="w-10 h-10 bg-surface-tertiary rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-surface-tertiary rounded w-1/3" />
-                    <div className="h-3 bg-surface-tertiary rounded w-1/4" />
-                  </div>
-                </div>
+                <CardSkeleton key={i} lines={2} />
               ))}
             </div>
           ) : members.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
-              <p className="text-body-2 text-foreground-secondary">Nenhum membro encontrado</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="Nenhum membro encontrado"
+            />
           ) : (
             <div className="space-y-1">
               {members.map((m) => (
@@ -241,11 +234,7 @@ export default function MembersPage() {
                   key={m.id}
                   className="flex items-center gap-3 p-3 rounded-card hover:bg-surface-secondary transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-brand-light text-brand flex items-center justify-center flex-shrink-0">
-                    <span className="text-body-2 font-medium">
-                      {getInitials(m.user.name)}
-                    </span>
-                  </div>
+                  <Avatar name={m.user.name} size="lg" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-body-1 font-medium text-foreground-primary truncate">

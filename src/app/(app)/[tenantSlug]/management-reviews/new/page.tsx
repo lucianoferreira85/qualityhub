@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -100,17 +102,15 @@ export default function NewManagementReviewPage() {
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Projeto *
               </label>
-              <select
+              <Select
                 value={projectId}
                 onChange={(e) => setProjectId(e.target.value)}
-                className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 required
-              >
-                <option value="">Selecionar projeto...</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "Selecionar projeto..." },
+                  ...projects.map((p) => ({ value: p.id, label: p.name })),
+                ]}
+              />
             </div>
 
             <div>
@@ -130,11 +130,10 @@ export default function NewManagementReviewPage() {
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                 Observacoes
               </label>
-              <textarea
+              <Textarea
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
                 rows={4}
-                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 placeholder="Notas iniciais ou pauta da reuniao..."
               />
             </div>

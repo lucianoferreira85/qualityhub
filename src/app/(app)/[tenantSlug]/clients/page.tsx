@@ -6,10 +6,13 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Building2, Mail, User, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
-import { getInitials } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
 import type { ConsultingClient } from "@/types";
@@ -96,15 +99,11 @@ export default function ClientsPage() {
         />
         <div className="flex items-center gap-2 flex-wrap">
           <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <select
+          <Select
             value={filterStatus}
             onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            className="h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-2 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-          >
-            {CLIENT_STATUSES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+            options={CLIENT_STATUSES}
+          />
           {filterStatus && (
             <Button
               variant="ghost"
@@ -133,31 +132,23 @@ export default function ClientsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="h-5 w-3/4 bg-surface-tertiary rounded animate-pulse mb-3" />
-                <div className="h-4 w-1/2 bg-surface-tertiary rounded animate-pulse mb-2" />
-                <div className="h-3 w-1/3 bg-surface-tertiary rounded animate-pulse" />
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <Building2 className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search || filterStatus
-                ? "Nenhum cliente encontrado"
-                : "Nenhum cliente cadastrado"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search || filterStatus
-                ? "Tente ajustar os filtros ou termos de busca"
-                : "Cadastre seu primeiro cliente para começar"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Building2}
+          title={
+            search || filterStatus
+              ? "Nenhum cliente encontrado"
+              : "Nenhum cliente cadastrado"
+          }
+          description={
+            search || filterStatus
+              ? "Tente ajustar os filtros ou termos de busca"
+              : "Cadastre seu primeiro cliente para começar"
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((client) => (
@@ -168,11 +159,7 @@ export default function ClientsPage() {
               <Card className="cursor-pointer hover:shadow-card-glow transition-all h-full">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-brand flex items-center justify-center flex-shrink-0">
-                      <span className="text-caption-1 font-medium text-white">
-                        {getInitials(client.name)}
-                      </span>
-                    </div>
+                    <Avatar name={client.name} size="lg" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="text-title-3 text-foreground-primary truncate">

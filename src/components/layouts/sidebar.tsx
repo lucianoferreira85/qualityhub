@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Cog,
   BookOpen,
+  FileText,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -64,6 +65,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: "Indicadores", href: "/indicators", icon: TrendingUp, resource: "indicator" },
       { label: "Processos", href: "/processes", icon: Cog, resource: "process" },
       { label: "Analise Critica", href: "/management-reviews", icon: BookOpen, resource: "managementReview" },
+      { label: "Documentos", href: "/documents", icon: FileText, resource: "document" },
     ],
   },
 ];

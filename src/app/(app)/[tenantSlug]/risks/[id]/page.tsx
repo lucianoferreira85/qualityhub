@@ -7,6 +7,10 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
@@ -21,8 +25,6 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import {
-  getStatusColor,
-  getStatusLabel,
   getRiskLevelLabel,
   getRiskLevel,
   formatDate,
@@ -51,6 +53,23 @@ const TREATMENTS = [
   { value: "mitigate", label: "Mitigar" },
   { value: "transfer", label: "Transferir" },
   { value: "avoid", label: "Evitar" },
+];
+
+const PROBABILITY_OPTIONS = [
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+];
+
+const RESIDUAL_OPTIONS = [
+  { value: "", label: "Não avaliado" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
 ];
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -285,9 +304,7 @@ export default function RiskDetailPage() {
             <Badge variant={LEVEL_COLORS[risk.riskLevel] || ""}>
               {getRiskLevelLabel(risk.riskLevel)}
             </Badge>
-            <Badge variant={getStatusColor(risk.status)}>
-              {getStatusLabel(risk.status)}
-            </Badge>
+            <StatusBadge status={risk.status} type="status" />
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -335,38 +352,14 @@ export default function RiskDetailPage() {
         </div>
       )}
 
-      {/* Delete confirmation */}
-      {showDeleteConfirm && (
-        <Card className="border-danger/30 bg-danger-bg/30">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-body-1 font-medium text-foreground-primary">
-                Excluir este risco?
-              </p>
-              <p className="text-body-2 text-foreground-secondary">
-                Esta ação não pode ser desfeita.
-              </p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDelete}
-                loading={deleting}
-              >
-                Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir este risco?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
 
       {editing ? (
         <>
@@ -390,12 +383,11 @@ export default function RiskDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Descrição *
                 </label>
-                <textarea
+                <Textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   required
                   rows={4}
-                  className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -403,44 +395,34 @@ export default function RiskDetailPage() {
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Categoria
                   </label>
-                  <select
+                  <Select
                     value={editCategory}
                     onChange={(e) => setEditCategory(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
+                    options={CATEGORIES}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Status
                   </label>
-                  <select
+                  <Select
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
+                    options={STATUSES}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Responsável
                   </label>
-                  <select
+                  <Select
                     value={editResponsibleId}
                     onChange={(e) => setEditResponsibleId(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="">Nenhum</option>
-                    {members.map((m) => (
-                      <option key={m.user.id} value={m.user.id}>{m.user.name}</option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: "", label: "Nenhum" },
+                      ...members.map((m) => ({ value: m.user.id, label: m.user.name })),
+                    ]}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -466,29 +448,21 @@ export default function RiskDetailPage() {
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Probabilidade (1-5)
                   </label>
-                  <select
-                    value={editProbability}
+                  <Select
+                    value={String(editProbability)}
                     onChange={(e) => setEditProbability(Number(e.target.value))}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {[1, 2, 3, 4, 5].map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                    options={PROBABILITY_OPTIONS}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Impacto (1-5)
                   </label>
-                  <select
-                    value={editImpact}
+                  <Select
+                    value={String(editImpact)}
                     onChange={(e) => setEditImpact(Number(e.target.value))}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    {[1, 2, 3, 4, 5].map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                    options={PROBABILITY_OPTIONS}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -496,31 +470,21 @@ export default function RiskDetailPage() {
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Probabilidade Residual
                   </label>
-                  <select
-                    value={editResidualProbability}
+                  <Select
+                    value={String(editResidualProbability)}
                     onChange={(e) => setEditResidualProbability(e.target.value ? Number(e.target.value) : "")}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="">Não avaliado</option>
-                    {[1, 2, 3, 4, 5].map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                    options={RESIDUAL_OPTIONS}
+                  />
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                     Impacto Residual
                   </label>
-                  <select
-                    value={editResidualImpact}
+                  <Select
+                    value={String(editResidualImpact)}
                     onChange={(e) => setEditResidualImpact(e.target.value ? Number(e.target.value) : "")}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                  >
-                    <option value="">Não avaliado</option>
-                    {[1, 2, 3, 4, 5].map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
+                    options={RESIDUAL_OPTIONS}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -535,26 +499,23 @@ export default function RiskDetailPage() {
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Tipo de Tratamento
                 </label>
-                <select
+                <Select
                   value={editTreatment}
                   onChange={(e) => setEditTreatment(e.target.value)}
-                  className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                >
-                  <option value="">Nenhum</option>
-                  {TREATMENTS.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: "", label: "Nenhum" },
+                    ...TREATMENTS,
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">
                   Plano de Tratamento
                 </label>
-                <textarea
+                <Textarea
                   value={editTreatmentPlan}
                   onChange={(e) => setEditTreatmentPlan(e.target.value)}
                   rows={3}
-                  className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                 />
               </div>
             </CardContent>
@@ -754,9 +715,7 @@ export default function RiskDetailPage() {
                           </p>
                         )}
                       </div>
-                      <Badge variant={getStatusColor(t.status)}>
-                        {getStatusLabel(t.status)}
-                      </Badge>
+                      <StatusBadge status={t.status} type="status" />
                     </div>
                   ))}
                 </div>
@@ -799,9 +758,7 @@ export default function RiskDetailPage() {
                               {ap.responsible.name.split(" ")[0]}
                             </span>
                           )}
-                          <Badge variant={getStatusColor(ap.status)}>
-                            {getStatusLabel(ap.status)}
-                          </Badge>
+                          <StatusBadge status={ap.status} type="status" />
                         </div>
                       </div>
                     </Link>

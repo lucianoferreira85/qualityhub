@@ -6,8 +6,12 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { Plus, X, Pencil, Trash2, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -37,6 +41,18 @@ const TRAINING_TYPES: Record<string, string> = {
   on_the_job: "On-the-job",
 };
 
+const LEVEL_OPTIONS = [
+  { value: "", label: "Selecionar..." },
+  ...Object.entries(LEVELS).map(([k, v]) => ({ value: k, label: v.label })),
+];
+
+const STATUS_OPTIONS = Object.entries(STATUSES).map(([k, v]) => ({ value: k, label: v.label }));
+
+const TRAINING_TYPE_OPTIONS = [
+  { value: "", label: "Selecionar..." },
+  ...Object.entries(TRAINING_TYPES).map(([k, v]) => ({ value: k, label: v })),
+];
+
 export default function CompetencesPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -59,6 +75,10 @@ export default function CompetencesPage() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("identified");
   const [saving, setSaving] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     const qs = new URLSearchParams();
@@ -140,16 +160,27 @@ export default function CompetencesPage() {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta competência?")) return;
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    setDeleting(true);
     try {
-      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/competences/${id}`, { method: "DELETE" });
+      await fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/competences/${itemToDelete}`, { method: "DELETE" });
       toast.success("Excluído");
       fetchData();
     } catch { toast.error("Erro ao excluir"); }
+    finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setItemToDelete(null);
+    }
   };
 
   const uniqueRoles = Array.from(new Set(competences.map((c) => c.role)));
+
+  const filterRoleOptions = [
+    { value: "", label: "Todas" },
+    ...uniqueRoles.map((r) => ({ value: r, label: r })),
+  ];
 
   const stats = {
     total: competences.length,
@@ -214,20 +245,18 @@ export default function CompetencesPage() {
         {uniqueRoles.length > 1 && (
           <div className="flex items-center gap-2">
             <span className="text-body-2 text-foreground-tertiary">Função:</span>
-            <select
+            <Select
               value={filterRole}
               onChange={(e) => { setFilterRole(e.target.value); setLoading(true); }}
-              className="h-8 rounded-input border border-stroke-primary bg-surface-primary px-2 text-caption-1 text-foreground-primary focus:outline-none focus:ring-1 focus:ring-brand"
-            >
-              <option value="">Todas</option>
-              {uniqueRoles.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+              options={filterRoleOptions}
+              className="h-8 !w-auto text-caption-1"
+            />
           </div>
         )}
       </div>
 
       {loading ? (
-        <Card><CardContent className="p-4"><div className="animate-pulse h-32 bg-surface-tertiary rounded" /></CardContent></Card>
+        <CardSkeleton />
       ) : competences.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -285,7 +314,7 @@ export default function CompetencesPage() {
                           </button>
                         )}
                         {can("competence", "delete") && (
-                          <button onClick={() => handleDelete(comp.id)} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
+                          <button onClick={() => { setItemToDelete(comp.id); setShowDeleteConfirm(true); }} className="p-1.5 rounded hover:bg-danger-bg text-foreground-tertiary hover:text-danger-fg">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -316,10 +345,7 @@ export default function CompetencesPage() {
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Nível Atual</label>
-                  <select value={formLevel} onChange={(e) => setFormLevel(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(LEVELS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  <Select value={formLevel} onChange={(e) => setFormLevel(e.target.value)} options={LEVEL_OPTIONS} />
                 </div>
               </div>
               <div>
@@ -333,10 +359,7 @@ export default function CompetencesPage() {
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Tipo de Treinamento</label>
-                  <select value={formType} onChange={(e) => setFormType(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                    <option value="">Selecionar...</option>
-                    {Object.entries(TRAINING_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
+                  <Select value={formType} onChange={(e) => setFormType(e.target.value)} options={TRAINING_TYPE_OPTIONS} />
                 </div>
               </div>
               <div>
@@ -351,15 +374,13 @@ export default function CompetencesPage() {
                 {editingId && (
                   <div>
                     <label className="block text-body-2 font-medium text-foreground-primary mb-1">Status</label>
-                    <select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand">
-                      {Object.entries(STATUSES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
+                    <Select value={formStatus} onChange={(e) => setFormStatus(e.target.value)} options={STATUS_OPTIONS} />
                   </div>
                 )}
               </div>
               <div>
                 <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
-                <textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="w-full h-16 px-3 py-2 rounded-input border border-stroke-primary bg-surface-primary text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand resize-none" />
+                <Textarea value={formNotes} onChange={(e) => setFormNotes(e.target.value)} className="h-16 resize-none" />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -369,6 +390,15 @@ export default function CompetencesPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir competência"
+        description="Tem certeza que deseja excluir esta competência? Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

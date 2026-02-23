@@ -6,23 +6,24 @@ import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const SECTORS = [
-  "Tecnologia",
-  "Saúde",
-  "Financeiro",
-  "Educação",
-  "Indústria",
-  "Varejo",
-  "Governo",
-  "Energia",
-  "Telecomunicações",
-  "Logística",
-  "Outro",
+  { value: "Tecnologia", label: "Tecnologia" },
+  { value: "Saúde", label: "Saúde" },
+  { value: "Financeiro", label: "Financeiro" },
+  { value: "Educação", label: "Educação" },
+  { value: "Indústria", label: "Indústria" },
+  { value: "Varejo", label: "Varejo" },
+  { value: "Governo", label: "Governo" },
+  { value: "Energia", label: "Energia" },
+  { value: "Telecomunicações", label: "Telecomunicações" },
+  { value: "Logística", label: "Logística" },
+  { value: "Outro", label: "Outro" },
 ];
 
 export default function NewClientPage() {
@@ -118,18 +119,12 @@ export default function NewClientPage() {
               <label className="block text-body-1 font-medium text-foreground-primary mb-1">
                 Setor
               </label>
-              <select
+              <Select
                 value={sector}
                 onChange={(e) => setSector(e.target.value)}
-                className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-              >
-                <option value="">Selecione o setor</option>
-                {SECTORS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+                options={SECTORS}
+                placeholder="Selecione o setor"
+              />
             </div>
           </CardContent>
         </Card>

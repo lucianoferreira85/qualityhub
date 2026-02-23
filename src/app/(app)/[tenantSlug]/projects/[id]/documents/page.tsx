@@ -5,11 +5,13 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardContent } from "@/components/ui/card";
+import { CardSkeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, FileText, User, Calendar, Tag } from "lucide-react";
-import { getStatusColor, getStatusLabel, getDocumentTypeLabel, getDocumentTypeColor, formatDate } from "@/lib/utils";
+import { getDocumentTypeLabel, formatDate } from "@/lib/utils";
 
 interface DocItem {
   id: string;
@@ -85,29 +87,15 @@ export default function ProjectDocumentsPage() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 bg-surface-tertiary rounded w-1/4" />
-                  <div className="h-5 bg-surface-tertiary rounded w-3/4" />
-                  <div className="h-4 bg-surface-tertiary rounded w-1/2" />
-                </div>
-              </CardContent>
-            </Card>
+            <CardSkeleton key={i} />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-12">
-            <FileText className="h-12 w-12 text-foreground-tertiary mb-4" />
-            <p className="text-title-3 text-foreground-primary mb-1">
-              {search ? "Nenhum documento encontrado" : "Nenhum documento neste projeto"}
-            </p>
-            <p className="text-body-1 text-foreground-secondary">
-              {search ? "Tente ajustar os termos de busca" : "Adicione documentos vinculados a este projeto"}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FileText}
+          title={search ? "Nenhum documento encontrado" : "Nenhum documento neste projeto"}
+          description={search ? "Tente ajustar os termos de busca" : "Adicione documentos vinculados a este projeto"}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filtered.map((doc) => (
@@ -121,9 +109,7 @@ export default function ProjectDocumentsPage() {
                         {doc.title}
                       </h3>
                     </div>
-                    <Badge variant={getDocumentTypeColor(doc.type)} className="flex-shrink-0">
-                      {getDocumentTypeLabel(doc.type)}
-                    </Badge>
+                    <StatusBadge status={doc.type} type="documentType" className="flex-shrink-0" />
                   </div>
 
                   <div className="space-y-2 mb-3">
@@ -142,9 +128,7 @@ export default function ProjectDocumentsPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                    <Badge variant={getStatusColor(doc.status)}>
-                      {getStatusLabel(doc.status)}
-                    </Badge>
+                    <StatusBadge status={doc.status} />
                     <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
                       <span className="font-mono">v{doc.version}</span>
                       {doc.author && (
