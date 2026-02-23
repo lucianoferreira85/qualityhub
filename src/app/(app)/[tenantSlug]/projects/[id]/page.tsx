@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useMemo, type ElementType } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -46,12 +46,70 @@ import {
   Truck,
   GitPullRequest,
   Download,
+  Layout,
+  ClipboardCheck,
+  Wrench,
+  HeadphonesIcon,
+  Activity,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Project } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Tabs } from "@/components/ui/tabs";
 import { generateProjectReport } from "@/lib/pdf-reports/project-report";
+
+type ModuleCategory = "overview" | "planning" | "operations" | "support" | "monitoring";
+
+const MODULE_CATEGORIES: Record<ModuleCategory, { label: string; moduleLabels: string[] }> = {
+  overview: {
+    label: "Visao Geral",
+    moduleLabels: [],
+  },
+  planning: {
+    label: "Planejamento",
+    moduleLabels: [
+      "Contexto",
+      "Partes Interessadas",
+      "Escopo",
+      "Objetivos",
+      "Políticas",
+      "Análise de Gaps",
+    ],
+  },
+  operations: {
+    label: "Operacao",
+    moduleLabels: [
+      "Requisitos",
+      "Controles",
+      "SoA",
+      "Riscos",
+      "Ativos",
+      "Fornecedores",
+      "Mudanças",
+    ],
+  },
+  support: {
+    label: "Suporte",
+    moduleLabels: [
+      "Documentos",
+      "Competências",
+      "Conscientização",
+      "Comunicação",
+    ],
+  },
+  monitoring: {
+    label: "Monitoramento",
+    moduleLabels: [
+      "Auditorias",
+      "Não Conformidades",
+      "Planos de Ação",
+      "Indicadores",
+      "Incidentes",
+      "Melhoria Contínua",
+    ],
+  },
+};
 
 interface AvailableStandard {
   id: string;
@@ -62,8 +120,10 @@ interface AvailableStandard {
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
   const { tenant, can } = useTenant();
+  const activeTab = (searchParams.get("tab") as ModuleCategory) || "overview";
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -215,6 +275,215 @@ export default function ProjectDetailPage() {
     } catch { /* ignore */ }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const counts = (project as any)?._count || {};
+
+  const modules = useMemo(() => {
+    const pid = project?.id || projectId;
+    return [
+      {
+        label: "Requisitos",
+        href: `/${tenant.slug}/projects/${pid}/requirements`,
+        icon: ClipboardList,
+        description: "Cláusulas e requisitos normativos",
+        count: counts.requirements,
+      },
+      {
+        label: "Controles",
+        href: `/${tenant.slug}/projects/${pid}/controls`,
+        icon: Shield,
+        description: "Controles do Anexo A",
+        count: counts.controls,
+      },
+      {
+        label: "SoA",
+        href: `/${tenant.slug}/projects/${pid}/soa`,
+        icon: FileSpreadsheet,
+        description: "Declaração de Aplicabilidade",
+      },
+      {
+        label: "Riscos",
+        href: `/${tenant.slug}/projects/${pid}/risks`,
+        icon: RiskIcon,
+        description: "Avaliação e tratamento de riscos",
+        count: counts.risks,
+      },
+      {
+        label: "Não Conformidades",
+        href: `/${tenant.slug}/projects/${pid}/nonconformities`,
+        icon: AlertCircle,
+        description: "Gestão de não conformidades",
+        count: counts.nonconformities,
+      },
+      {
+        label: "Planos de Ação",
+        href: `/${tenant.slug}/projects/${pid}/action-plans`,
+        icon: CheckCircle2,
+        description: "Ações corretivas e preventivas",
+        count: counts.actionPlans,
+      },
+      {
+        label: "Auditorias",
+        href: `/${tenant.slug}/projects/${pid}/audits`,
+        icon: FileCheck,
+        description: "Auditorias internas e externas",
+        count: counts.audits,
+      },
+      {
+        label: "Documentos",
+        href: `/${tenant.slug}/projects/${pid}/documents`,
+        icon: FileSpreadsheet,
+        description: "Políticas, procedimentos e registros",
+        count: counts.documents,
+      },
+      {
+        label: "Indicadores",
+        href: `/${tenant.slug}/projects/${pid}/indicators`,
+        icon: BarChart3,
+        description: "KPIs e métricas de desempenho",
+      },
+      {
+        label: "Contexto",
+        href: `/${tenant.slug}/projects/${pid}/context`,
+        icon: Target,
+        description: "Análise SWOT - ISO 27001 cláusula 4.1",
+      },
+      {
+        label: "Partes Interessadas",
+        href: `/${tenant.slug}/projects/${pid}/interested-parties`,
+        icon: Handshake,
+        description: "Stakeholders - ISO 27001 cláusula 4.2",
+      },
+      {
+        label: "Análise de Gaps",
+        href: `/${tenant.slug}/projects/${pid}/gap-analysis`,
+        icon: BarChart3,
+        description: "Maturidade e conformidade do projeto",
+      },
+      {
+        label: "Escopo",
+        href: `/${tenant.slug}/projects/${pid}/scope`,
+        icon: Globe,
+        description: "Escopo do SGSI - ISO 27001 cláusula 4.3",
+      },
+      {
+        label: "Comunicação",
+        href: `/${tenant.slug}/projects/${pid}/communication-plan`,
+        icon: MessageSquare,
+        description: "Plano de Comunicação - ISO 27001 cláusula 7.4",
+      },
+      {
+        label: "Competências",
+        href: `/${tenant.slug}/projects/${pid}/competences`,
+        icon: GraduationCap,
+        description: "Gestão de Competências - ISO 27001 cláusula 7.2",
+      },
+      {
+        label: "Objetivos",
+        href: `/${tenant.slug}/projects/${pid}/objectives`,
+        icon: Crosshair,
+        description: "Objetivos de Segurança - ISO 27001 cláusula 6.2",
+        count: counts.securityObjectives,
+      },
+      {
+        label: "Políticas",
+        href: `/${tenant.slug}/projects/${pid}/policies`,
+        icon: ScrollText,
+        description: "Gestão de Políticas - ISO 27001 cláusula 5.2",
+        count: counts.policies,
+      },
+      {
+        label: "Conscientização",
+        href: `/${tenant.slug}/projects/${pid}/awareness`,
+        icon: Megaphone,
+        description: "Programa de Conscientização - ISO 27001 cláusula 7.3",
+        count: counts.awarenessCampaigns,
+      },
+      {
+        label: "Melhoria Contínua",
+        href: `/${tenant.slug}/projects/${pid}/improvements`,
+        icon: Lightbulb,
+        description: "Oportunidades de Melhoria - ISO 27001 cláusula 10.3",
+        count: counts.improvementOpportunities,
+      },
+      {
+        label: "Incidentes",
+        href: `/${tenant.slug}/projects/${pid}/incidents`,
+        icon: ShieldAlert,
+        description: "Gestão de Incidentes - ISO 27001 A.5.24-A.5.28",
+        count: counts.securityIncidents,
+      },
+      {
+        label: "Ativos",
+        href: `/${tenant.slug}/projects/${pid}/assets`,
+        icon: Server,
+        description: "Ativos de Informação - ISO 27001 A.5.9-A.5.11",
+        count: counts.informationAssets,
+      },
+      {
+        label: "Fornecedores",
+        href: `/${tenant.slug}/projects/${pid}/suppliers`,
+        icon: Truck,
+        description: "Gestão de Fornecedores - ISO 27001 A.5.19-A.5.23",
+        count: counts.suppliers,
+      },
+      {
+        label: "Mudanças",
+        href: `/${tenant.slug}/projects/${pid}/changes`,
+        icon: GitPullRequest,
+        description: "Gestão de Mudanças - ISO 27001 cláusula 6.3",
+        count: counts.changeRequests,
+      },
+    ];
+  }, [tenant.slug, project?.id, projectId, counts]);
+
+  const handleTabChange = useCallback(
+    (tab: string) => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (tab === "overview") {
+        p.delete("tab");
+      } else {
+        p.set("tab", tab);
+      }
+      const qs = p.toString();
+      router.replace(`/${tenant.slug}/projects/${projectId}${qs ? `?${qs}` : ""}`, { scroll: false });
+    },
+    [router, tenant.slug, projectId, searchParams]
+  );
+
+  const filteredModules = useMemo(() => {
+    const cat = MODULE_CATEGORIES[activeTab];
+    if (!cat || activeTab === "overview") return [];
+    return modules.filter((m) => cat.moduleLabels.includes(m.label));
+  }, [activeTab, modules]);
+
+  const TAB_ICONS: Record<string, ElementType> = {
+    overview: Layout,
+    planning: ClipboardCheck,
+    operations: Wrench,
+    support: HeadphonesIcon,
+    monitoring: Activity,
+  };
+
+  const tabItems = useMemo(() => {
+    return (Object.entries(MODULE_CATEGORIES) as [ModuleCategory, typeof MODULE_CATEGORIES[ModuleCategory]][]).map(
+      ([key, cat]) => {
+        let count: number | undefined;
+        if (key !== "overview") {
+          const catModules = modules.filter((m) => cat.moduleLabels.includes(m.label));
+          const total = catModules.reduce((sum, m) => sum + (m.count ?? 0), 0);
+          if (total > 0) count = total;
+        }
+        return {
+          value: key,
+          label: cat.label,
+          icon: TAB_ICONS[key],
+          count,
+        };
+      }
+    );
+  }, [modules]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -233,166 +502,8 @@ export default function ProjectDetailPage() {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const counts = (project as any)._count || {};
   const standards = project.standards || [];
   const members = project.members || [];
-
-  const modules = [
-    {
-      label: "Requisitos",
-      href: `/${tenant.slug}/projects/${project.id}/requirements`,
-      icon: ClipboardList,
-      description: "Cláusulas e requisitos normativos",
-      count: counts.requirements,
-    },
-    {
-      label: "Controles",
-      href: `/${tenant.slug}/projects/${project.id}/controls`,
-      icon: Shield,
-      description: "Controles do Anexo A",
-      count: counts.controls,
-    },
-    {
-      label: "SoA",
-      href: `/${tenant.slug}/projects/${project.id}/soa`,
-      icon: FileSpreadsheet,
-      description: "Declaração de Aplicabilidade",
-    },
-    {
-      label: "Riscos",
-      href: `/${tenant.slug}/projects/${project.id}/risks`,
-      icon: RiskIcon,
-      description: "Avaliação e tratamento de riscos",
-      count: counts.risks,
-    },
-    {
-      label: "Não Conformidades",
-      href: `/${tenant.slug}/projects/${project.id}/nonconformities`,
-      icon: AlertCircle,
-      description: "Gestão de não conformidades",
-      count: counts.nonconformities,
-    },
-    {
-      label: "Planos de Ação",
-      href: `/${tenant.slug}/projects/${project.id}/action-plans`,
-      icon: CheckCircle2,
-      description: "Ações corretivas e preventivas",
-      count: counts.actionPlans,
-    },
-    {
-      label: "Auditorias",
-      href: `/${tenant.slug}/projects/${project.id}/audits`,
-      icon: FileCheck,
-      description: "Auditorias internas e externas",
-      count: counts.audits,
-    },
-    {
-      label: "Documentos",
-      href: `/${tenant.slug}/projects/${project.id}/documents`,
-      icon: FileSpreadsheet,
-      description: "Políticas, procedimentos e registros",
-      count: counts.documents,
-    },
-    {
-      label: "Indicadores",
-      href: `/${tenant.slug}/projects/${project.id}/indicators`,
-      icon: BarChart3,
-      description: "KPIs e métricas de desempenho",
-    },
-    {
-      label: "Contexto",
-      href: `/${tenant.slug}/projects/${project.id}/context`,
-      icon: Target,
-      description: "Análise SWOT - ISO 27001 cláusula 4.1",
-    },
-    {
-      label: "Partes Interessadas",
-      href: `/${tenant.slug}/projects/${project.id}/interested-parties`,
-      icon: Handshake,
-      description: "Stakeholders - ISO 27001 cláusula 4.2",
-    },
-    {
-      label: "Análise de Gaps",
-      href: `/${tenant.slug}/projects/${project.id}/gap-analysis`,
-      icon: BarChart3,
-      description: "Maturidade e conformidade do projeto",
-    },
-    {
-      label: "Escopo",
-      href: `/${tenant.slug}/projects/${project.id}/scope`,
-      icon: Globe,
-      description: "Escopo do SGSI - ISO 27001 cláusula 4.3",
-    },
-    {
-      label: "Comunicação",
-      href: `/${tenant.slug}/projects/${project.id}/communication-plan`,
-      icon: MessageSquare,
-      description: "Plano de Comunicação - ISO 27001 cláusula 7.4",
-    },
-    {
-      label: "Competências",
-      href: `/${tenant.slug}/projects/${project.id}/competences`,
-      icon: GraduationCap,
-      description: "Gestão de Competências - ISO 27001 cláusula 7.2",
-    },
-    {
-      label: "Objetivos",
-      href: `/${tenant.slug}/projects/${project.id}/objectives`,
-      icon: Crosshair,
-      description: "Objetivos de Segurança - ISO 27001 cláusula 6.2",
-      count: counts.securityObjectives,
-    },
-    {
-      label: "Políticas",
-      href: `/${tenant.slug}/projects/${project.id}/policies`,
-      icon: ScrollText,
-      description: "Gestão de Políticas - ISO 27001 cláusula 5.2",
-      count: counts.policies,
-    },
-    {
-      label: "Conscientização",
-      href: `/${tenant.slug}/projects/${project.id}/awareness`,
-      icon: Megaphone,
-      description: "Programa de Conscientização - ISO 27001 cláusula 7.3",
-      count: counts.awarenessCampaigns,
-    },
-    {
-      label: "Melhoria Contínua",
-      href: `/${tenant.slug}/projects/${project.id}/improvements`,
-      icon: Lightbulb,
-      description: "Oportunidades de Melhoria - ISO 27001 cláusula 10.3",
-      count: counts.improvementOpportunities,
-    },
-    {
-      label: "Incidentes",
-      href: `/${tenant.slug}/projects/${project.id}/incidents`,
-      icon: ShieldAlert,
-      description: "Gestão de Incidentes - ISO 27001 A.5.24-A.5.28",
-      count: counts.securityIncidents,
-    },
-    {
-      label: "Ativos",
-      href: `/${tenant.slug}/projects/${project.id}/assets`,
-      icon: Server,
-      description: "Ativos de Informação - ISO 27001 A.5.9-A.5.11",
-      count: counts.informationAssets,
-    },
-    {
-      label: "Fornecedores",
-      href: `/${tenant.slug}/projects/${project.id}/suppliers`,
-      icon: Truck,
-      description: "Gestão de Fornecedores - ISO 27001 A.5.19-A.5.23",
-      count: counts.suppliers,
-    },
-    {
-      label: "Mudanças",
-      href: `/${tenant.slug}/projects/${project.id}/changes`,
-      icon: GitPullRequest,
-      description: "Gestão de Mudanças - ISO 27001 cláusula 6.3",
-      count: counts.changeRequests,
-    },
-  ];
 
   const statusOptions = [
     { value: "planning", label: "Planejamento" },
@@ -725,49 +836,56 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
-      {/* Team */}
-      {members.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <h2 className="text-title-3 text-foreground-primary">
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-foreground-tertiary" />
-                Equipe ({members.length})
-              </span>
-            </h2>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-button bg-surface-secondary"
-                >
-                  <Avatar name={member.user?.name || "?"} />
-                  <div>
-                    <p className="text-body-2 font-medium text-foreground-primary leading-tight">
-                      {member.user?.name}
-                    </p>
-                    <p className="text-caption-2 text-foreground-tertiary">
-                      {member.role === "owner"
-                        ? "Responsável"
-                        : member.role === "member"
-                        ? "Membro"
-                        : member.role}
-                    </p>
-                  </div>
+      {/* Tabs */}
+      <Tabs tabs={tabItems} value={activeTab} onChange={handleTabChange} />
+
+      {/* Tab Content: Overview */}
+      {activeTab === "overview" && (
+        <>
+          {/* Team */}
+          {members.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <h2 className="text-title-3 text-foreground-primary">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-foreground-tertiary" />
+                    Equipe ({members.length})
+                  </span>
+                </h2>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3">
+                  {members.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-2 px-3 py-2 rounded-button bg-surface-secondary"
+                    >
+                      <Avatar name={member.user?.name || "?"} />
+                      <div>
+                        <p className="text-body-2 font-medium text-foreground-primary leading-tight">
+                          {member.user?.name}
+                        </p>
+                        <p className="text-caption-2 text-foreground-tertiary">
+                          {member.role === "owner"
+                            ? "Responsável"
+                            : member.role === "member"
+                            ? "Membro"
+                            : member.role}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Modules */}
-      <div>
-        <h2 className="text-title-2 text-foreground-primary mb-4">Módulos</h2>
+      {/* Tab Content: Module categories */}
+      {activeTab !== "overview" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {modules.map((mod) => (
+          {filteredModules.map((mod) => (
             <Link key={mod.label} href={mod.href}>
               <Card className="cursor-pointer hover:shadow-card-glow transition-all h-full">
                 <CardContent className="flex items-center gap-4 p-5">
@@ -792,7 +910,7 @@ export default function ProjectDetailPage() {
             </Link>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
