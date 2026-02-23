@@ -21,7 +21,7 @@ function Tabs({ tabs, value, onChange, className }: TabsProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-1 overflow-x-auto scrollbar-none border-b border-stroke-secondary",
+        "flex flex-wrap items-center gap-1 border-b border-stroke-secondary",
         className
       )}
       role="tablist"
@@ -36,7 +36,7 @@ function Tabs({ tabs, value, onChange, className }: TabsProps) {
             aria-selected={isActive}
             onClick={() => onChange(tab.value)}
             className={cn(
-              "inline-flex items-center gap-1.5 px-3 h-10 text-body-1 font-medium whitespace-nowrap transition-colors border-b-2 -mb-px flex-shrink-0",
+              "inline-flex items-center gap-1.5 px-3 py-2 text-body-2 font-medium whitespace-nowrap transition-colors border-b-2 -mb-px",
               isActive
                 ? "border-brand text-brand"
                 : "border-transparent text-foreground-tertiary hover:text-foreground-primary"
