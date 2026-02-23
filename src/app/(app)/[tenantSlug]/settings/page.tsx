@@ -1,17 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Users, CreditCard, Pencil, Building2, Activity, Bell, Target, Handshake } from "lucide-react";
+import { Tabs } from "@/components/ui/tabs";
+import {
+  Users, CreditCard, Pencil, Building2, Activity, Bell, Target, Handshake,
+} from "lucide-react";
 import { toast } from "sonner";
+
+const SETTINGS_TABS = [
+  { value: "general", label: "Geral", icon: Building2 },
+  { value: "members", label: "Membros", icon: Users },
+  { value: "billing", label: "Faturamento", icon: CreditCard },
+  { value: "clients", label: "Clientes", icon: Building2 },
+  { value: "activity", label: "Atividade", icon: Activity },
+  { value: "notifications", label: "Notificações", icon: Bell },
+  { value: "context", label: "Contexto", icon: Target },
+  { value: "interested-parties", label: "Partes Interessadas", icon: Handshake },
+];
 
 export default function SettingsPage() {
   const { tenant, can, plan } = useTenant();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -20,6 +36,21 @@ export default function SettingsPage() {
 
   const [editName, setEditName] = useState(tenant.name);
   const [editCnpj, setEditCnpj] = useState("");
+
+  const activeTab = (() => {
+    const segments = pathname.split("/");
+    const last = segments[segments.length - 1];
+    const match = SETTINGS_TABS.find((t) => t.value === last);
+    return match ? match.value : "general";
+  })();
+
+  const handleTabChange = (value: string) => {
+    if (value === "general") {
+      router.push(`/${tenant.slug}/settings`);
+    } else {
+      router.push(`/${tenant.slug}/settings/${value}`);
+    }
+  };
 
   const startEdit = () => {
     setEditName(tenant.name);
@@ -66,51 +97,12 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Sub-navigation */}
-      <div className="flex gap-2">
-        <Link href={`/${tenant.slug}/settings/members`}>
-          <Button variant="outline" size="sm">
-            <Users className="h-4 w-4" />
-            Membros
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/billing`}>
-          <Button variant="outline" size="sm">
-            <CreditCard className="h-4 w-4" />
-            Faturamento
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/clients`}>
-          <Button variant="outline" size="sm">
-            <Building2 className="h-4 w-4" />
-            Clientes
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/activity`}>
-          <Button variant="outline" size="sm">
-            <Activity className="h-4 w-4" />
-            Log de Atividades
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/notifications`}>
-          <Button variant="outline" size="sm">
-            <Bell className="h-4 w-4" />
-            Notificações
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/context`}>
-          <Button variant="outline" size="sm">
-            <Target className="h-4 w-4" />
-            Contexto
-          </Button>
-        </Link>
-        <Link href={`/${tenant.slug}/settings/interested-parties`}>
-          <Button variant="outline" size="sm">
-            <Handshake className="h-4 w-4" />
-            Partes Interessadas
-          </Button>
-        </Link>
-      </div>
+      {/* Tabs navigation */}
+      <Tabs
+        tabs={SETTINGS_TABS}
+        value={activeTab}
+        onChange={handleTabChange}
+      />
 
       {/* Org Data */}
       <Card>

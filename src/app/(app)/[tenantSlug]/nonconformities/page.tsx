@@ -2,16 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, AlertTriangle, FolderKanban, User, Calendar, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { Plus, AlertTriangle, FolderKanban, User, Calendar } from "lucide-react";
 import { getSeverityLabel, getStatusLabel, getOriginLabel, formatDate } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
@@ -61,8 +63,31 @@ interface NcWithRelations extends Omit<Nonconformity, "responsible"> {
   _count?: { actionPlans: number };
 }
 
+const TABLE_COLUMNS: Column<NcWithRelations>[] = [
+  { key: "code", label: "Código", sortable: true, render: (nc) => (
+    <span className="text-foreground-tertiary font-mono">{nc.code}</span>
+  )},
+  { key: "title", label: "Título", sortable: true, render: (nc) => (
+    <span className="font-medium text-foreground-primary line-clamp-1">{nc.title}</span>
+  )},
+  { key: "severity", label: "Severidade", render: (nc) => (
+    <StatusBadge status={nc.severity} type="severity" />
+  )},
+  { key: "origin", label: "Origem", render: (nc) => (
+    <span className="text-foreground-secondary">{getOriginLabel(nc.origin)}</span>
+  )},
+  { key: "status", label: "Status", render: (nc) => <StatusBadge status={nc.status} /> },
+  { key: "responsible", label: "Responsável", render: (nc) => (
+    <span className="text-foreground-secondary">{nc.responsible?.name?.split(" ")[0] || "—"}</span>
+  )},
+  { key: "dueDate", label: "Prazo", render: (nc) => (
+    <span className="text-foreground-secondary">{nc.dueDate ? formatDate(nc.dueDate) : "—"}</span>
+  )},
+];
+
 export default function NonconformitiesPage() {
   const { tenant, can } = useTenant();
+  const router = useRouter();
   const [ncs, setNcs] = useState<NcWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -71,6 +96,7 @@ export default function NonconformitiesPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [view, setView] = useViewPreference("nonconformities");
 
   const fetchNcs = useCallback(() => {
     setLoading(true);
@@ -108,153 +134,143 @@ export default function NonconformitiesPage() {
     );
   });
 
+  const hasActiveFilters = !!(filterOrigin || filterSeverity || filterStatus);
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "origin") { setFilterOrigin(value); setPage(1); }
+    if (key === "severity") { setFilterSeverity(value); setPage(1); }
+    if (key === "status") { setFilterStatus(value); setPage(1); }
+  };
+
+  const clearFilters = () => {
+    setFilterOrigin("");
+    setFilterSeverity("");
+    setFilterStatus("");
+    setPage(1);
+  };
+
+  const handleExport = () => {
+    exportToCSV(filtered, CSV_COLUMNS, "nao-conformidades");
+    toast.success("CSV exportado com sucesso");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-title-1 text-foreground-primary">
-            Não Conformidades
-          </h1>
+          <h1 className="text-title-1 text-foreground-primary">Não Conformidades</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
             Gerencie as não conformidades identificadas
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              exportToCSV(filtered, CSV_COLUMNS, "nao-conformidades");
-              toast.success("CSV exportado com sucesso");
-            }}
-            disabled={filtered.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
-          {can("nonconformity", "create") && (
-            <Link href={`/${tenant.slug}/nonconformities/new`}>
-              <Button>
-                <Plus className="h-4 w-4" />
-                Nova NC
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input
-          placeholder="Buscar por código, título ou projeto..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <Select
-            value={filterOrigin}
-            onChange={(e) => { setFilterOrigin(e.target.value); setPage(1); }}
-            options={NC_ORIGINS}
-          />
-          <Select
-            value={filterSeverity}
-            onChange={(e) => { setFilterSeverity(e.target.value); setPage(1); }}
-            options={NC_SEVERITIES}
-          />
-          <Select
-            value={filterStatus}
-            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            options={NC_STATUSES}
-          />
-          {(filterOrigin || filterSeverity || filterStatus) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setFilterOrigin(""); setFilterSeverity(""); setFilterStatus(""); setPage(1); }}
-              className="text-foreground-tertiary"
-            >
-              Limpar
+        {can("nonconformity", "create") && (
+          <Link href={`/${tenant.slug}/nonconformities/new`}>
+            <Button>
+              <Plus className="h-4 w-4" />
+              Nova NC
             </Button>
-          )}
-        </div>
+          </Link>
+        )}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={AlertTriangle}
-          title={search || filterOrigin || filterSeverity || filterStatus
-            ? "Nenhuma NC encontrada"
-            : "Nenhuma não conformidade registrada"}
-          description={search || filterOrigin || filterSeverity || filterStatus
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por código, título ou projeto..."
+        filters={[
+          { key: "origin", options: NC_ORIGINS, value: filterOrigin },
+          { key: "severity", options: NC_SEVERITIES, value: filterSeverity },
+          { key: "status", options: NC_STATUSES, value: filterStatus },
+        ]}
+        onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+        onExport={handleExport}
+        viewToggle={{ view, onChange: setView }}
+      />
+
+      {view === "cards" ? (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={AlertTriangle}
+              title={hasActiveFilters || search ? "Nenhuma NC encontrada" : "Nenhuma não conformidade registrada"}
+              description={hasActiveFilters || search
+                ? "Tente ajustar os filtros ou termos de busca"
+                : "Registre a primeira não conformidade para começar"}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.map((nc) => (
+                <Link key={nc.id} href={`/${tenant.slug}/nonconformities/${nc.id}`}>
+                  <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0">
+                          <p className="text-caption-1 text-foreground-tertiary font-mono">{nc.code}</p>
+                          <h3 className="text-body-1 font-medium text-foreground-primary mt-0.5 line-clamp-2">{nc.title}</h3>
+                        </div>
+                        <StatusBadge status={nc.severity} type="severity" className="flex-shrink-0" />
+                      </div>
+
+                      <div className="space-y-2 mb-3">
+                        {nc.project && (
+                          <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
+                            <FolderKanban className="h-3.5 w-3.5" />
+                            <span className="truncate">{nc.project.name}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
+                          <AlertTriangle className="h-3.5 w-3.5" />
+                          <span>{getOriginLabel(nc.origin)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
+                        <StatusBadge status={nc.status} />
+                        <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
+                          {nc.responsible && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {nc.responsible.name.split(" ")[0]}
+                            </span>
+                          )}
+                          {nc.dueDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(nc.dueDate)}
+                            </span>
+                          )}
+                          {nc._count && nc._count.actionPlans > 0 && (
+                            <span>{nc._count.actionPlans} ação(ões)</span>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <DataTable
+          columns={TABLE_COLUMNS}
+          data={filtered}
+          loading={loading}
+          onRowClick={(nc) => router.push(`/${tenant.slug}/nonconformities/${nc.id}`)}
+          emptyMessage={hasActiveFilters || search ? "Nenhuma NC encontrada" : "Nenhuma não conformidade registrada"}
+          emptyDescription={hasActiveFilters || search
             ? "Tente ajustar os filtros ou termos de busca"
             : "Registre a primeira não conformidade para começar"}
+          emptyIcon={AlertTriangle}
         />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((nc) => (
-            <Link
-              key={nc.id}
-              href={`/${tenant.slug}/nonconformities/${nc.id}`}
-            >
-              <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <p className="text-caption-1 text-foreground-tertiary font-mono">
-                        {nc.code}
-                      </p>
-                      <h3 className="text-body-1 font-medium text-foreground-primary mt-0.5 line-clamp-2">
-                        {nc.title}
-                      </h3>
-                    </div>
-                    <StatusBadge status={nc.severity} type="severity" className="flex-shrink-0" />
-                  </div>
-
-                  <div className="space-y-2 mb-3">
-                    {nc.project && (
-                      <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
-                        <FolderKanban className="h-3.5 w-3.5" />
-                        <span className="truncate">{nc.project.name}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      <span>{getOriginLabel(nc.origin)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                    <StatusBadge status={nc.status} />
-                    <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
-                      {nc.responsible && (
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {nc.responsible.name.split(" ")[0]}
-                        </span>
-                      )}
-                      {nc.dueDate && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(nc.dueDate)}
-                        </span>
-                      )}
-                      {nc._count && nc._count.actionPlans > 0 && (
-                        <span>{nc._count.actionPlans} ação(ões)</span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
       )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

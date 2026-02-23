@@ -2,16 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Plus, FileText, FolderKanban, User, Calendar, Tag, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { Plus, FileText, FolderKanban, User, Calendar, Tag } from "lucide-react";
 import { getStatusLabel, getDocumentTypeLabel, formatDate } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
@@ -48,8 +50,31 @@ interface DocWithRelations extends Omit<Document, "author"> {
   author?: { id: string; name: string } | null;
 }
 
+const TABLE_COLUMNS: Column<DocWithRelations>[] = [
+  { key: "code", label: "Código", sortable: true, render: (d) => (
+    <span className="text-foreground-tertiary font-mono">{d.code}</span>
+  )},
+  { key: "title", label: "Título", sortable: true, render: (d) => (
+    <span className="font-medium text-foreground-primary line-clamp-1">{d.title}</span>
+  )},
+  { key: "type", label: "Tipo", render: (d) => (
+    <StatusBadge status={d.type} type="documentType" />
+  )},
+  { key: "version", label: "Versão", render: (d) => (
+    <span className="text-foreground-secondary font-mono">v{d.version}</span>
+  )},
+  { key: "status", label: "Status", render: (d) => <StatusBadge status={d.status} /> },
+  { key: "project", label: "Projeto", render: (d) => (
+    <span className="text-foreground-secondary truncate">{d.project?.name || "—"}</span>
+  )},
+  { key: "author", label: "Autor", render: (d) => (
+    <span className="text-foreground-secondary">{d.author?.name?.split(" ")[0] || "—"}</span>
+  )},
+];
+
 export default function DocumentsPage() {
   const { tenant, can } = useTenant();
+  const router = useRouter();
   const [documents, setDocuments] = useState<DocWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -57,6 +82,7 @@ export default function DocumentsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [view, setView] = useViewPreference("documents");
 
   const fetchDocuments = useCallback(() => {
     setLoading(true);
@@ -95,7 +121,23 @@ export default function DocumentsPage() {
     );
   });
 
-  const hasFilters = filterType || filterStatus;
+  const hasActiveFilters = !!(filterType || filterStatus);
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "type") { setFilterType(value); setPage(1); }
+    if (key === "status") { setFilterStatus(value); setPage(1); }
+  };
+
+  const clearFilters = () => {
+    setFilterType("");
+    setFilterStatus("");
+    setPage(1);
+  };
+
+  const handleExport = () => {
+    exportToCSV(filtered, CSV_COLUMNS, "documentos");
+    toast.success("CSV exportado com sucesso");
+  };
 
   return (
     <div className="space-y-6">
@@ -106,134 +148,113 @@ export default function DocumentsPage() {
             Gerencie políticas, procedimentos e registros do sistema de gestão
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              exportToCSV(filtered, CSV_COLUMNS, "documentos");
-              toast.success("CSV exportado com sucesso");
-            }}
-            disabled={filtered.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
-          {can("document", "create") && (
-            <Link href={`/${tenant.slug}/documents/new`}>
-              <Button>
-                <Plus className="h-4 w-4" />
-                Novo Documento
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input
-          placeholder="Buscar por código, título, projeto ou categoria..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <Select
-            value={filterType}
-            onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-            options={DOCUMENT_TYPES}
-          />
-          <Select
-            value={filterStatus}
-            onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-            options={DOCUMENT_STATUSES}
-          />
-          {hasFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setFilterType(""); setFilterStatus(""); setPage(1); }}
-              className="text-foreground-tertiary"
-            >
-              Limpar
+        {can("document", "create") && (
+          <Link href={`/${tenant.slug}/documents/new`}>
+            <Button>
+              <Plus className="h-4 w-4" />
+              Novo Documento
             </Button>
-          )}
-        </div>
+          </Link>
+        )}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={FileText}
-          title={search || hasFilters
-            ? "Nenhum documento encontrado"
-            : "Nenhum documento registrado"}
-          description={search || hasFilters
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por código, título, projeto ou categoria..."
+        filters={[
+          { key: "type", options: DOCUMENT_TYPES, value: filterType },
+          { key: "status", options: DOCUMENT_STATUSES, value: filterStatus },
+        ]}
+        onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+        onExport={handleExport}
+        viewToggle={{ view, onChange: setView }}
+      />
+
+      {view === "cards" ? (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title={hasActiveFilters || search ? "Nenhum documento encontrado" : "Nenhum documento registrado"}
+              description={hasActiveFilters || search
+                ? "Tente ajustar os filtros ou termos de busca"
+                : "Adicione o primeiro documento para começar"}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtered.map((doc) => (
+                <Link key={doc.id} href={`/${tenant.slug}/documents/${doc.id}`}>
+                  <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0">
+                          <p className="text-caption-1 text-foreground-tertiary font-mono mb-1">{doc.code}</p>
+                          <h3 className="text-body-1 font-medium text-foreground-primary line-clamp-2">{doc.title}</h3>
+                        </div>
+                        <StatusBadge status={doc.type} type="documentType" className="flex-shrink-0" />
+                      </div>
+
+                      <div className="space-y-2 mb-3">
+                        {doc.project && (
+                          <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
+                            <FolderKanban className="h-3.5 w-3.5" />
+                            <span className="truncate">{doc.project.name}</span>
+                          </div>
+                        )}
+                        {doc.category && (
+                          <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
+                            <Tag className="h-3.5 w-3.5" />
+                            <span className="truncate">{doc.category}</span>
+                          </div>
+                        )}
+                        {doc.nextReviewDate && (
+                          <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>Revisão: {formatDate(doc.nextReviewDate)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
+                        <StatusBadge status={doc.status} />
+                        <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
+                          <span className="font-mono">v{doc.version}</span>
+                          {doc.author && (
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {doc.author.name.split(" ")[0]}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <DataTable
+          columns={TABLE_COLUMNS}
+          data={filtered}
+          loading={loading}
+          onRowClick={(d) => router.push(`/${tenant.slug}/documents/${d.id}`)}
+          emptyMessage={hasActiveFilters || search ? "Nenhum documento encontrado" : "Nenhum documento registrado"}
+          emptyDescription={hasActiveFilters || search
             ? "Tente ajustar os filtros ou termos de busca"
             : "Adicione o primeiro documento para começar"}
+          emptyIcon={FileText}
         />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((doc) => (
-            <Link key={doc.id} href={`/${tenant.slug}/documents/${doc.id}`}>
-              <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="min-w-0">
-                      <p className="text-caption-1 text-foreground-tertiary font-mono mb-1">
-                        {doc.code}
-                      </p>
-                      <h3 className="text-body-1 font-medium text-foreground-primary line-clamp-2">
-                        {doc.title}
-                      </h3>
-                    </div>
-                    <StatusBadge status={doc.type} type="documentType" className="flex-shrink-0" />
-                  </div>
-
-                  <div className="space-y-2 mb-3">
-                    {doc.project && (
-                      <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
-                        <FolderKanban className="h-3.5 w-3.5" />
-                        <span className="truncate">{doc.project.name}</span>
-                      </div>
-                    )}
-                    {doc.category && (
-                      <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
-                        <Tag className="h-3.5 w-3.5" />
-                        <span className="truncate">{doc.category}</span>
-                      </div>
-                    )}
-                    {doc.nextReviewDate && (
-                      <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>Revisão: {formatDate(doc.nextReviewDate)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                    <StatusBadge status={doc.status} />
-                    <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
-                      <span className="font-mono">v{doc.version}</span>
-                      {doc.author && (
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {doc.author.name.split(" ")[0]}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
       )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

@@ -2,16 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { useViewPreference } from "@/hooks/use-view-preference";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus, Filter, Download } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { DataTable, type Column } from "@/components/ui/data-table";
+import { Plus, TrendingUp, FolderKanban, Target, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { getFrequencyLabel } from "@/lib/utils";
 import { exportToCSV, type CsvColumn } from "@/lib/export";
 import { toast } from "sonner";
@@ -61,14 +63,60 @@ const PERF_COLORS: Record<string, string> = {
   danger: "bg-danger-bg text-danger-fg",
 };
 
+function getIndicatorPerf(ind: IndicatorWithRelations) {
+  const latest = ind.measurements && ind.measurements.length > 0 ? ind.measurements[0] : null;
+  const latestVal = latest ? Number(latest.value) : null;
+  const targetNum = Number(ind.target);
+  return latestVal !== null
+    ? getPerformance(latestVal, targetNum, ind.upperLimit ? Number(ind.upperLimit) : null, ind.lowerLimit ? Number(ind.lowerLimit) : null)
+    : null;
+}
+
+const TABLE_COLUMNS: Column<IndicatorWithRelations>[] = [
+  { key: "name", label: "Nome", sortable: true, render: (ind) => (
+    <span className="font-medium text-foreground-primary line-clamp-1">{ind.name}</span>
+  )},
+  { key: "frequency", label: "Frequência", render: (ind) => (
+    <span className="text-foreground-secondary">{getFrequencyLabel(ind.frequency)}</span>
+  )},
+  { key: "unit", label: "Unidade", render: (ind) => (
+    <span className="text-foreground-secondary">{ind.unit}</span>
+  )},
+  { key: "target", label: "Meta", render: (ind) => (
+    <span className="text-foreground-secondary">{Number(ind.target).toLocaleString("pt-BR")}</span>
+  )},
+  { key: "current", label: "Atual", render: (ind) => {
+    const latest = ind.measurements && ind.measurements.length > 0 ? ind.measurements[0] : null;
+    return (
+      <span className="text-foreground-primary font-medium">
+        {latest ? Number(latest.value).toLocaleString("pt-BR") : "—"}
+      </span>
+    );
+  }},
+  { key: "performance", label: "Desempenho", render: (ind) => {
+    const perf = getIndicatorPerf(ind);
+    if (!perf) return <Badge variant="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">Sem medição</Badge>;
+    return (
+      <Badge variant={PERF_COLORS[perf]}>
+        {perf === "success" ? "Na meta" : perf === "warning" ? "Atenção" : "Fora da meta"}
+      </Badge>
+    );
+  }},
+  { key: "project", label: "Projeto", render: (ind) => (
+    <span className="text-foreground-secondary truncate">{ind.project?.name || "—"}</span>
+  )},
+];
+
 export default function IndicatorsPage() {
   const { tenant, can } = useTenant();
+  const router = useRouter();
   const [indicators, setIndicators] = useState<IndicatorWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterFrequency, setFilterFrequency] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [view, setView] = useViewPreference("indicators");
 
   const fetchIndicators = useCallback(() => {
     setLoading(true);
@@ -104,6 +152,22 @@ export default function IndicatorsPage() {
     );
   });
 
+  const hasActiveFilters = !!filterFrequency;
+
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === "frequency") { setFilterFrequency(value); setPage(1); }
+  };
+
+  const clearFilters = () => {
+    setFilterFrequency("");
+    setPage(1);
+  };
+
+  const handleExport = () => {
+    exportToCSV(filtered, CSV_COLUMNS, "indicadores");
+    toast.success("CSV exportado com sucesso");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -113,172 +177,160 @@ export default function IndicatorsPage() {
             Acompanhe os indicadores de desempenho do SGQ
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              exportToCSV(filtered, CSV_COLUMNS, "indicadores");
-              toast.success("CSV exportado com sucesso");
-            }}
-            disabled={filtered.length === 0}
-          >
-            <Download className="h-4 w-4" />
-            Exportar CSV
-          </Button>
-          {can("indicator", "create") && (
-            <Link href={`/${tenant.slug}/indicators/new`}>
-              <Button>
-                <Plus className="h-4 w-4" />
-                Novo Indicador
-              </Button>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input
-          placeholder="Buscar por nome, projeto ou unidade..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-foreground-tertiary flex-shrink-0" />
-          <Select
-            value={filterFrequency}
-            onChange={(e) => { setFilterFrequency(e.target.value); setPage(1); }}
-            options={FREQUENCIES}
-          />
-          {filterFrequency && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setFilterFrequency(""); setPage(1); }}
-              className="text-foreground-tertiary"
-            >
-              Limpar
+        {can("indicator", "create") && (
+          <Link href={`/${tenant.slug}/indicators/new`}>
+            <Button>
+              <Plus className="h-4 w-4" />
+              Novo Indicador
             </Button>
-          )}
-        </div>
+          </Link>
+        )}
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={TrendingUp}
-          title={search || filterFrequency ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
-          description={search || filterFrequency ? "Tente ajustar os filtros ou termos de busca" : "Configure indicadores para monitorar o desempenho"}
-        />
+      <FilterBar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar por nome, projeto ou unidade..."
+        filters={[
+          { key: "frequency", options: FREQUENCIES, value: filterFrequency },
+        ]}
+        onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
+        hasActiveFilters={hasActiveFilters}
+        onExport={handleExport}
+        viewToggle={{ view, onChange: setView }}
+      />
+
+      {view === "cards" ? (
+        <>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={TrendingUp}
+              title={hasActiveFilters || search ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
+              description={hasActiveFilters || search
+                ? "Tente ajustar os filtros ou termos de busca"
+                : "Configure indicadores para monitorar o desempenho"}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((ind) => {
+                const latest = ind.measurements && ind.measurements.length > 0
+                  ? ind.measurements[0]
+                  : null;
+                const prev = ind.measurements && ind.measurements.length > 1
+                  ? ind.measurements[1]
+                  : null;
+                const latestVal = latest ? Number(latest.value) : null;
+                const prevVal = prev ? Number(prev.value) : null;
+                const targetNum = Number(ind.target);
+                const perf = latestVal !== null
+                  ? getPerformance(latestVal, targetNum, ind.upperLimit ? Number(ind.upperLimit) : null, ind.lowerLimit ? Number(ind.lowerLimit) : null)
+                  : null;
+                const trend = latestVal !== null && prevVal !== null
+                  ? latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "stable"
+                  : null;
+
+                return (
+                  <Link key={ind.id} href={`/${tenant.slug}/indicators/${ind.id}`}>
+                    <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
+                      <CardContent className="p-5">
+                        <div className="mb-3">
+                          <h3 className="text-body-1 font-medium text-foreground-primary line-clamp-2">{ind.name}</h3>
+                          <p className="text-caption-1 text-foreground-tertiary mt-0.5">
+                            {getFrequencyLabel(ind.frequency)} &middot; {ind.unit}
+                          </p>
+                        </div>
+
+                        <div className="flex items-end gap-3 mb-3">
+                          <div>
+                            <p className="text-caption-1 text-foreground-tertiary">Atual</p>
+                            <p className="text-title-2 font-semibold text-foreground-primary">
+                              {latestVal !== null ? latestVal.toLocaleString("pt-BR") : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-caption-1 text-foreground-tertiary">Meta</p>
+                            <p className="text-body-1 text-foreground-secondary">
+                              {targetNum.toLocaleString("pt-BR")} {ind.unit}
+                            </p>
+                          </div>
+                          {trend && (
+                            <div className="ml-auto">
+                              {trend === "up" && <ArrowUp className="h-5 w-5 text-success-fg" />}
+                              {trend === "down" && <ArrowDown className="h-5 w-5 text-danger-fg" />}
+                              {trend === "stable" && <Minus className="h-5 w-5 text-foreground-tertiary" />}
+                            </div>
+                          )}
+                        </div>
+
+                        {latestVal !== null && targetNum > 0 && (
+                          <div className="mb-3">
+                            <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${
+                                  perf === "success"
+                                    ? "bg-success-fg"
+                                    : perf === "warning"
+                                    ? "bg-warning-fg"
+                                    : "bg-danger-fg"
+                                }`}
+                                style={{ width: `${Math.min((latestVal / targetNum) * 100, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
+                          {perf ? (
+                            <Badge variant={PERF_COLORS[perf]}>
+                              {perf === "success" ? "Na meta" : perf === "warning" ? "Atenção" : "Fora da meta"}
+                            </Badge>
+                          ) : (
+                            <Badge variant="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                              Sem medição
+                            </Badge>
+                          )}
+                          <div className="flex items-center gap-2 text-caption-1 text-foreground-tertiary">
+                            {ind.project && (
+                              <span className="flex items-center gap-1">
+                                <FolderKanban className="h-3 w-3" />
+                                {ind.project.name}
+                              </span>
+                            )}
+                            {ind.measurements && ind.measurements.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Target className="h-3 w-3" />
+                                {ind.measurements.length}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((ind) => {
-            const latest = ind.measurements && ind.measurements.length > 0
-              ? ind.measurements[0]
-              : null;
-            const prev = ind.measurements && ind.measurements.length > 1
-              ? ind.measurements[1]
-              : null;
-            const latestVal = latest ? Number(latest.value) : null;
-            const prevVal = prev ? Number(prev.value) : null;
-            const targetNum = Number(ind.target);
-            const perf = latestVal !== null
-              ? getPerformance(latestVal, targetNum, ind.upperLimit ? Number(ind.upperLimit) : null, ind.lowerLimit ? Number(ind.lowerLimit) : null)
-              : null;
-            const trend = latestVal !== null && prevVal !== null
-              ? latestVal > prevVal ? "up" : latestVal < prevVal ? "down" : "stable"
-              : null;
-
-            return (
-              <Link key={ind.id} href={`/${tenant.slug}/indicators/${ind.id}`}>
-                <Card className="cursor-pointer hover:shadow-card-glow transition-shadow h-full">
-                  <CardContent className="p-5">
-                    <div className="mb-3">
-                      <h3 className="text-body-1 font-medium text-foreground-primary line-clamp-2">
-                        {ind.name}
-                      </h3>
-                      <p className="text-caption-1 text-foreground-tertiary mt-0.5">
-                        {getFrequencyLabel(ind.frequency)} &middot; {ind.unit}
-                      </p>
-                    </div>
-
-                    <div className="flex items-end gap-3 mb-3">
-                      <div>
-                        <p className="text-caption-1 text-foreground-tertiary">Atual</p>
-                        <p className="text-title-2 font-semibold text-foreground-primary">
-                          {latestVal !== null ? latestVal.toLocaleString("pt-BR") : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-caption-1 text-foreground-tertiary">Meta</p>
-                        <p className="text-body-1 text-foreground-secondary">
-                          {targetNum.toLocaleString("pt-BR")} {ind.unit}
-                        </p>
-                      </div>
-                      {trend && (
-                        <div className="ml-auto">
-                          {trend === "up" && <ArrowUp className="h-5 w-5 text-success-fg" />}
-                          {trend === "down" && <ArrowDown className="h-5 w-5 text-danger-fg" />}
-                          {trend === "stable" && <Minus className="h-5 w-5 text-foreground-tertiary" />}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Progress bar */}
-                    {latestVal !== null && targetNum > 0 && (
-                      <div className="mb-3">
-                        <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              perf === "success"
-                                ? "bg-success-fg"
-                                : perf === "warning"
-                                ? "bg-warning-fg"
-                                : "bg-danger-fg"
-                            }`}
-                            style={{ width: `${Math.min((latestVal / targetNum) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-3 border-t border-stroke-secondary">
-                      {perf ? (
-                        <Badge variant={PERF_COLORS[perf]}>
-                          {perf === "success" ? "Na meta" : perf === "warning" ? "Atenção" : "Fora da meta"}
-                        </Badge>
-                      ) : (
-                        <Badge variant="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
-                          Sem medição
-                        </Badge>
-                      )}
-                      <div className="flex items-center gap-2 text-caption-1 text-foreground-tertiary">
-                        {ind.project && (
-                          <span className="flex items-center gap-1">
-                            <FolderKanban className="h-3 w-3" />
-                            {ind.project.name}
-                          </span>
-                        )}
-                        {ind.measurements && ind.measurements.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <Target className="h-3 w-3" />
-                            {ind.measurements.length}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+        <DataTable
+          columns={TABLE_COLUMNS}
+          data={filtered}
+          loading={loading}
+          onRowClick={(ind) => router.push(`/${tenant.slug}/indicators/${ind.id}`)}
+          emptyMessage={hasActiveFilters || search ? "Nenhum indicador encontrado" : "Nenhum indicador configurado"}
+          emptyDescription={hasActiveFilters || search
+            ? "Tente ajustar os filtros ou termos de busca"
+            : "Configure indicadores para monitorar o desempenho"}
+          emptyIcon={TrendingUp}
+        />
       )}
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
