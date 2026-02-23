@@ -42,8 +42,9 @@ const CATEGORIES = [
 
 const STATUSES = [
   { value: "identified", label: "Identificado" },
-  { value: "assessed", label: "Avaliado" },
-  { value: "treating", label: "Em Tratamento" },
+  { value: "analyzing", label: "Em Análise" },
+  { value: "treated", label: "Tratado" },
+  { value: "accepted", label: "Aceito" },
   { value: "monitored", label: "Monitorado" },
   { value: "closed", label: "Fechado" },
 ];

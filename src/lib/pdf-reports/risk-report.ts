@@ -11,10 +11,11 @@ import {
 import { getRiskLevelLabel } from "@/lib/utils";
 
 const RISK_COLORS: Record<string, [number, number, number]> = {
+  very_low: [138, 136, 134],
   low: [16, 124, 16],
   medium: [157, 93, 0],
   high: [234, 118, 0],
-  critical: [196, 49, 75],
+  very_high: [196, 49, 75],
 };
 
 const TREATMENT_LABELS: Record<string, string> = {
@@ -60,7 +61,7 @@ export function generateRiskReport(data: RiskReportData, tenantName?: string) {
 
   // Stats
   const total = data.risks.length;
-  const critical = data.risks.filter((r) => r.riskLevel === "critical").length;
+  const critical = data.risks.filter((r) => r.riskLevel === "very_high").length;
   const high = data.risks.filter((r) => r.riskLevel === "high").length;
   const medium = data.risks.filter((r) => r.riskLevel === "medium").length;
   const low = data.risks.filter((r) => r.riskLevel === "low").length;
@@ -161,7 +162,7 @@ export function generateRiskReport(data: RiskReportData, tenantName?: string) {
 
   // Risk table by level
   const sortedRisks = [...data.risks].sort((a, b) => {
-    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    const order = { very_high: 0, high: 1, medium: 2, low: 3, very_low: 4 };
     return (
       (order[a.riskLevel as keyof typeof order] ?? 4) -
       (order[b.riskLevel as keyof typeof order] ?? 4)
@@ -206,7 +207,7 @@ export function generateRiskReport(data: RiskReportData, tenantName?: string) {
 
   // Detail per critical/high risk
   const criticalHighRisks = sortedRisks.filter(
-    (r) => r.riskLevel === "critical" || r.riskLevel === "high"
+    (r) => r.riskLevel === "very_high" || r.riskLevel === "high"
   );
 
   if (criticalHighRisks.length > 0) {

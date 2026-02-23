@@ -30,17 +30,19 @@ const CSV_COLUMNS: CsvColumn<RiskItem>[] = [
 
 const RISK_LEVELS = [
   { value: "", label: "Todos os níveis" },
-  { value: "critical", label: "Crítico" },
+  { value: "very_high", label: "Muito Alto" },
   { value: "high", label: "Alto" },
   { value: "medium", label: "Médio" },
   { value: "low", label: "Baixo" },
+  { value: "very_low", label: "Muito Baixo" },
 ];
 
 const RISK_STATUSES = [
   { value: "", label: "Todos os status" },
   { value: "identified", label: "Identificado" },
-  { value: "assessed", label: "Avaliado" },
-  { value: "treating", label: "Em Tratamento" },
+  { value: "analyzing", label: "Em Análise" },
+  { value: "treated", label: "Tratado" },
+  { value: "accepted", label: "Aceito" },
   { value: "monitored", label: "Monitorado" },
   { value: "closed", label: "Fechado" },
 ];
@@ -56,10 +58,11 @@ const RISK_CATEGORIES = [
 ];
 
 const LEVEL_COLORS: Record<string, string> = {
-  critical: "bg-danger-bg text-danger-fg",
+  very_high: "bg-danger-bg text-danger-fg",
   high: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
   medium: "bg-warning-bg text-warning-fg",
   low: "bg-success-bg text-success-fg",
+  very_low: "bg-surface-tertiary text-foreground-tertiary",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {

@@ -93,17 +93,19 @@ const TREATMENT_STATUSES = [
 const REVIEW_STATUS_OPTIONS = [
   { value: "identified", label: "Identificado" },
   { value: "analyzing", label: "Em Análise" },
-  { value: "treating", label: "Em Tratamento" },
-  { value: "monitoring", label: "Monitorando" },
+  { value: "treated", label: "Tratado" },
+  { value: "accepted", label: "Aceito" },
+  { value: "monitored", label: "Monitorado" },
   { value: "closed", label: "Encerrado" },
 ];
 
 function getRiskColor(level: string): string {
   const c: Record<string, string> = {
+    very_low: "bg-surface-tertiary text-foreground-tertiary",
     low: "bg-success-bg text-success-fg",
     medium: "bg-warning-bg text-warning-fg",
     high: "bg-orange-100 text-orange-800",
-    critical: "bg-danger-bg text-danger-fg",
+    very_high: "bg-danger-bg text-danger-fg",
   };
   return c[level] || "bg-gray-100 text-gray-800";
 }
@@ -287,7 +289,7 @@ export default function RisksPage() {
 
   const stats = {
     total: risks.length,
-    critical: risks.filter((r) => r.riskLevel === "critical").length,
+    veryHigh: risks.filter((r) => r.riskLevel === "very_high").length,
     high: risks.filter((r) => r.riskLevel === "high").length,
     medium: risks.filter((r) => r.riskLevel === "medium").length,
     low: risks.filter((r) => r.riskLevel === "low").length,
@@ -343,7 +345,7 @@ export default function RisksPage() {
         <div className="grid grid-cols-5 gap-3">
           {[
             { label: "Total", value: stats.total, color: "text-foreground-primary" },
-            { label: "Critico", value: stats.critical, color: "text-danger-fg" },
+            { label: "Muito Alto", value: stats.veryHigh, color: "text-danger-fg" },
             { label: "Alto", value: stats.high, color: "text-orange-600" },
             { label: "Medio", value: stats.medium, color: "text-warning" },
             { label: "Baixo", value: stats.low, color: "text-success-fg" },

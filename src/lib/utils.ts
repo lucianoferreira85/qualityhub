@@ -78,8 +78,8 @@ export function getStatusColor(status: string): string {
     approved: "bg-success-bg text-success-fg",
     obsolete: "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
     identified: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    assessed: "bg-warning-bg text-warning-fg",
-    treating: "bg-brand-light text-brand",
+    treated: "bg-brand-light text-brand",
+    accepted: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
     monitored: "bg-success-bg text-success-fg",
     cancelled: "bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
     scheduled: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
@@ -111,8 +111,8 @@ export function getStatusLabel(status: string): string {
     approved: "Aprovado",
     obsolete: "Obsoleto",
     identified: "Identificado",
-    assessed: "Avaliado",
-    treating: "Em Tratamento",
+    treated: "Tratado",
+    accepted: "Aceito",
     monitored: "Monitorado",
     cancelled: "Cancelada",
     scheduled: "Agendada",
@@ -161,7 +161,7 @@ export function getAuditTypeLabel(type: string): string {
   const labels: Record<string, string> = {
     internal: "Interna",
     external: "Externa",
-    supplier: "Fornecedor",
+    surveillance: "Vigilância",
     certification: "Certificação",
   };
   return labels[type] || type;

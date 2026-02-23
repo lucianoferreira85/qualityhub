@@ -43,15 +43,17 @@ const INITIAL_FORM: ObjectiveFormData = {
   indicatorId: "",
   frequency: "",
   notes: "",
-  status: "defined",
+  status: "identified",
 };
 
 const STATUSES: Record<string, { label: string; color: string }> = {
-  defined: { label: "Definido", color: "bg-surface-tertiary text-foreground-secondary" },
+  identified: { label: "Identificado", color: "bg-surface-tertiary text-foreground-secondary" },
+  analyzing: { label: "Em Análise", color: "bg-warning-bg text-warning-fg" },
+  planned: { label: "Planejado", color: "bg-blue-100 text-blue-800" },
   in_progress: { label: "Em Andamento", color: "bg-brand-light text-brand" },
-  achieved: { label: "Alcançado", color: "bg-success-bg text-success-fg" },
-  not_achieved: { label: "Não Alcançado", color: "bg-danger-bg text-danger-fg" },
-  cancelled: { label: "Cancelado", color: "bg-surface-tertiary text-foreground-tertiary" },
+  implemented: { label: "Implementado", color: "bg-success-bg text-success-fg" },
+  verified: { label: "Verificado", color: "bg-emerald-100 text-emerald-800" },
+  closed: { label: "Fechado", color: "bg-surface-tertiary text-foreground-tertiary" },
 };
 
 const CATEGORIES: Record<string, string> = {
@@ -207,10 +209,10 @@ export default function ObjectivesPage() {
 
   const stats = {
     total: objectives.length,
-    defined: objectives.filter((o) => o.status === "defined").length,
+    identified: objectives.filter((o) => o.status === "identified").length,
     inProgress: objectives.filter((o) => o.status === "in_progress").length,
-    achieved: objectives.filter((o) => o.status === "achieved").length,
-    notAchieved: objectives.filter((o) => o.status === "not_achieved").length,
+    implemented: objectives.filter((o) => o.status === "implemented" || o.status === "verified").length,
+    closed: objectives.filter((o) => o.status === "closed").length,
   };
 
   return (
@@ -237,10 +239,10 @@ export default function ObjectivesPage() {
         <div className="grid grid-cols-5 gap-3">
           {[
             { label: "Total", value: stats.total, color: "text-foreground-primary" },
-            { label: "Definidos", value: stats.defined, color: "text-foreground-secondary" },
+            { label: "Identificados", value: stats.identified, color: "text-foreground-secondary" },
             { label: "Em Andamento", value: stats.inProgress, color: "text-brand" },
-            { label: "Alcançados", value: stats.achieved, color: "text-success-fg" },
-            { label: "Não Alcançados", value: stats.notAchieved, color: "text-danger-fg" },
+            { label: "Implementados", value: stats.implemented, color: "text-success-fg" },
+            { label: "Fechados", value: stats.closed, color: "text-foreground-tertiary" },
           ].map((s) => (
             <Card key={s.label}>
               <CardContent className="p-3 text-center">
@@ -254,7 +256,7 @@ export default function ObjectivesPage() {
 
       <div className="flex items-center gap-2">
         <span className="text-body-2 text-foreground-tertiary">Status:</span>
-        {["", "defined", "in_progress", "achieved", "not_achieved", "cancelled"].map((s) => (
+        {["", "identified", "analyzing", "planned", "in_progress", "implemented", "verified", "closed"].map((s) => (
           <button
             key={s}
             onClick={() => { setFilterStatus(s); setLoading(true); }}

@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 const RISK_LEVEL_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  critical: { label: "Critico", color: "text-white", bg: "bg-danger" },
+  very_high: { label: "Muito Alto", color: "text-white", bg: "bg-danger" },
   high: { label: "Alto", color: "text-danger-fg", bg: "bg-danger-bg" },
   medium: { label: "Medio", color: "text-warning-fg", bg: "bg-warning-bg" },
   low: { label: "Baixo", color: "text-success-fg", bg: "bg-success-bg" },
@@ -18,7 +18,7 @@ function RiskDistribution({ data }: RiskDistributionProps) {
   if (data.length === 0) return null;
 
   const totalRisks = data.reduce((s, r) => s + r.count, 0);
-  const orderedLevels = ["critical", "high", "medium", "low", "very_low"];
+  const orderedLevels = ["very_high", "high", "medium", "low", "very_low"];
   const sorted = [...data].sort(
     (a, b) => orderedLevels.indexOf(a.level) - orderedLevels.indexOf(b.level)
   );
