@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { getRiskLevel, getRiskLevelLabel } from "@/lib/utils";
 
@@ -63,19 +62,37 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface RiskFormData {
+  title: string;
+  description: string;
+  category: string;
+  probability: number;
+  impact: number;
+  treatment: string;
+  treatmentPlan: string;
+  responsibleId: string;
+  projectId: string;
+}
+
+const INITIAL_FORM: RiskFormData = {
+  title: "",
+  description: "",
+  category: "operational",
+  probability: 1,
+  impact: 1,
+  treatment: "",
+  treatmentPlan: "",
+  responsibleId: "",
+  projectId: "",
+};
+
 export default function NewRiskPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("operational");
-  const [probability, setProbability] = useState(1);
-  const [impact, setImpact] = useState(1);
-  const [treatment, setTreatment] = useState("");
-  const [treatmentPlan, setTreatmentPlan] = useState("");
-  const [responsibleId, setResponsibleId] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [form, setForm] = useState<RiskFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof RiskFormData, value: string | number) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -96,8 +113,8 @@ export default function NewRiskPage() {
       .finally(() => setLoadingData(false));
   }, [tenant.slug]);
 
-  const calculatedLevel = getRiskLevel(probability, impact);
-  const score = probability * impact;
+  const calculatedLevel = getRiskLevel(form.probability, form.impact);
+  const score = form.probability * form.impact;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,15 +126,15 @@ export default function NewRiskPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          description,
-          category,
-          probability,
-          impact,
-          treatment: treatment || null,
-          treatmentPlan: treatmentPlan || null,
-          responsibleId: responsibleId || null,
-          projectId,
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          probability: form.probability,
+          impact: form.impact,
+          treatment: form.treatment || null,
+          treatmentPlan: form.treatmentPlan || null,
+          responsibleId: form.responsibleId || null,
+          projectId: form.projectId,
         }),
       });
       if (!res.ok) {
@@ -145,14 +162,7 @@ export default function NewRiskPage() {
         ]}
       />
 
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/risks`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Novo Risco</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Novo Risco</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -167,8 +177,8 @@ export default function NewRiskPage() {
                 Título *
               </label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={form.title}
+                onChange={(e) => updateForm("title", e.target.value)}
                 placeholder="Descreva brevemente o risco"
                 required
               />
@@ -179,8 +189,8 @@ export default function NewRiskPage() {
                 Descrição *
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Detalhe o risco, causas potenciais, consequências..."
                 required
                 rows={4}
@@ -193,8 +203,8 @@ export default function NewRiskPage() {
                   Projeto *
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   required
                   placeholder={loadingData ? "Carregando..." : "Selecione o projeto"}
                   options={projects.map((p) => ({
@@ -209,8 +219,8 @@ export default function NewRiskPage() {
                   Categoria *
                 </label>
                 <Select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={form.category}
+                  onChange={(e) => updateForm("category", e.target.value)}
                   options={CATEGORIES}
                 />
               </div>
@@ -241,8 +251,8 @@ export default function NewRiskPage() {
                   Probabilidade (1-5) *
                 </label>
                 <Select
-                  value={String(probability)}
-                  onChange={(e) => setProbability(Number(e.target.value))}
+                  value={String(form.probability)}
+                  onChange={(e) => updateForm("probability", Number(e.target.value))}
                   options={PROBABILITIES}
                 />
               </div>
@@ -252,8 +262,8 @@ export default function NewRiskPage() {
                   Impacto (1-5) *
                 </label>
                 <Select
-                  value={String(impact)}
-                  onChange={(e) => setImpact(Number(e.target.value))}
+                  value={String(form.impact)}
+                  onChange={(e) => updateForm("impact", Number(e.target.value))}
                   options={IMPACTS}
                 />
               </div>
@@ -272,8 +282,8 @@ export default function NewRiskPage() {
                   Tipo de Tratamento
                 </label>
                 <Select
-                  value={treatment}
-                  onChange={(e) => setTreatment(e.target.value)}
+                  value={form.treatment}
+                  onChange={(e) => updateForm("treatment", e.target.value)}
                   placeholder="Selecione..."
                   options={TREATMENTS}
                 />
@@ -284,8 +294,8 @@ export default function NewRiskPage() {
                   Responsável
                 </label>
                 <Select
-                  value={responsibleId}
-                  onChange={(e) => setResponsibleId(e.target.value)}
+                  value={form.responsibleId}
+                  onChange={(e) => updateForm("responsibleId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Selecione o responsável"}
                   options={members.map((m) => ({
                     value: m.user.id,
@@ -300,8 +310,8 @@ export default function NewRiskPage() {
                 Plano de Tratamento
               </label>
               <Textarea
-                value={treatmentPlan}
-                onChange={(e) => setTreatmentPlan(e.target.value)}
+                value={form.treatmentPlan}
+                onChange={(e) => updateForm("treatmentPlan", e.target.value)}
                 placeholder="Descreva o plano de tratamento para este risco..."
                 rows={3}
               />

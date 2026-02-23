@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ArrowLeft, Plus, Cog, User, TrendingUp } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Plus, Cog, User, TrendingUp } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
   core: "Principal",
@@ -33,13 +34,19 @@ export default function ProjectProcessesPage() {
   const projectId = params.id as string;
   const { tenant, can } = useTenant();
   const [processes, setProcesses] = useState<ProcessItem[]>([]);
+  const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/processes?projectId=${projectId}`)
-      .then((res) => res.json())
-      .then((res) => setProcesses(res.data || []))
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/processes?projectId=${projectId}`).then((res) => res.json()),
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`).then((res) => res.json()),
+    ])
+      .then(([processRes, projectRes]) => {
+        setProcesses(processRes.data || []);
+        setProjectName(projectRes.data?.name || "");
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -55,19 +62,17 @@ export default function ProjectProcessesPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Processos" },
+      ]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Processos</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Processos deste projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Processos</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Processos deste projeto
+          </p>
         </div>
         {can("process" as never, "create") && (
           <Link href={`/${tenant.slug}/processes/new`}>

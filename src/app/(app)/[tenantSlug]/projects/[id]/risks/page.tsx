@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,8 +13,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Modal } from "@/components/ui/modal";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
-  ArrowLeft,
   AlertTriangle,
   Plus,
   X,
@@ -119,6 +119,7 @@ export default function RisksPage() {
   const { tenant, can } = useTenant();
   const [risks, setRisks] = useState<Risk[]>([]);
   const [loading, setLoading] = useState(true);
+  const [projectName, setProjectName] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
@@ -143,17 +144,19 @@ export default function RisksPage() {
   const [reviewForm, setReviewForm] = useState({ probability: 3, impact: 3, residualProbability: 0, residualImpact: 0, status: "identified", reviewNotes: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  const fetchRisks = () => {
-    fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/risks`)
-      .then((r) => r.json())
-      .then((res) => setRisks(res.data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  };
+  const fetchData = useCallback(() => {
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}/risks`).then((r) => r.json()),
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`).then((r) => r.json()),
+    ]).then(([risksRes, projRes]) => {
+      setRisks(risksRes.data || []);
+      setProjectName(projRes.data?.name || "Projeto");
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [tenant.slug, projectId]);
 
   useEffect(() => {
-    fetchRisks();
-  }, [tenant.slug, projectId]);
+    fetchData();
+  }, [fetchData]);
 
   const handleAddTreatment = async (riskId: string) => {
     if (!treatmentDesc.trim()) return;
@@ -166,7 +169,7 @@ export default function RisksPage() {
       if (!res.ok) throw new Error("Erro ao criar tratamento");
       setTreatmentDesc("");
       setLoading(true);
-      fetchRisks();
+      fetchData();
     } catch { /* silently fail */ }
     finally { setAddingTreatment(false); }
   };
@@ -178,7 +181,7 @@ export default function RisksPage() {
         { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId, status }) }
       );
       setLoading(true);
-      fetchRisks();
+      fetchData();
     } catch { /* silently fail */ }
   };
 
@@ -190,7 +193,7 @@ export default function RisksPage() {
         { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ treatmentId: deleteTarget.treatmentId }) }
       );
       setLoading(true);
-      fetchRisks();
+      fetchData();
     } catch { /* silently fail */ }
     finally {
       setShowDeleteConfirm(false);
@@ -222,7 +225,7 @@ export default function RisksPage() {
       setForm({ title: "", description: "", category: "operational", probability: 3, impact: 3, treatment: "", treatmentPlan: "" });
       setShowAdd(false);
       setLoading(true);
-      fetchRisks();
+      fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar");
     } finally {
@@ -265,7 +268,7 @@ export default function RisksPage() {
       toast.success("Revisão registrada com sucesso");
       setReviewRisk(null);
       setLoading(true);
-      fetchRisks();
+      fetchData();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     } finally {
@@ -292,23 +295,22 @@ export default function RisksPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Riscos" },
+      ]} />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Riscos</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Avaliacao e tratamento de riscos do projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Riscos</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Avaliacao e tratamento de riscos do projeto
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {risks.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => generateRiskReport({ projectName: projectId, risks }, tenant.name)}>
+            <Button variant="outline" size="sm" onClick={() => generateRiskReport({ projectName: projectName || projectId, risks }, tenant.name)}>
               <Download className="h-4 w-4" /> Exportar PDF
             </Button>
           )}
@@ -598,17 +600,15 @@ export default function RisksPage() {
       )}
 
       {/* Review Modal */}
-      {reviewRisk && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <h2 className="text-title-3 text-foreground-primary">Revisar Risco: {reviewRisk.code}</h2>
-                <button onClick={() => setReviewRisk(null)} className="text-foreground-tertiary hover:text-foreground-primary"><X className="h-5 w-5" /></button>
-              </div>
-              <p className="text-body-2 text-foreground-secondary mt-1">{reviewRisk.title}</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
+      <Modal
+        open={!!reviewRisk}
+        onOpenChange={(open) => { if (!open) setReviewRisk(null); }}
+        title={`Revisar Risco: ${reviewRisk?.code || ""}`}
+        description={reviewRisk?.title}
+      >
+        <div className="space-y-4">
+          {reviewRisk && (
+            <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Probabilidade ({reviewForm.probability})</label>
@@ -658,10 +658,10 @@ export default function RisksPage() {
                 <Button variant="outline" onClick={() => setReviewRisk(null)}>Cancelar</Button>
                 <Button onClick={handleSubmitReview} loading={submittingReview}>Registrar Revisão</Button>
               </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
-      )}
+      </Modal>
 
       <ConfirmDialog
         open={showDeleteConfirm}

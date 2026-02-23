@@ -11,8 +11,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Search, User, Calendar, FileSearch } from "lucide-react";
+import { Plus, Search, User, Calendar, FileSearch } from "lucide-react";
 import { getAuditTypeLabel, formatDate } from "@/lib/utils";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const AUDIT_TYPE_COLORS: Record<string, string> = {
   internal: "bg-info-bg text-info-fg",
@@ -40,11 +41,17 @@ export default function ProjectAuditsPage() {
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [projectName, setProjectName] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/audits?projectId=${projectId}`)
-      .then((res) => res.json())
-      .then((res) => setAudits(res.data || []))
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/audits?projectId=${projectId}`)
+        .then((res) => res.json())
+        .then((res) => setAudits(res.data || [])),
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
+        .then((res) => res.json())
+        .then((res) => setProjectName(res.data?.name || "")),
+    ])
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -59,19 +66,17 @@ export default function ProjectAuditsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Auditorias" },
+      ]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Auditorias</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Auditorias vinculadas a este projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Auditorias</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Auditorias vinculadas a este projeto
+          </p>
         </div>
         {can("audit", "create") && (
           <Link href={`/${tenant.slug}/audits/new`}>

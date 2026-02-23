@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
-  ArrowLeft,
   CreditCard,
   Users,
   FolderKanban,
@@ -179,18 +178,16 @@ export default function BillingPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/settings`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-title-1 text-foreground-primary">Faturamento</h1>
-          <p className="text-body-1 text-foreground-secondary mt-1">
-            Gerencie sua assinatura e veja o uso atual
-          </p>
-        </div>
+      <Breadcrumb items={[
+        { label: "Configurações", href: `/${tenant.slug}/settings` },
+        { label: "Faturamento" },
+      ]} />
+
+      <div>
+        <h1 className="text-title-1 text-foreground-primary">Faturamento</h1>
+        <p className="text-body-1 text-foreground-secondary mt-1">
+          Gerencie sua assinatura e veja o uso atual
+        </p>
       </div>
 
       {/* Subscription Card */}

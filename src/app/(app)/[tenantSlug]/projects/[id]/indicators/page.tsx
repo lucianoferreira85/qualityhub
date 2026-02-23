@@ -10,7 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, TrendingUp, Target, ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Plus, TrendingUp, Target, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { getFrequencyLabel } from "@/lib/utils";
 
 interface Measurement {
@@ -51,13 +52,19 @@ export default function ProjectIndicatorsPage() {
   const projectId = params.id as string;
   const { tenant, can } = useTenant();
   const [indicators, setIndicators] = useState<IndicatorItem[]>([]);
+  const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/indicators?projectId=${projectId}`)
-      .then((res) => res.json())
-      .then((res) => setIndicators(res.data || []))
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/indicators?projectId=${projectId}`).then((res) => res.json()),
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`).then((res) => res.json()),
+    ])
+      .then(([indicatorsRes, projectRes]) => {
+        setIndicators(indicatorsRes.data || []);
+        setProjectName(projectRes.data?.name || "");
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
@@ -72,19 +79,17 @@ export default function ProjectIndicatorsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Indicadores" },
+      ]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Indicadores</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              KPIs e métricas de desempenho do projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Indicadores</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            KPIs e métricas de desempenho do projeto
+          </p>
         </div>
         {can("indicator", "create") && (
           <Link href={`/${tenant.slug}/indicators/new`}>

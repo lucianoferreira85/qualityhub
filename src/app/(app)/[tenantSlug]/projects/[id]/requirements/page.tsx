@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,8 +9,8 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
-  ArrowLeft,
   ClipboardList,
   Plus,
   X,
@@ -75,6 +74,7 @@ export default function RequirementsPage() {
   const { tenant, can } = useTenant();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [projectName, setProjectName] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
   const [availableClauses, setAvailableClauses] = useState<Clause[]>([]);
@@ -96,13 +96,14 @@ export default function RequirementsPage() {
 
   useEffect(() => {
     fetchRequirements();
-    // Fetch project to get standards
+    // Fetch project to get standards and name
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
       .then((r) => r.json())
       .then((res) => {
         const stds = (res.data?.standards || []).map((ps: { standard: { id: string; code: string; name: string } }) => ps.standard);
         setProjectStandards(stds);
         if (stds.length > 0) setSelectedStandardId(stds[0].id);
+        setProjectName(res.data?.name || "Projeto");
       })
       .catch(() => {});
   }, [tenant.slug, projectId]);
@@ -185,19 +186,17 @@ export default function RequirementsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Requisitos" },
+      ]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Requisitos</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Clausulas e requisitos normativos do projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Requisitos</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Clausulas e requisitos normativos do projeto
+          </p>
         </div>
         {can("requirement", "create") && (
           <Button onClick={() => setShowAdd(!showAdd)}>

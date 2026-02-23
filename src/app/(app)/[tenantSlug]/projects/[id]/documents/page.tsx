@@ -10,7 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, FileText, User, Calendar, Tag } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Plus, FileText, User, Calendar, Tag } from "lucide-react";
 import { getDocumentTypeLabel, formatDate } from "@/lib/utils";
 
 interface DocItem {
@@ -30,15 +31,21 @@ export default function ProjectDocumentsPage() {
   const projectId = params.id as string;
   const { tenant, can } = useTenant();
   const [documents, setDocuments] = useState<DocItem[]>([]);
+  const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(`/api/tenants/${tenant.slug}/documents?projectId=${projectId}`)
-      .then((res) => res.json())
-      .then((res) => setDocuments(res.data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
+        .then((res) => res.json())
+        .then((res) => setProjectName(res.data?.name || ""))
+        .catch(() => {}),
+      fetch(`/api/tenants/${tenant.slug}/documents?projectId=${projectId}`)
+        .then((res) => res.json())
+        .then((res) => setDocuments(res.data || []))
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
   }, [tenant.slug, projectId]);
 
   const filtered = documents.filter((d) => {
@@ -53,19 +60,17 @@ export default function ProjectDocumentsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Documentos" },
+      ]} />
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Documentos</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Políticas, procedimentos e registros do projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Documentos</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Políticas, procedimentos e registros do projeto
+          </p>
         </div>
         {can("document", "create") && (
           <Link href={`/${tenant.slug}/documents/new`}>

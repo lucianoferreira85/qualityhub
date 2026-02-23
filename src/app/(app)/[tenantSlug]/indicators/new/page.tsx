@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -26,18 +25,36 @@ interface ProjectOption {
   name: string;
 }
 
+interface IndicatorFormData {
+  name: string;
+  description: string;
+  unit: string;
+  frequency: string;
+  target: string;
+  lowerLimit: string;
+  upperLimit: string;
+  projectId: string;
+}
+
+const INITIAL_FORM: IndicatorFormData = {
+  name: "",
+  description: "",
+  unit: "",
+  frequency: "monthly",
+  target: "",
+  lowerLimit: "",
+  upperLimit: "",
+  projectId: "",
+};
+
 export default function NewIndicatorPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [unit, setUnit] = useState("");
-  const [frequency, setFrequency] = useState("monthly");
-  const [target, setTarget] = useState("");
-  const [lowerLimit, setLowerLimit] = useState("");
-  const [upperLimit, setUpperLimit] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [form, setForm] = useState<IndicatorFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof IndicatorFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -62,14 +79,14 @@ export default function NewIndicatorPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          description: description || null,
-          unit,
-          frequency,
-          target: parseFloat(target),
-          lowerLimit: lowerLimit ? parseFloat(lowerLimit) : null,
-          upperLimit: upperLimit ? parseFloat(upperLimit) : null,
-          projectId: projectId || null,
+          name: form.name,
+          description: form.description || null,
+          unit: form.unit,
+          frequency: form.frequency,
+          target: parseFloat(form.target),
+          lowerLimit: form.lowerLimit ? parseFloat(form.lowerLimit) : null,
+          upperLimit: form.upperLimit ? parseFloat(form.upperLimit) : null,
+          projectId: form.projectId || null,
         }),
       });
       if (!res.ok) {
@@ -91,14 +108,7 @@ export default function NewIndicatorPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Indicadores", href: `/${tenant.slug}/indicators` }, { label: "Novo" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/indicators`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Novo Indicador</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Novo Indicador</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -113,8 +123,8 @@ export default function NewIndicatorPage() {
                 Nome *
               </label>
               <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm("name", e.target.value)}
                 placeholder="Ex: Taxa de Conformidade de Controles"
                 required
               />
@@ -125,8 +135,8 @@ export default function NewIndicatorPage() {
                 Descrição
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Descreva o que este indicador mede e como é calculado"
                 rows={3}
               />
@@ -138,8 +148,8 @@ export default function NewIndicatorPage() {
                   Unidade *
                 </label>
                 <Input
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
+                  value={form.unit}
+                  onChange={(e) => updateForm("unit", e.target.value)}
                   placeholder="Ex: %, dias, ocorrências"
                   required
                 />
@@ -150,8 +160,8 @@ export default function NewIndicatorPage() {
                   Frequência *
                 </label>
                 <Select
-                  value={frequency}
-                  onChange={(e) => setFrequency(e.target.value)}
+                  value={form.frequency}
+                  onChange={(e) => updateForm("frequency", e.target.value)}
                   options={FREQUENCIES}
                 />
               </div>
@@ -163,8 +173,8 @@ export default function NewIndicatorPage() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
+                  value={form.target}
+                  onChange={(e) => updateForm("target", e.target.value)}
                   placeholder="Ex: 95"
                   required
                 />
@@ -175,8 +185,8 @@ export default function NewIndicatorPage() {
                   Projeto
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   options={[
                     { value: "", label: loadingProjects ? "Carregando..." : "Indicador geral (sem projeto)" },
                     ...projects.map((p) => ({ value: p.id, label: p.name })),
@@ -191,8 +201,8 @@ export default function NewIndicatorPage() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={lowerLimit}
-                  onChange={(e) => setLowerLimit(e.target.value)}
+                  value={form.lowerLimit}
+                  onChange={(e) => updateForm("lowerLimit", e.target.value)}
                   placeholder="Ex: 80"
                 />
               </div>
@@ -204,8 +214,8 @@ export default function NewIndicatorPage() {
                 <Input
                   type="number"
                   step="0.01"
-                  value={upperLimit}
-                  onChange={(e) => setUpperLimit(e.target.value)}
+                  value={form.upperLimit}
+                  onChange={(e) => updateForm("upperLimit", e.target.value)}
                   placeholder="Ex: 100"
                 />
               </div>

@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -17,15 +16,28 @@ interface ProjectOption {
   name: string;
 }
 
+interface ReviewFormData {
+  projectId: string;
+  scheduledDate: string;
+  minutes: string;
+}
+
+const INITIAL_FORM: ReviewFormData = {
+  projectId: "",
+  scheduledDate: "",
+  minutes: "",
+};
+
 export default function NewManagementReviewPage() {
   const router = useRouter();
   const { tenant } = useTenant();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [projectId, setProjectId] = useState("");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [minutes, setMinutes] = useState("");
+  const [form, setForm] = useState<ReviewFormData>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const updateForm = (field: keyof ReviewFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   useEffect(() => {
     fetch(`/api/tenants/${tenant.slug}/projects`)
@@ -36,14 +48,14 @@ export default function NewManagementReviewPage() {
           name: p.name,
         }));
         setProjects(items);
-        if (items.length > 0) setProjectId(items[0].id);
+        if (items.length > 0) setForm((prev) => ({ ...prev, projectId: items[0].id }));
       })
       .catch(() => {});
   }, [tenant.slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projectId || !scheduledDate) return;
+    if (!form.projectId || !form.scheduledDate) return;
     setSaving(true);
     setError("");
 
@@ -52,9 +64,9 @@ export default function NewManagementReviewPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId,
-          scheduledDate,
-          minutes: minutes || null,
+          projectId: form.projectId,
+          scheduledDate: form.scheduledDate,
+          minutes: form.minutes || null,
         }),
       });
       if (!res.ok) {
@@ -75,18 +87,11 @@ export default function NewManagementReviewPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <Breadcrumb items={[{ label: "Análises Críticas", href: `/${tenant.slug}/management-reviews` }, { label: "Nova" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/management-reviews`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-title-1 text-foreground-primary">Nova Analise Critica</h1>
-          <p className="text-body-1 text-foreground-secondary mt-1">
-            Agende uma reuniao de analise critica pela direcao
-          </p>
-        </div>
+      <div>
+        <h1 className="text-title-1 text-foreground-primary">Nova Analise Critica</h1>
+        <p className="text-body-1 text-foreground-secondary mt-1">
+          Agende uma reuniao de analise critica pela direcao
+        </p>
       </div>
 
       <Card>
@@ -103,8 +108,8 @@ export default function NewManagementReviewPage() {
                 Projeto *
               </label>
               <Select
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
+                value={form.projectId}
+                onChange={(e) => updateForm("projectId", e.target.value)}
                 required
                 options={[
                   { value: "", label: "Selecionar projeto..." },
@@ -119,8 +124,8 @@ export default function NewManagementReviewPage() {
               </label>
               <input
                 type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
+                value={form.scheduledDate}
+                onChange={(e) => updateForm("scheduledDate", e.target.value)}
                 className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 required
               />
@@ -131,8 +136,8 @@ export default function NewManagementReviewPage() {
                 Observacoes
               </label>
               <Textarea
-                value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
+                value={form.minutes}
+                onChange={(e) => updateForm("minutes", e.target.value)}
                 rows={4}
                 placeholder="Notas iniciais ou pauta da reuniao..."
               />
@@ -142,7 +147,7 @@ export default function NewManagementReviewPage() {
               <Link href={`/${tenant.slug}/management-reviews`}>
                 <Button variant="outline" type="button">Cancelar</Button>
               </Link>
-              <Button type="submit" loading={saving} disabled={!projectId || !scheduledDate}>
+              <Button type="submit" loading={saving} disabled={!form.projectId || !form.scheduledDate}>
                 Criar Analise
               </Button>
             </div>

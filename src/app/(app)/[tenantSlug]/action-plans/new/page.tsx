@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -34,17 +33,34 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface ActionPlanFormData {
+  title: string;
+  description: string;
+  projectId: string;
+  type: string;
+  nonconformityId: string;
+  responsibleId: string;
+  dueDate: string;
+}
+
+const INITIAL_FORM: ActionPlanFormData = {
+  title: "",
+  description: "",
+  projectId: "",
+  type: "corrective",
+  nonconformityId: "",
+  responsibleId: "",
+  dueDate: "",
+};
+
 export default function NewActionPlanPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [type, setType] = useState("corrective");
-  const [nonconformityId, setNonconformityId] = useState("");
-  const [responsibleId, setResponsibleId] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [form, setForm] = useState<ActionPlanFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof ActionPlanFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -84,13 +100,13 @@ export default function NewActionPlanPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          description,
-          projectId,
-          type,
-          nonconformityId: nonconformityId || null,
-          responsibleId: responsibleId || null,
-          dueDate: dueDate || null,
+          title: form.title,
+          description: form.description,
+          projectId: form.projectId,
+          type: form.type,
+          nonconformityId: form.nonconformityId || null,
+          responsibleId: form.responsibleId || null,
+          dueDate: form.dueDate || null,
         }),
       });
       if (!res.ok) {
@@ -112,16 +128,9 @@ export default function NewActionPlanPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Planos de Ação", href: `/${tenant.slug}/action-plans` }, { label: "Novo" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/action-plans`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">
-          Novo Plano de Ação
-        </h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">
+        Novo Plano de Ação
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -136,8 +145,8 @@ export default function NewActionPlanPage() {
                 Título *
               </label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={form.title}
+                onChange={(e) => updateForm("title", e.target.value)}
                 placeholder="Descreva brevemente o plano de ação"
                 required
               />
@@ -148,8 +157,8 @@ export default function NewActionPlanPage() {
                 Descrição *
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Detalhe as ações a serem executadas"
                 required
                 rows={4}
@@ -162,8 +171,8 @@ export default function NewActionPlanPage() {
                   Projeto *
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   required
                   placeholder={loadingData ? "Carregando..." : "Selecione o projeto"}
                   options={projects.map((p) => ({
@@ -178,8 +187,8 @@ export default function NewActionPlanPage() {
                   Tipo *
                 </label>
                 <Select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  value={form.type}
+                  onChange={(e) => updateForm("type", e.target.value)}
                   options={TYPES}
                 />
               </div>
@@ -189,8 +198,8 @@ export default function NewActionPlanPage() {
                   NC vinculada
                 </label>
                 <Select
-                  value={nonconformityId}
-                  onChange={(e) => setNonconformityId(e.target.value)}
+                  value={form.nonconformityId}
+                  onChange={(e) => updateForm("nonconformityId", e.target.value)}
                   placeholder="Nenhuma"
                   options={ncs.map((nc) => ({
                     value: nc.id,
@@ -204,8 +213,8 @@ export default function NewActionPlanPage() {
                   Responsável
                 </label>
                 <Select
-                  value={responsibleId}
-                  onChange={(e) => setResponsibleId(e.target.value)}
+                  value={form.responsibleId}
+                  onChange={(e) => updateForm("responsibleId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Selecione o responsável"}
                   options={members.map((m) => ({
                     value: m.user.id,
@@ -220,8 +229,8 @@ export default function NewActionPlanPage() {
                 </label>
                 <Input
                   type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  value={form.dueDate}
+                  onChange={(e) => updateForm("dueDate", e.target.value)}
                 />
               </div>
             </div>

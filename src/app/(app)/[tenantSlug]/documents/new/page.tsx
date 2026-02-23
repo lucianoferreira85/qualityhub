@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -32,18 +31,36 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface DocumentFormData {
+  title: string;
+  type: string;
+  projectId: string;
+  category: string;
+  content: string;
+  reviewerId: string;
+  nextReviewDate: string;
+  fileUrl: string;
+}
+
+const INITIAL_FORM: DocumentFormData = {
+  title: "",
+  type: "procedure",
+  projectId: "",
+  category: "",
+  content: "",
+  reviewerId: "",
+  nextReviewDate: "",
+  fileUrl: "",
+};
+
 export default function NewDocumentPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("procedure");
-  const [projectId, setProjectId] = useState("");
-  const [category, setCategory] = useState("");
-  const [content, setContent] = useState("");
-  const [reviewerId, setReviewerId] = useState("");
-  const [nextReviewDate, setNextReviewDate] = useState("");
-  const [fileUrl, setFileUrl] = useState("");
+  const [form, setForm] = useState<DocumentFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof DocumentFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,14 +91,14 @@ export default function NewDocumentPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          type,
-          projectId: projectId || null,
-          category: category || null,
-          content: content || null,
-          fileUrl: fileUrl || null,
-          reviewerId: reviewerId || null,
-          nextReviewDate: nextReviewDate || null,
+          title: form.title,
+          type: form.type,
+          projectId: form.projectId || null,
+          category: form.category || null,
+          content: form.content || null,
+          fileUrl: form.fileUrl || null,
+          reviewerId: form.reviewerId || null,
+          nextReviewDate: form.nextReviewDate || null,
         }),
       });
       if (!res.ok) {
@@ -103,14 +120,7 @@ export default function NewDocumentPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Documentos", href: `/${tenant.slug}/documents` }, { label: "Novo" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/documents`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Novo Documento</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Novo Documento</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -125,8 +135,8 @@ export default function NewDocumentPage() {
                 Título *
               </label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={form.title}
+                onChange={(e) => updateForm("title", e.target.value)}
                 placeholder="Ex: Política de Segurança da Informação"
                 required
               />
@@ -138,8 +148,8 @@ export default function NewDocumentPage() {
                   Tipo *
                 </label>
                 <Select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  value={form.type}
+                  onChange={(e) => updateForm("type", e.target.value)}
                   options={DOCUMENT_TYPES}
                 />
               </div>
@@ -149,8 +159,8 @@ export default function NewDocumentPage() {
                   Projeto
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Documento geral (sem projeto)"}
                   options={projects.map((p) => ({
                     value: p.id,
@@ -164,8 +174,8 @@ export default function NewDocumentPage() {
                   Categoria
                 </label>
                 <Input
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={form.category}
+                  onChange={(e) => updateForm("category", e.target.value)}
                   placeholder="Ex: SGSI, SGQ, Compliance"
                 />
               </div>
@@ -175,8 +185,8 @@ export default function NewDocumentPage() {
                   Revisor
                 </label>
                 <Select
-                  value={reviewerId}
-                  onChange={(e) => setReviewerId(e.target.value)}
+                  value={form.reviewerId}
+                  onChange={(e) => updateForm("reviewerId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Selecione o revisor"}
                   options={members.map((m) => ({
                     value: m.user.id,
@@ -191,8 +201,8 @@ export default function NewDocumentPage() {
                 </label>
                 <Input
                   type="date"
-                  value={nextReviewDate}
-                  onChange={(e) => setNextReviewDate(e.target.value)}
+                  value={form.nextReviewDate}
+                  onChange={(e) => updateForm("nextReviewDate", e.target.value)}
                 />
               </div>
             </div>
@@ -204,8 +214,8 @@ export default function NewDocumentPage() {
               <FileUpload
                 tenantSlug={tenant.slug}
                 folder="documents"
-                onUpload={(result) => setFileUrl(result.url)}
-                onRemove={() => setFileUrl("")}
+                onUpload={(result) => updateForm("fileUrl", result.url)}
+                onRemove={() => updateForm("fileUrl", "")}
               />
             </div>
 
@@ -214,8 +224,8 @@ export default function NewDocumentPage() {
                 Conteúdo
               </label>
               <Textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+                value={form.content}
+                onChange={(e) => updateForm("content", e.target.value)}
                 placeholder="Descreva o conteúdo do documento ou cole o texto aqui..."
                 rows={6}
               />

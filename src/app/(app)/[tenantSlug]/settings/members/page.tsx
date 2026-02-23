@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
-  ArrowLeft,
   Plus,
   Users,
   Mail,
@@ -128,20 +127,18 @@ export default function MembersPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Configurações", href: `/${tenant.slug}/settings` },
+        { label: "Membros" },
+      ]} />
+
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/settings`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Membros</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Gerencie os membros da empresa
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Membros</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Gerencie os membros da empresa
+          </p>
         </div>
         {can("invitation", "create") && (
           <Button onClick={() => { setShowInvite(!showInvite); setError(""); setSuccess(""); }}>

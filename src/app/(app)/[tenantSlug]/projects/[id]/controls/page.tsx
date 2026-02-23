@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
-  ArrowLeft,
   Shield,
   Plus,
   X,
   Trash2,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface StandardControl {
   id: string;
@@ -80,6 +79,8 @@ export default function ControlsPage() {
   const [projectStandards, setProjectStandards] = useState<{ id: string; code: string; name: string }[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState("");
 
+  const [projectName, setProjectName] = useState("");
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
@@ -99,6 +100,7 @@ export default function ControlsPage() {
         const stds = (res.data?.standards || []).map((ps: { standard: { id: string; code: string; name: string } }) => ps.standard);
         setProjectStandards(stds);
         if (stds.length > 0) setSelectedStandardId(stds[0].id);
+        setProjectName(res.data?.name || "Projeto");
       })
       .catch(() => {});
   }, [tenant.slug, projectId]);
@@ -185,19 +187,18 @@ export default function ControlsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Controles" },
+      ]} />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Controles</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Controles do Anexo A aplicaveis ao projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Controles</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Controles do Anexo A aplicaveis ao projeto
+          </p>
         </div>
         {can("control", "create") && (
           <Button onClick={() => setShowAdd(!showAdd)}>

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -29,18 +28,36 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface AuditFormData {
+  title: string;
+  type: string;
+  projectId: string;
+  leadAuditorId: string;
+  startDate: string;
+  endDate: string;
+  scope: string;
+  notes: string;
+}
+
+const INITIAL_FORM: AuditFormData = {
+  title: "",
+  type: "internal",
+  projectId: "",
+  leadAuditorId: "",
+  startDate: "",
+  endDate: "",
+  scope: "",
+  notes: "",
+};
+
 export default function NewAuditPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [title, setTitle] = useState("");
-  const [type, setType] = useState("internal");
-  const [projectId, setProjectId] = useState("");
-  const [leadAuditorId, setLeadAuditorId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [scope, setScope] = useState("");
-  const [notes, setNotes] = useState("");
+  const [form, setForm] = useState<AuditFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof AuditFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -71,14 +88,14 @@ export default function NewAuditPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          type,
-          projectId,
-          leadAuditorId: leadAuditorId || null,
-          startDate,
-          endDate: endDate || null,
-          scope: scope || null,
-          notes: notes || null,
+          title: form.title,
+          type: form.type,
+          projectId: form.projectId,
+          leadAuditorId: form.leadAuditorId || null,
+          startDate: form.startDate,
+          endDate: form.endDate || null,
+          scope: form.scope || null,
+          notes: form.notes || null,
         }),
       });
       if (!res.ok) {
@@ -100,14 +117,7 @@ export default function NewAuditPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Auditorias", href: `/${tenant.slug}/audits` }, { label: "Nova" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/audits`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Nova Auditoria</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Nova Auditoria</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -122,8 +132,8 @@ export default function NewAuditPage() {
                 Título *
               </label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={form.title}
+                onChange={(e) => updateForm("title", e.target.value)}
                 placeholder="Ex: Auditoria Interna ISO 27001 - Q1 2026"
                 required
               />
@@ -135,8 +145,8 @@ export default function NewAuditPage() {
                   Projeto *
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   required
                   placeholder={loadingData ? "Carregando..." : "Selecione o projeto"}
                   options={projects.map((p) => ({
@@ -151,8 +161,8 @@ export default function NewAuditPage() {
                   Tipo *
                 </label>
                 <Select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  value={form.type}
+                  onChange={(e) => updateForm("type", e.target.value)}
                   options={AUDIT_TYPES}
                 />
               </div>
@@ -162,8 +172,8 @@ export default function NewAuditPage() {
                   Auditor líder
                 </label>
                 <Select
-                  value={leadAuditorId}
-                  onChange={(e) => setLeadAuditorId(e.target.value)}
+                  value={form.leadAuditorId}
+                  onChange={(e) => updateForm("leadAuditorId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Selecione o auditor"}
                   options={members.map((m) => ({
                     value: m.user.id,
@@ -178,8 +188,8 @@ export default function NewAuditPage() {
                 </label>
                 <Input
                   type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  value={form.startDate}
+                  onChange={(e) => updateForm("startDate", e.target.value)}
                   required
                 />
               </div>
@@ -190,8 +200,8 @@ export default function NewAuditPage() {
                 </label>
                 <Input
                   type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={form.endDate}
+                  onChange={(e) => updateForm("endDate", e.target.value)}
                 />
               </div>
             </div>
@@ -201,8 +211,8 @@ export default function NewAuditPage() {
                 Escopo
               </label>
               <Textarea
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
+                value={form.scope}
+                onChange={(e) => updateForm("scope", e.target.value)}
                 placeholder="Defina o escopo da auditoria (processos, áreas, requisitos)"
                 rows={3}
               />
@@ -213,8 +223,8 @@ export default function NewAuditPage() {
                 Observações
               </label>
               <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                value={form.notes}
+                onChange={(e) => updateForm("notes", e.target.value)}
                 placeholder="Observações adicionais"
                 rows={2}
               />

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -28,15 +27,30 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface ProcessFormData {
+  name: string;
+  description: string;
+  projectId: string;
+  responsibleId: string;
+  category: string;
+}
+
+const INITIAL_FORM: ProcessFormData = {
+  name: "",
+  description: "",
+  projectId: "",
+  responsibleId: "",
+  category: "",
+};
+
 export default function NewProcessPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [responsibleId, setResponsibleId] = useState("");
-  const [category, setCategory] = useState("");
+  const [form, setForm] = useState<ProcessFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof ProcessFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -67,11 +81,11 @@ export default function NewProcessPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          description: description || null,
-          projectId,
-          responsibleId: responsibleId || null,
-          category: category || null,
+          name: form.name,
+          description: form.description || null,
+          projectId: form.projectId,
+          responsibleId: form.responsibleId || null,
+          category: form.category || null,
         }),
       });
       if (!res.ok) {
@@ -93,14 +107,7 @@ export default function NewProcessPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Processos", href: `/${tenant.slug}/processes` }, { label: "Novo" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/processes`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Novo Processo</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Novo Processo</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -115,8 +122,8 @@ export default function NewProcessPage() {
                 Nome *
               </label>
               <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm("name", e.target.value)}
                 placeholder="Nome do processo"
                 required
               />
@@ -127,8 +134,8 @@ export default function NewProcessPage() {
                 Descrição
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Descreva o processo, seus objetivos e escopo"
                 rows={4}
               />
@@ -140,8 +147,8 @@ export default function NewProcessPage() {
                   Projeto *
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   required
                   options={[
                     { value: "", label: loadingData ? "Carregando..." : "Selecione o projeto" },
@@ -155,8 +162,8 @@ export default function NewProcessPage() {
                   Categoria
                 </label>
                 <Select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={form.category}
+                  onChange={(e) => updateForm("category", e.target.value)}
                   options={CATEGORIES}
                   placeholder="Selecione a categoria"
                 />
@@ -167,8 +174,8 @@ export default function NewProcessPage() {
                   Responsável
                 </label>
                 <Select
-                  value={responsibleId}
-                  onChange={(e) => setResponsibleId(e.target.value)}
+                  value={form.responsibleId}
+                  onChange={(e) => updateForm("responsibleId", e.target.value)}
                   options={[
                     { value: "", label: loadingData ? "Carregando..." : "Selecione o responsável" },
                     ...members.map((m) => ({ value: m.user.id, label: m.user.name })),

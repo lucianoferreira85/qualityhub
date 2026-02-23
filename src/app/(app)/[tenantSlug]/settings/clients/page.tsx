@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
-  ArrowLeft,
   Building2,
   ExternalLink,
   Mail,
@@ -44,19 +44,17 @@ export default function SettingsClientsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumb items={[
+        { label: "Configurações", href: `/${tenant.slug}/settings` },
+        { label: "Clientes" },
+      ]} />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/settings`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Clientes</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Visao geral dos clientes da consultoria
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Clientes</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Visao geral dos clientes da consultoria
+          </p>
         </div>
         <Link href={`/${tenant.slug}/clients`}>
           <Button variant="outline" size="sm">

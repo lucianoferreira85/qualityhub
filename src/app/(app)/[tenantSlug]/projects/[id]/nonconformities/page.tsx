@@ -10,7 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, AlertTriangle, User, Calendar } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Plus, AlertTriangle, User, Calendar } from "lucide-react";
 import { getOriginLabel, formatDate } from "@/lib/utils";
 
 interface NcItem {
@@ -33,6 +34,7 @@ export default function ProjectNonconformitiesPage() {
   const [ncs, setNcs] = useState<NcItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [projectName, setProjectName] = useState("");
 
   useEffect(() => {
     fetch(`/api/tenants/${tenant.slug}/nonconformities?projectId=${projectId}`)
@@ -40,6 +42,11 @@ export default function ProjectNonconformitiesPage() {
       .then((res) => setNcs(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
+      .then((res) => res.json())
+      .then((res) => setProjectName(res.data?.name || ""))
+      .catch(() => {});
   }, [tenant.slug, projectId]);
 
   const filtered = ncs.filter((nc) => {
@@ -52,19 +59,18 @@ export default function ProjectNonconformitiesPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "Não Conformidades" },
+      ]} />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Não Conformidades</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              NCs vinculadas a este projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Não Conformidades</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            NCs vinculadas a este projeto
+          </p>
         </div>
         {can("nonconformity", "create") && (
           <Link href={`/${tenant.slug}/nonconformities/new`}>

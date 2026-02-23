@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,13 +9,13 @@ import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import {
-  ArrowLeft,
   FileSpreadsheet,
   Check,
   X,
   Minus,
   Download,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { generateSoaReport } from "@/lib/pdf-reports/soa-report";
 
 interface StandardControl {
@@ -68,6 +67,7 @@ export default function SoaPage() {
   const [projectStandards, setProjectStandards] = useState<{ id: string; code: string; name: string }[]>([]);
   const [selectedStandardId, setSelectedStandardId] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [projectName, setProjectName] = useState("");
 
   const standardSelectOptions = projectStandards.map((s) => ({ value: s.id, label: `${s.code} - ${s.name}` }));
 
@@ -84,6 +84,7 @@ export default function SoaPage() {
     fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
       .then((r) => r.json())
       .then((res) => {
+        setProjectName(res.data?.name || "Projeto");
         const stds = (res.data?.standards || []).map((ps: { standard: { id: string; code: string; name: string } }) => ps.standard);
         setProjectStandards(stds);
         if (stds.length > 0) setSelectedStandardId(stds[0].id);
@@ -194,19 +195,18 @@ export default function SoaPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[
+        { label: "Projetos", href: `/${tenant.slug}/projects` },
+        { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+        { label: "SoA" },
+      ]} />
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-title-1 text-foreground-primary">Declaracao de Aplicabilidade</h1>
-            <p className="text-body-1 text-foreground-secondary mt-1">
-              Statement of Applicability (SoA) do projeto
-            </p>
-          </div>
+        <div>
+          <h1 className="text-title-1 text-foreground-primary">Declaracao de Aplicabilidade</h1>
+          <p className="text-body-1 text-foreground-secondary mt-1">
+            Statement of Applicability (SoA) do projeto
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (

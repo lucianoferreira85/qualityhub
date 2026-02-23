@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
@@ -38,17 +37,34 @@ interface MemberOption {
   user: { id: string; name: string };
 }
 
+interface NcFormData {
+  title: string;
+  description: string;
+  projectId: string;
+  origin: string;
+  severity: string;
+  responsibleId: string;
+  dueDate: string;
+}
+
+const INITIAL_FORM: NcFormData = {
+  title: "",
+  description: "",
+  projectId: "",
+  origin: "internal",
+  severity: "minor",
+  responsibleId: "",
+  dueDate: "",
+};
+
 export default function NewNonconformityPage() {
   const router = useRouter();
   const { tenant } = useTenant();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [origin, setOrigin] = useState("internal");
-  const [severity, setSeverity] = useState("minor");
-  const [responsibleId, setResponsibleId] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [form, setForm] = useState<NcFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof NcFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -81,13 +97,13 @@ export default function NewNonconformityPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title,
-            description,
-            projectId,
-            origin,
-            severity,
-            responsibleId: responsibleId || null,
-            dueDate: dueDate || null,
+            title: form.title,
+            description: form.description,
+            projectId: form.projectId,
+            origin: form.origin,
+            severity: form.severity,
+            responsibleId: form.responsibleId || null,
+            dueDate: form.dueDate || null,
           }),
         }
       );
@@ -110,16 +126,9 @@ export default function NewNonconformityPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Não Conformidades", href: `/${tenant.slug}/nonconformities` }, { label: "Nova" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/nonconformities`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">
-          Nova Não Conformidade
-        </h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">
+        Nova Não Conformidade
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
@@ -134,8 +143,8 @@ export default function NewNonconformityPage() {
                 Título *
               </label>
               <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={form.title}
+                onChange={(e) => updateForm("title", e.target.value)}
                 placeholder="Descreva brevemente a não conformidade"
                 required
               />
@@ -146,8 +155,8 @@ export default function NewNonconformityPage() {
                 Descrição *
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Detalhe a não conformidade encontrada, evidências, local, etc."
                 required
                 rows={4}
@@ -160,8 +169,8 @@ export default function NewNonconformityPage() {
                   Projeto *
                 </label>
                 <Select
-                  value={projectId}
-                  onChange={(e) => setProjectId(e.target.value)}
+                  value={form.projectId}
+                  onChange={(e) => updateForm("projectId", e.target.value)}
                   required
                   placeholder={loadingData ? "Carregando..." : "Selecione o projeto"}
                   options={projects.map((p) => ({ value: p.id, label: p.name }))}
@@ -173,8 +182,8 @@ export default function NewNonconformityPage() {
                   Origem *
                 </label>
                 <Select
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
+                  value={form.origin}
+                  onChange={(e) => updateForm("origin", e.target.value)}
                   options={ORIGINS}
                 />
               </div>
@@ -184,8 +193,8 @@ export default function NewNonconformityPage() {
                   Severidade *
                 </label>
                 <Select
-                  value={severity}
-                  onChange={(e) => setSeverity(e.target.value)}
+                  value={form.severity}
+                  onChange={(e) => updateForm("severity", e.target.value)}
                   options={SEVERITIES}
                 />
               </div>
@@ -195,8 +204,8 @@ export default function NewNonconformityPage() {
                   Responsável
                 </label>
                 <Select
-                  value={responsibleId}
-                  onChange={(e) => setResponsibleId(e.target.value)}
+                  value={form.responsibleId}
+                  onChange={(e) => updateForm("responsibleId", e.target.value)}
                   placeholder={loadingData ? "Carregando..." : "Selecione o responsável"}
                   options={members.map((m) => ({ value: m.user.id, label: m.user.name }))}
                 />
@@ -208,8 +217,8 @@ export default function NewNonconformityPage() {
                 </label>
                 <Input
                   type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  value={form.dueDate}
+                  onChange={(e) => updateForm("dueDate", e.target.value)}
                 />
               </div>
             </div>

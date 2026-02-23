@@ -11,7 +11,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, ClipboardCheck, User, Calendar, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Plus, ClipboardCheck, User, Calendar, AlertTriangle, ShieldAlert } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -46,6 +47,7 @@ export default function ProjectActionPlansPage() {
   const [plans, setPlans] = useState<ApItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [projectName, setProjectName] = useState("");
 
   useEffect(() => {
     fetch(`/api/tenants/${tenant.slug}/action-plans?projectId=${projectId}`)
@@ -53,6 +55,11 @@ export default function ProjectActionPlansPage() {
       .then((res) => setPlans(res.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
+
+    fetch(`/api/tenants/${tenant.slug}/projects/${projectId}`)
+      .then((res) => res.json())
+      .then((res) => setProjectName(res.data?.name || "Projeto"))
+      .catch(() => {});
   }, [tenant.slug, projectId]);
 
   const filtered = plans.filter((ap) => {
@@ -68,12 +75,12 @@ export default function ProjectActionPlansPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href={`/${tenant.slug}/projects/${projectId}`}>
-            <Button variant="ghost" size="icon-sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+        <div className="space-y-4">
+          <Breadcrumb items={[
+            { label: "Projetos", href: `/${tenant.slug}/projects` },
+            { label: projectName, href: `/${tenant.slug}/projects/${projectId}` },
+            { label: "Planos de Ação" },
+          ]} />
           <div>
             <h1 className="text-title-1 text-foreground-primary">Planos de Ação</h1>
             <p className="text-body-1 text-foreground-secondary mt-1">

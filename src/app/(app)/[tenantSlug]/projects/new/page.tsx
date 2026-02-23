@@ -8,21 +8,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Building2, BookOpen, X } from "lucide-react";
+import { Building2, BookOpen, X } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { ConsultingClient, Standard } from "@/types";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 
+interface ProjectFormData {
+  name: string;
+  description: string;
+  clientId: string;
+  startDate: string;
+  endDate: string;
+  selectedStandardIds: string[];
+}
+
+const INITIAL_FORM: ProjectFormData = {
+  name: "",
+  description: "",
+  clientId: "",
+  startDate: "",
+  endDate: "",
+  selectedStandardIds: [],
+};
+
 export default function NewProjectPage() {
   const { tenant } = useTenant();
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedStandardIds, setSelectedStandardIds] = useState<string[]>([]);
+  const [form, setForm] = useState<ProjectFormData>(INITIAL_FORM);
+  const updateForm = (field: keyof ProjectFormData, value: string) =>
+    setForm((prev) => ({ ...prev, [field]: value }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -44,9 +59,12 @@ export default function NewProjectPage() {
   }, [tenant.slug]);
 
   const toggleStandard = (id: string) => {
-    setSelectedStandardIds((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+    setForm((prev) => ({
+      ...prev,
+      selectedStandardIds: prev.selectedStandardIds.includes(id)
+        ? prev.selectedStandardIds.filter((s) => s !== id)
+        : [...prev.selectedStandardIds, id],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,12 +77,12 @@ export default function NewProjectPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          description: description || null,
-          clientId: clientId || null,
-          startDate: startDate || null,
-          endDate: endDate || null,
-          standardIds: selectedStandardIds.length > 0 ? selectedStandardIds : undefined,
+          name: form.name,
+          description: form.description || null,
+          clientId: form.clientId || null,
+          startDate: form.startDate || null,
+          endDate: form.endDate || null,
+          standardIds: form.selectedStandardIds.length > 0 ? form.selectedStandardIds : undefined,
         }),
       });
 
@@ -88,14 +106,7 @@ export default function NewProjectPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Breadcrumb items={[{ label: "Projetos", href: `/${tenant.slug}/projects` }, { label: "Novo" }]} />
-      <div className="flex items-center gap-3">
-        <Link href={`/${tenant.slug}/projects`}>
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <h1 className="text-title-1 text-foreground-primary">Novo Projeto</h1>
-      </div>
+      <h1 className="text-title-1 text-foreground-primary">Novo Projeto</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
@@ -111,8 +122,8 @@ export default function NewProjectPage() {
                 Nome do projeto *
               </label>
               <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={(e) => updateForm("name", e.target.value)}
                 placeholder="Ex: Certificação ISO 27001 - Empresa X"
                 required
               />
@@ -123,8 +134,8 @@ export default function NewProjectPage() {
                 Descrição
               </label>
               <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={form.description}
+                onChange={(e) => updateForm("description", e.target.value)}
                 placeholder="Descreva o escopo e objetivos do projeto..."
                 rows={3}
               />
@@ -141,8 +152,8 @@ export default function NewProjectPage() {
                 <div className="h-10 w-full bg-surface-tertiary rounded-input animate-pulse" />
               ) : (
                 <Select
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
+                  value={form.clientId}
+                  onChange={(e) => updateForm("clientId", e.target.value)}
                   placeholder="Nenhum cliente selecionado"
                   options={clients.map((client) => ({
                     value: client.id,
@@ -159,8 +170,8 @@ export default function NewProjectPage() {
                 </label>
                 <Input
                   type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  value={form.startDate}
+                  onChange={(e) => updateForm("startDate", e.target.value)}
                 />
               </div>
               <div>
@@ -169,8 +180,8 @@ export default function NewProjectPage() {
                 </label>
                 <Input
                   type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={form.endDate}
+                  onChange={(e) => updateForm("endDate", e.target.value)}
                 />
               </div>
             </div>
@@ -207,7 +218,7 @@ export default function NewProjectPage() {
             ) : (
               <div className="space-y-2">
                 {standards.map((standard) => {
-                  const isSelected = selectedStandardIds.includes(standard.id);
+                  const isSelected = form.selectedStandardIds.includes(standard.id);
                   return (
                     <button
                       key={standard.id}
@@ -256,9 +267,9 @@ export default function NewProjectPage() {
               </div>
             )}
 
-            {selectedStandardIds.length > 0 && (
+            {form.selectedStandardIds.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-stroke-secondary">
-                {selectedStandardIds.map((id) => {
+                {form.selectedStandardIds.map((id) => {
                   const std = standards.find((s) => s.id === id);
                   if (!std) return null;
                   return (
