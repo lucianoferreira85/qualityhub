@@ -8,7 +8,10 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft,
   Pencil,
@@ -37,6 +40,14 @@ interface IndicatorDetail extends Omit<Indicator, "measurements"> {
   measurements?: IndicatorMeasurement[];
 }
 
+interface MeasurementFormData {
+  value: string;
+  period: string;
+  notes: string;
+}
+
+const EMPTY_MEASUREMENT: MeasurementFormData = { value: "", period: "", notes: "" };
+
 export default function IndicatorDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -47,8 +58,8 @@ export default function IndicatorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
   // Edit fields
@@ -60,21 +71,16 @@ export default function IndicatorDetailPage() {
   const [editLower, setEditLower] = useState("");
   const [editUpper, setEditUpper] = useState("");
 
-  // New measurement
-  const [showAddMeasurement, setShowAddMeasurement] = useState(false);
-  const [mValue, setMValue] = useState("");
-  const [mPeriod, setMPeriod] = useState("");
-  const [mNotes, setMNotes] = useState("");
-  const [addingMeasurement, setAddingMeasurement] = useState(false);
-
-  // Edit/delete measurement
-  const [editingMeasurementId, setEditingMeasurementId] = useState<string | null>(null);
-  const [editMValue, setEditMValue] = useState("");
-  const [editMPeriod, setEditMPeriod] = useState("");
-  const [editMNotes, setEditMNotes] = useState("");
+  // Measurement modal
+  const [measurementModalOpen, setMeasurementModalOpen] = useState(false);
+  const [measurementModalMode, setMeasurementModalMode] = useState<"add" | "edit">("add");
+  const [measurementEditId, setMeasurementEditId] = useState<string | null>(null);
+  const [measurementForm, setMeasurementForm] = useState<MeasurementFormData>(EMPTY_MEASUREMENT);
   const [savingMeasurement, setSavingMeasurement] = useState(false);
-  const [confirmDeleteMeasurement, setConfirmDeleteMeasurement] = useState<string | null>(null);
-  const [deletingMeasurementId, setDeletingMeasurementId] = useState<string | null>(null);
+
+  // Measurement delete
+  const [deleteMeasurementId, setDeleteMeasurementId] = useState<string | null>(null);
+  const [deletingMeasurement, setDeletingMeasurement] = useState(false);
 
   const fetchIndicator = () => {
     fetch(`/api/tenants/${tenant.slug}/indicators/${id}`)
@@ -150,77 +156,56 @@ export default function IndicatorDetailPage() {
       setError("Erro ao excluir indicador");
       toast.error("Erro ao excluir indicador");
       setDeleting(false);
-      setConfirmDelete(false);
+      setShowDeleteConfirm(false);
     }
   };
 
-  const handleAddMeasurement = async (e: React.FormEvent) => {
+  // Measurement modal helpers
+  const openAddMeasurement = () => {
+    setMeasurementForm(EMPTY_MEASUREMENT);
+    setMeasurementEditId(null);
+    setMeasurementModalMode("add");
+    setMeasurementModalOpen(true);
+  };
+
+  const openEditMeasurement = (m: IndicatorMeasurement) => {
+    setMeasurementForm({
+      value: String(Number(m.value)),
+      period: new Date(m.period).toISOString().split("T")[0],
+      notes: m.notes || "",
+    });
+    setMeasurementEditId(m.id);
+    setMeasurementModalMode("edit");
+    setMeasurementModalOpen(true);
+  };
+
+  const handleSaveMeasurement = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAddingMeasurement(true);
+    setSavingMeasurement(true);
     setError("");
     try {
-      const res = await fetch(`/api/tenants/${tenant.slug}/indicators/${id}/measurements`, {
-        method: "POST",
+      const url = measurementModalMode === "add"
+        ? `/api/tenants/${tenant.slug}/indicators/${id}/measurements`
+        : `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${measurementEditId}`;
+      const method = measurementModalMode === "add" ? "POST" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          value: parseFloat(mValue),
-          period: mPeriod,
-          notes: mNotes || null,
+          value: parseFloat(measurementForm.value),
+          period: measurementForm.period,
+          notes: measurementForm.notes || null,
         }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Erro ao registrar medição");
+        throw new Error(data.error || "Erro ao salvar medição");
       }
-      setMValue("");
-      setMPeriod("");
-      setMNotes("");
-      setShowAddMeasurement(false);
+      setMeasurementModalOpen(false);
       setLoading(true);
       fetchIndicator();
-      toast.success("Medição adicionada com sucesso");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao registrar";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setAddingMeasurement(false);
-    }
-  };
-
-  const startEditMeasurement = (m: IndicatorMeasurement) => {
-    setEditingMeasurementId(m.id);
-    setEditMValue(String(Number(m.value)));
-    setEditMPeriod(new Date(m.period).toISOString().split("T")[0]);
-    setEditMNotes(m.notes || "");
-    setError("");
-  };
-
-  const handleSaveMeasurement = async () => {
-    if (!editingMeasurementId) return;
-    setSavingMeasurement(true);
-    setError("");
-    try {
-      const res = await fetch(
-        `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${editingMeasurementId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            value: parseFloat(editMValue),
-            period: editMPeriod,
-            notes: editMNotes || null,
-          }),
-        }
-      );
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erro ao atualizar medição");
-      }
-      setEditingMeasurementId(null);
-      setLoading(true);
-      fetchIndicator();
-      toast.success("Medição atualizada com sucesso");
+      toast.success(measurementModalMode === "add" ? "Medição adicionada com sucesso" : "Medição atualizada com sucesso");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao salvar";
       setError(message);
@@ -230,15 +215,16 @@ export default function IndicatorDetailPage() {
     }
   };
 
-  const handleDeleteMeasurement = async (measurementId: string) => {
-    setDeletingMeasurementId(measurementId);
+  const handleDeleteMeasurement = async () => {
+    if (!deleteMeasurementId) return;
+    setDeletingMeasurement(true);
     try {
       const res = await fetch(
-        `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${measurementId}`,
+        `/api/tenants/${tenant.slug}/indicators/${id}/measurements/${deleteMeasurementId}`,
         { method: "DELETE" }
       );
       if (!res.ok) throw new Error("Erro ao excluir");
-      setConfirmDeleteMeasurement(null);
+      setDeleteMeasurementId(null);
       setLoading(true);
       fetchIndicator();
       toast.success("Medição excluída com sucesso");
@@ -246,7 +232,7 @@ export default function IndicatorDetailPage() {
       setError("Erro ao excluir medição");
       toast.error("Erro ao excluir medição");
     } finally {
-      setDeletingMeasurementId(null);
+      setDeletingMeasurement(false);
     }
   };
 
@@ -292,7 +278,6 @@ export default function IndicatorDetailPage() {
   const lowerNum = indicator.lowerLimit !== null ? Number(indicator.lowerLimit) : null;
   const upperNum = indicator.upperLimit !== null ? Number(indicator.upperLimit) : null;
 
-  // Chart data: last 12 measurements, reversed for chronological order
   const chartData = measurements.slice(0, 12).reverse();
   const allValues = chartData.map((m) => Number(m.value));
   const chartMax = allValues.length > 0
@@ -302,6 +287,72 @@ export default function IndicatorDetailPage() {
   return (
     <div className="space-y-6">
       <Breadcrumb items={[{ label: "Indicadores", href: `/${tenant.slug}/indicators` }, { label: indicator.name }]} />
+
+      {/* Delete indicator confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir este indicador?"
+        description="Todas as medições serão excluídas. Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+
+      {/* Delete measurement confirmation */}
+      <ConfirmDialog
+        open={!!deleteMeasurementId}
+        onOpenChange={(open) => { if (!open) setDeleteMeasurementId(null); }}
+        title="Excluir esta medição?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDeleteMeasurement}
+        loading={deletingMeasurement}
+      />
+
+      {/* Measurement modal (add/edit) */}
+      <Modal
+        open={measurementModalOpen}
+        onOpenChange={setMeasurementModalOpen}
+        title={measurementModalMode === "add" ? "Nova Medição" : "Editar Medição"}
+        className="max-w-sm"
+      >
+        <form onSubmit={handleSaveMeasurement} className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Valor *</label>
+            <Input
+              type="number"
+              step="0.01"
+              value={measurementForm.value}
+              onChange={(e) => setMeasurementForm({ ...measurementForm, value: e.target.value })}
+              placeholder="Ex: 92.5"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Período *</label>
+            <Input
+              type="date"
+              value={measurementForm.period}
+              onChange={(e) => setMeasurementForm({ ...measurementForm, period: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Observações</label>
+            <Input
+              value={measurementForm.notes}
+              onChange={(e) => setMeasurementForm({ ...measurementForm, notes: e.target.value })}
+              placeholder="Opcional"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setMeasurementModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" size="sm" loading={savingMeasurement}>
+              {measurementModalMode === "add" ? "Registrar" : "Salvar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
@@ -322,28 +373,13 @@ export default function IndicatorDetailPage() {
         <div className="flex items-center gap-2">
           {can("indicator", "update") && !editing && (
             <Button variant="outline" size="sm" onClick={startEdit}>
-              <Pencil className="h-4 w-4" />
-              Editar
+              <Pencil className="h-4 w-4" /> Editar
             </Button>
           )}
           {can("indicator", "delete") && !editing && (
-            <>
-              {confirmDelete ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-body-2 text-danger-fg">Confirmar?</span>
-                  <Button variant="danger" size="sm" onClick={handleDelete} loading={deleting}>
-                    Sim, excluir
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setConfirmDelete(false)}>
-                    Não
-                  </Button>
-                </div>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => setConfirmDelete(true)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </>
+            <Button variant="ghost" size="icon-sm" onClick={() => setShowDeleteConfirm(true)} className="text-foreground-tertiary hover:text-danger-fg">
+              <Trash2 className="h-4 w-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -361,11 +397,10 @@ export default function IndicatorDetailPage() {
             </div>
             <div>
               <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-              <textarea
+              <Textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 rows={3}
-                className="w-full rounded-input border border-stroke-primary bg-surface-primary px-3 py-2 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -532,72 +567,13 @@ export default function IndicatorDetailPage() {
                   </h2>
                 </div>
                 {can("indicator", "create") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddMeasurement(!showAddMeasurement)}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Nova Medição
+                  <Button variant="outline" size="sm" onClick={openAddMeasurement}>
+                    <Plus className="h-4 w-4" /> Nova Medição
                   </Button>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {/* Add measurement form */}
-              {showAddMeasurement && (
-                <form onSubmit={handleAddMeasurement} className="mb-4 p-4 bg-surface-secondary rounded-card space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-body-2 font-medium text-foreground-primary mb-1">
-                        Valor *
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={mValue}
-                        onChange={(e) => setMValue(e.target.value)}
-                        placeholder="Ex: 92.5"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-body-2 font-medium text-foreground-primary mb-1">
-                        Período *
-                      </label>
-                      <Input
-                        type="date"
-                        value={mPeriod}
-                        onChange={(e) => setMPeriod(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-body-2 font-medium text-foreground-primary mb-1">
-                        Observações
-                      </label>
-                      <Input
-                        value={mNotes}
-                        onChange={(e) => setMNotes(e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </div>
-                  </div>
-                  {error && (
-                    <div className="bg-danger-bg text-danger-fg text-body-2 p-2 rounded-button">{error}</div>
-                  )}
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" type="button" onClick={() => setShowAddMeasurement(false)}>
-                      Cancelar
-                    </Button>
-                    <Button size="sm" type="submit" loading={addingMeasurement}>
-                      Registrar
-                    </Button>
-                  </div>
-                </form>
-              )}
-
-              {/* Measurements list */}
               {measurements.length === 0 ? (
                 <div className="text-center py-8">
                   <TrendingUp className="h-8 w-8 text-foreground-tertiary mx-auto mb-2" />
@@ -605,9 +581,8 @@ export default function IndicatorDetailPage() {
                     Nenhuma medição registrada ainda
                   </p>
                   {can("indicator", "create") && (
-                    <Button variant="outline" size="sm" onClick={() => setShowAddMeasurement(true)}>
-                      <Plus className="h-4 w-4" />
-                      Registrar primeira medição
+                    <Button variant="outline" size="sm" onClick={openAddMeasurement}>
+                      <Plus className="h-4 w-4" /> Registrar primeira medição
                     </Button>
                   )}
                 </div>
@@ -616,25 +591,13 @@ export default function IndicatorDetailPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-stroke-secondary">
-                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                          Período
-                        </th>
-                        <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                          Valor
-                        </th>
-                        <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                          vs Meta
-                        </th>
-                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                          Status
-                        </th>
-                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                          Observações
-                        </th>
+                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">Período</th>
+                        <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">Valor</th>
+                        <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">vs Meta</th>
+                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">Status</th>
+                        <th className="text-left text-caption-1 font-medium text-foreground-tertiary py-2 px-3">Observações</th>
                         {(can("indicator", "update") || can("indicator", "delete")) && (
-                          <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">
-                            Ações
-                          </th>
+                          <th className="text-right text-caption-1 font-medium text-foreground-tertiary py-2 px-3">Ações</th>
                         )}
                       </tr>
                     </thead>
@@ -647,30 +610,6 @@ export default function IndicatorDetailPage() {
                           (upperNum !== null && val > upperNum) ||
                           (lowerNum !== null && val < lowerNum);
                         const isOnTarget = pct >= 95;
-
-                        if (editingMeasurementId === m.id) {
-                          return (
-                            <tr key={m.id} className="border-b border-stroke-secondary bg-surface-secondary">
-                              <td className="py-2 px-3">
-                                <Input type="date" value={editMPeriod} onChange={(e) => setEditMPeriod(e.target.value)} className="h-8 text-body-2" />
-                              </td>
-                              <td className="py-2 px-3">
-                                <Input type="number" step="0.01" value={editMValue} onChange={(e) => setEditMValue(e.target.value)} className="h-8 text-body-2 text-right w-28" />
-                              </td>
-                              <td className="py-2 px-3" />
-                              <td className="py-2 px-3" />
-                              <td className="py-2 px-3">
-                                <Input value={editMNotes} onChange={(e) => setEditMNotes(e.target.value)} className="h-8 text-body-2" placeholder="Notas" />
-                              </td>
-                              <td className="py-2 px-3 text-right">
-                                <div className="flex items-center gap-1 justify-end">
-                                  <Button variant="outline" size="sm" onClick={() => setEditingMeasurementId(null)}>Cancelar</Button>
-                                  <Button size="sm" onClick={handleSaveMeasurement} loading={savingMeasurement}>Salvar</Button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        }
 
                         return (
                           <tr key={m.id} className="border-b border-stroke-secondary last:border-0">
@@ -705,30 +644,14 @@ export default function IndicatorDetailPage() {
                               <td className="py-2.5 px-3 text-right">
                                 <div className="flex items-center gap-1 justify-end">
                                   {can("indicator", "update") && (
-                                    <Button variant="ghost" size="icon-sm" onClick={() => startEditMeasurement(m)}>
+                                    <Button variant="ghost" size="icon-sm" onClick={() => openEditMeasurement(m)}>
                                       <Pencil className="h-3.5 w-3.5" />
                                     </Button>
                                   )}
                                   {can("indicator", "delete") && (
-                                    confirmDeleteMeasurement === m.id ? (
-                                      <div className="flex items-center gap-1">
-                                        <Button
-                                          variant="danger"
-                                          size="sm"
-                                          onClick={() => handleDeleteMeasurement(m.id)}
-                                          loading={deletingMeasurementId === m.id}
-                                        >
-                                          Sim
-                                        </Button>
-                                        <Button variant="outline" size="sm" onClick={() => setConfirmDeleteMeasurement(null)}>
-                                          Não
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <Button variant="ghost" size="icon-sm" onClick={() => setConfirmDeleteMeasurement(m.id)}>
-                                        <Trash2 className="h-3.5 w-3.5 text-danger-fg" />
-                                      </Button>
-                                    )
+                                    <Button variant="ghost" size="icon-sm" onClick={() => setDeleteMeasurementId(m.id)}>
+                                      <Trash2 className="h-3.5 w-3.5 text-danger-fg" />
+                                    </Button>
                                   )}
                                 </div>
                               </td>

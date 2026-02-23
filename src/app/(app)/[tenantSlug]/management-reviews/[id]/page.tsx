@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, Edit2, Trash2, Save, X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
@@ -221,11 +222,10 @@ export default function ManagementReviewDetailPage() {
                 </div>
                 <div>
                   <label className="block text-body-2 font-medium text-foreground-primary mb-1">Data Realizada</label>
-                  <input
+                  <Input
                     type="date"
                     value={editActualDate}
                     onChange={(e) => setEditActualDate(e.target.value)}
-                    className="h-10 w-full rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"
                   />
                 </div>
               </div>
@@ -299,13 +299,12 @@ export default function ManagementReviewDetailPage() {
                 </div>
               ))}
               <div className="flex gap-2">
-                <input
-                  type="text"
+                <Input
                   value={newDecision}
                   onChange={(e) => setNewDecision(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addDecision())}
                   placeholder="Nova decisao..."
-                  className="flex-1 h-10 rounded-input border border-stroke-primary bg-surface-primary px-3 text-body-1 text-foreground-primary focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="flex-1"
                 />
                 <Button variant="outline" onClick={addDecision} disabled={!newDecision.trim()}>
                   <Plus className="h-4 w-4" />

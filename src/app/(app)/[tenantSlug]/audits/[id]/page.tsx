@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Modal } from "@/components/ui/modal";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowLeft,
   Pencil,
@@ -74,6 +76,18 @@ interface AuditDetail extends Omit<Audit, "leadAuditor" | "findings"> {
   findings?: FindingWithRelations[];
 }
 
+interface FindingFormData {
+  classification: string;
+  description: string;
+  evidence: string;
+}
+
+const EMPTY_FINDING: FindingFormData = {
+  classification: "observation",
+  description: "",
+  evidence: "",
+};
+
 export default function AuditDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -83,10 +97,11 @@ export default function AuditDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
+  // Audit edit fields
   const [editTitle, setEditTitle] = useState("");
   const [editType, setEditType] = useState("");
   const [editStatus, setEditStatus] = useState("");
@@ -95,19 +110,16 @@ export default function AuditDetailPage() {
   const [editConclusion, setEditConclusion] = useState("");
   const [editNotes, setEditNotes] = useState("");
 
-  const [showAddFinding, setShowAddFinding] = useState(false);
-  const [findingClassification, setFindingClassification] = useState("observation");
-  const [findingDescription, setFindingDescription] = useState("");
-  const [findingEvidence, setFindingEvidence] = useState("");
+  // Finding modal state
+  const [findingModalOpen, setFindingModalOpen] = useState(false);
+  const [findingModalMode, setFindingModalMode] = useState<"add" | "edit">("add");
+  const [findingEditId, setFindingEditId] = useState<string | null>(null);
+  const [findingForm, setFindingForm] = useState<FindingFormData>(EMPTY_FINDING);
   const [savingFinding, setSavingFinding] = useState(false);
 
-  const [editingFindingId, setEditingFindingId] = useState<string | null>(null);
-  const [editFindingClassification, setEditFindingClassification] = useState("");
-  const [editFindingDescription, setEditFindingDescription] = useState("");
-  const [editFindingEvidence, setEditFindingEvidence] = useState("");
-  const [savingEditFinding, setSavingEditFinding] = useState(false);
-  const [deletingFindingId, setDeletingFindingId] = useState<string | null>(null);
-  const [confirmDeleteFindingId, setConfirmDeleteFindingId] = useState<string | null>(null);
+  // Finding delete state
+  const [deleteFindingId, setDeleteFindingId] = useState<string | null>(null);
+  const [deletingFinding, setDeletingFinding] = useState(false);
 
   const fetchAudit = useCallback(() => {
     fetch(`/api/tenants/${tenant.slug}/audits/${auditId}`)
@@ -170,82 +182,71 @@ export default function AuditDetailPage() {
     }
   };
 
-  const handleAddFinding = async (e: React.FormEvent) => {
+  // Finding modal helpers
+  const openAddFinding = () => {
+    setFindingForm(EMPTY_FINDING);
+    setFindingEditId(null);
+    setFindingModalMode("add");
+    setFindingModalOpen(true);
+  };
+
+  const openEditFinding = (f: FindingWithRelations) => {
+    setFindingForm({
+      classification: f.classification,
+      description: f.description,
+      evidence: f.evidence || "",
+    });
+    setFindingEditId(f.id);
+    setFindingModalMode("edit");
+    setFindingModalOpen(true);
+  };
+
+  const handleSaveFinding = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingFinding(true);
     setError("");
     try {
-      const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}/findings`, {
-        method: "POST",
+      const url = findingModalMode === "add"
+        ? `/api/tenants/${tenant.slug}/audits/${auditId}/findings`
+        : `/api/tenants/${tenant.slug}/audits/${auditId}/findings/${findingEditId}`;
+      const method = findingModalMode === "add" ? "POST" : "PATCH";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          classification: findingClassification,
-          description: findingDescription,
-          evidence: findingEvidence || null,
+          classification: findingForm.classification,
+          description: findingForm.description,
+          evidence: findingForm.evidence || null,
         }),
       });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao adicionar constatação"); }
-      setShowAddFinding(false);
-      setFindingClassification("observation");
-      setFindingDescription("");
-      setFindingEvidence("");
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao salvar constatação"); }
+      setFindingModalOpen(false);
       fetchAudit();
-      toast.success("Constatação adicionada com sucesso");
+      toast.success(findingModalMode === "add" ? "Constatação adicionada com sucesso" : "Constatação atualizada com sucesso");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao adicionar";
+      const message = err instanceof Error ? err.message : "Erro ao salvar";
       setError(message);
       toast.error(message);
     } finally { setSavingFinding(false); }
   };
 
-  const startEditFinding = (f: FindingWithRelations) => {
-    setEditingFindingId(f.id);
-    setEditFindingClassification(f.classification);
-    setEditFindingDescription(f.description);
-    setEditFindingEvidence(f.evidence || "");
-  };
-
-  const handleSaveEditFinding = async () => {
-    if (!editingFindingId) return;
-    setSavingEditFinding(true);
-    setError("");
+  const handleDeleteFinding = async () => {
+    if (!deleteFindingId) return;
+    setDeletingFinding(true);
     try {
-      const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}/findings/${editingFindingId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          classification: editFindingClassification,
-          description: editFindingDescription,
-          evidence: editFindingEvidence || null,
-        }),
-      });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao atualizar"); }
-      setEditingFindingId(null);
-      fetchAudit();
-      toast.success("Constatação atualizada com sucesso");
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao atualizar constatação";
-      setError(message);
-      toast.error(message);
-    } finally { setSavingEditFinding(false); }
-  };
-
-  const handleDeleteFinding = async (findingId: string) => {
-    setDeletingFindingId(findingId);
-    setError("");
-    try {
-      const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}/findings/${findingId}`, {
+      const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}/findings/${deleteFindingId}`, {
         method: "DELETE",
       });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao excluir"); }
-      setConfirmDeleteFindingId(null);
+      setDeleteFindingId(null);
       fetchAudit();
       toast.success("Constatação excluída com sucesso");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao excluir constatação";
       setError(message);
       toast.error(message);
-    } finally { setDeletingFindingId(null); }
+    } finally { setDeletingFinding(false); }
   };
 
   if (loading) return (
@@ -307,20 +308,69 @@ export default function AuditDetailPage() {
 
       {error && <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">{error}</div>}
 
-      {showDeleteConfirm && (
-        <Card className="border-danger/30 bg-danger-bg/30">
-          <CardContent className="flex items-center justify-between p-4">
-            <div>
-              <p className="text-body-1 font-medium text-foreground-primary">Excluir esta auditoria?</p>
-              <p className="text-body-2 text-foreground-secondary">Todas as constatações serão excluídas.</p>
-            </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(false)}>Cancelar</Button>
-              <Button variant="danger" size="sm" onClick={handleDelete} loading={deleting}>Excluir</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Delete audit confirmation */}
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir esta auditoria?"
+        description="Todas as constatações serão excluídas. Esta ação não pode ser desfeita."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
+
+      {/* Delete finding confirmation */}
+      <ConfirmDialog
+        open={!!deleteFindingId}
+        onOpenChange={(open) => { if (!open) setDeleteFindingId(null); }}
+        title="Excluir esta constatação?"
+        description="Esta ação não pode ser desfeita."
+        onConfirm={handleDeleteFinding}
+        loading={deletingFinding}
+      />
+
+      {/* Finding modal (add/edit) */}
+      <Modal
+        open={findingModalOpen}
+        onOpenChange={setFindingModalOpen}
+        title={findingModalMode === "add" ? "Nova Constatação" : "Editar Constatação"}
+        className="max-w-md"
+      >
+        <form onSubmit={handleSaveFinding} className="space-y-4">
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação *</label>
+            <Select
+              value={findingForm.classification}
+              onChange={(e) => setFindingForm({ ...findingForm, classification: e.target.value })}
+              options={CLASSIFICATIONS}
+            />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição *</label>
+            <Textarea
+              value={findingForm.description}
+              onChange={(e) => setFindingForm({ ...findingForm, description: e.target.value })}
+              required
+              rows={3}
+              placeholder="Descreva a constatação"
+            />
+          </div>
+          <div>
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
+            <Textarea
+              value={findingForm.evidence}
+              onChange={(e) => setFindingForm({ ...findingForm, evidence: e.target.value })}
+              rows={2}
+              placeholder="Evidência objetiva"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setFindingModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" size="sm" loading={savingFinding}>
+              {findingModalMode === "add" ? "Adicionar" : "Salvar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Status timeline */}
       <Card>
@@ -439,42 +489,21 @@ export default function AuditDetailPage() {
                 Constatações ({findings.length})
               </span>
             </h2>
-            {can("auditFinding", "create") && !showAddFinding && (
-              <Button variant="outline" size="sm" onClick={() => setShowAddFinding(true)}>
+            {can("auditFinding", "create") && (
+              <Button variant="outline" size="sm" onClick={openAddFinding}>
                 <Plus className="h-4 w-4" /> Adicionar
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent>
-          {showAddFinding && (
-            <form onSubmit={handleAddFinding} className="mb-4 p-4 border border-stroke-secondary rounded-button space-y-3">
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação *</label>
-                <Select value={findingClassification} onChange={(e) => setFindingClassification(e.target.value)} options={CLASSIFICATIONS} />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição *</label>
-                <Textarea value={findingDescription} onChange={(e) => setFindingDescription(e.target.value)} required rows={2} placeholder="Descreva a constatação" />
-              </div>
-              <div>
-                <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
-                <Textarea value={findingEvidence} onChange={(e) => setFindingEvidence(e.target.value)} rows={2} placeholder="Evidência objetiva" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddFinding(false)}>Cancelar</Button>
-                <Button type="submit" size="sm" loading={savingFinding}>Salvar</Button>
-              </div>
-            </form>
-          )}
-
-          {findings.length === 0 && !showAddFinding ? (
+          {findings.length === 0 ? (
             <div className="flex flex-col items-center py-8">
               <FileSearch className="h-10 w-10 text-foreground-tertiary mb-3" />
               <p className="text-body-1 text-foreground-primary mb-1">Nenhuma constatação registrada</p>
               <p className="text-body-2 text-foreground-secondary mb-3">Adicione constatações encontradas durante a auditoria</p>
               {can("auditFinding", "create") && (
-                <Button variant="outline" size="sm" onClick={() => setShowAddFinding(true)}>
+                <Button variant="outline" size="sm" onClick={openAddFinding}>
                   <Plus className="h-4 w-4" /> Adicionar primeira constatação
                 </Button>
               )}
@@ -483,66 +512,35 @@ export default function AuditDetailPage() {
             <div className="space-y-2">
               {findings.map((f) => (
                 <div key={f.id} className="p-3 rounded-button border border-stroke-secondary">
-                  {editingFindingId === f.id ? (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-body-2 font-medium text-foreground-primary mb-1">Classificação</label>
-                        <Select value={editFindingClassification} onChange={(e) => setEditFindingClassification(e.target.value)} options={CLASSIFICATIONS} />
-                      </div>
-                      <div>
-                        <label className="block text-body-2 font-medium text-foreground-primary mb-1">Descrição</label>
-                        <Textarea value={editFindingDescription} onChange={(e) => setEditFindingDescription(e.target.value)} rows={2} />
-                      </div>
-                      <div>
-                        <label className="block text-body-2 font-medium text-foreground-primary mb-1">Evidência</label>
-                        <Textarea value={editFindingEvidence} onChange={(e) => setEditFindingEvidence(e.target.value)} rows={2} />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setEditingFindingId(null)}>Cancelar</Button>
-                        <Button size="sm" onClick={handleSaveEditFinding} loading={savingEditFinding}><Save className="h-3 w-3" /> Salvar</Button>
-                      </div>
-                    </div>
-                  ) : confirmDeleteFindingId === f.id ? (
-                    <div className="flex items-center justify-between">
-                      <p className="text-body-2 text-foreground-primary">Excluir esta constatação?</p>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteFindingId(null)}>Não</Button>
-                        <Button variant="danger" size="sm" onClick={() => handleDeleteFinding(f.id)} loading={deletingFindingId === f.id}>Sim</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-start justify-between gap-3 mb-1.5">
-                        <p className="text-body-1 text-foreground-primary">{f.description}</p>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <StatusBadge status={f.classification} type="classification" />
-                          {can("auditFinding", "update") && (
-                            <Button variant="ghost" size="icon-sm" onClick={() => startEditFinding(f)} className="text-foreground-tertiary hover:text-foreground-primary">
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                          )}
-                          {can("auditFinding", "delete") && (
-                            <Button variant="ghost" size="icon-sm" onClick={() => setConfirmDeleteFindingId(f.id)} className="text-foreground-tertiary hover:text-danger-fg">
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {f.evidence && (
-                        <p className="text-body-2 text-foreground-secondary mb-1.5">
-                          <span className="font-medium">Evidência:</span> {f.evidence}
-                        </p>
+                  <div className="flex items-start justify-between gap-3 mb-1.5">
+                    <p className="text-body-1 text-foreground-primary">{f.description}</p>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <StatusBadge status={f.classification} type="classification" />
+                      {can("auditFinding", "update") && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => openEditFinding(f)} className="text-foreground-tertiary hover:text-foreground-primary">
+                          <Pencil className="h-3 w-3" />
+                        </Button>
                       )}
-                      <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
-                        {f.clause && <span>{f.clause.code} - {f.clause.title}</span>}
-                        {f.nonconformity && (
-                          <Link href={`/${tenant.slug}/nonconformities/${f.nonconformity.id}`} className="flex items-center gap-1 text-brand hover:text-brand-hover">
-                            <AlertTriangle className="h-3 w-3" />{f.nonconformity.code}
-                          </Link>
-                        )}
-                      </div>
-                    </>
+                      {can("auditFinding", "delete") && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => setDeleteFindingId(f.id)} className="text-foreground-tertiary hover:text-danger-fg">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {f.evidence && (
+                    <p className="text-body-2 text-foreground-secondary mb-1.5">
+                      <span className="font-medium">Evidência:</span> {f.evidence}
+                    </p>
                   )}
+                  <div className="flex items-center gap-3 text-caption-1 text-foreground-tertiary">
+                    {f.clause && <span>{f.clause.code} - {f.clause.title}</span>}
+                    {f.nonconformity && (
+                      <Link href={`/${tenant.slug}/nonconformities/${f.nonconformity.id}`} className="flex items-center gap-1 text-brand hover:text-brand-hover">
+                        <AlertTriangle className="h-3 w-3" />{f.nonconformity.code}
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
