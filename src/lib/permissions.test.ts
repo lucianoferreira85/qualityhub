@@ -113,6 +113,120 @@ describe("hasPermission", () => {
     });
   });
 
+  describe("senior_consultant", () => {
+    it("can CRU risks, action plans, NCs, documents", () => {
+      expect(canCreate("senior_consultant", "risk")).toBe(true);
+      expect(canRead("senior_consultant", "risk")).toBe(true);
+      expect(canUpdate("senior_consultant", "risk")).toBe(true);
+      expect(canCreate("senior_consultant", "actionPlan")).toBe(true);
+      expect(canCreate("senior_consultant", "nonconformity")).toBe(true);
+      expect(canCreate("senior_consultant", "document")).toBe(true);
+    });
+
+    it("can only read projects and audits", () => {
+      expect(canRead("senior_consultant", "project")).toBe(true);
+      expect(canCreate("senior_consultant", "project")).toBe(false);
+      expect(canRead("senior_consultant", "audit")).toBe(true);
+      expect(canCreate("senior_consultant", "audit")).toBe(false);
+    });
+
+    it("can only read management reviews", () => {
+      expect(canRead("senior_consultant", "managementReview")).toBe(true);
+      expect(canCreate("senior_consultant", "managementReview")).toBe(false);
+    });
+
+    it("cannot delete anything", () => {
+      expect(canDelete("senior_consultant", "risk")).toBe(false);
+      expect(canDelete("senior_consultant", "document")).toBe(false);
+      expect(canDelete("senior_consultant", "nonconformity")).toBe(false);
+    });
+
+    it("cannot access billing", () => {
+      expect(hasPermission("senior_consultant", "billing", "read")).toBe(false);
+    });
+  });
+
+  describe("junior_consultant", () => {
+    it("can read and update risks/NCs/action plans but not create", () => {
+      expect(canRead("junior_consultant", "risk")).toBe(true);
+      expect(canUpdate("junior_consultant", "risk")).toBe(true);
+      expect(canCreate("junior_consultant", "risk")).toBe(false);
+      expect(canRead("junior_consultant", "nonconformity")).toBe(true);
+      expect(canUpdate("junior_consultant", "nonconformity")).toBe(true);
+      expect(canCreate("junior_consultant", "nonconformity")).toBe(false);
+    });
+
+    it("can only read indicators, projects, audits", () => {
+      expect(canRead("junior_consultant", "indicator")).toBe(true);
+      expect(canCreate("junior_consultant", "indicator")).toBe(false);
+      expect(canRead("junior_consultant", "project")).toBe(true);
+      expect(canRead("junior_consultant", "audit")).toBe(true);
+    });
+
+    it("cannot access billing or settings", () => {
+      expect(hasPermission("junior_consultant", "billing", "read")).toBe(false);
+      expect(hasPermission("junior_consultant", "settings", "read")).toBe(false);
+    });
+
+    it("cannot delete anything", () => {
+      expect(canDelete("junior_consultant", "document")).toBe(false);
+      expect(canDelete("junior_consultant", "risk")).toBe(false);
+    });
+  });
+
+  describe("internal_auditor", () => {
+    it("can CRU audits and audit findings", () => {
+      expect(canCreate("internal_auditor", "audit")).toBe(true);
+      expect(canRead("internal_auditor", "audit")).toBe(true);
+      expect(canUpdate("internal_auditor", "audit")).toBe(true);
+      expect(canDelete("internal_auditor", "audit")).toBe(false);
+      expect(canCreate("internal_auditor", "auditFinding")).toBe(true);
+      expect(canUpdate("internal_auditor", "auditFinding")).toBe(true);
+    });
+
+    it("can create and read NCs", () => {
+      expect(canCreate("internal_auditor", "nonconformity")).toBe(true);
+      expect(canRead("internal_auditor", "nonconformity")).toBe(true);
+      expect(canUpdate("internal_auditor", "nonconformity")).toBe(false);
+    });
+
+    it("can only read risks, documents, indicators", () => {
+      expect(canRead("internal_auditor", "risk")).toBe(true);
+      expect(canCreate("internal_auditor", "risk")).toBe(false);
+      expect(canRead("internal_auditor", "document")).toBe(true);
+      expect(canCreate("internal_auditor", "document")).toBe(false);
+    });
+
+    it("cannot access billing or settings", () => {
+      expect(hasPermission("internal_auditor", "billing", "read")).toBe(false);
+      expect(hasPermission("internal_auditor", "settings", "read")).toBe(false);
+    });
+  });
+
+  describe("external_auditor", () => {
+    it("can only read all resources", () => {
+      expect(canRead("external_auditor", "audit")).toBe(true);
+      expect(canRead("external_auditor", "nonconformity")).toBe(true);
+      expect(canRead("external_auditor", "risk")).toBe(true);
+      expect(canRead("external_auditor", "document")).toBe(true);
+      expect(canRead("external_auditor", "managementReview")).toBe(true);
+    });
+
+    it("cannot create, update or delete anything", () => {
+      expect(canCreate("external_auditor", "audit")).toBe(false);
+      expect(canUpdate("external_auditor", "audit")).toBe(false);
+      expect(canDelete("external_auditor", "audit")).toBe(false);
+      expect(canCreate("external_auditor", "nonconformity")).toBe(false);
+    });
+
+    it("cannot access billing, settings, members, clients", () => {
+      expect(hasPermission("external_auditor", "billing", "read")).toBe(false);
+      expect(hasPermission("external_auditor", "settings", "read")).toBe(false);
+      expect(hasPermission("external_auditor", "member", "read")).toBe(false);
+      expect(hasPermission("external_auditor", "client", "read")).toBe(false);
+    });
+  });
+
   it("returns false for unknown role", () => {
     // @ts-expect-error testing invalid role
     expect(hasPermission("unknown_role", "project", "read")).toBe(false);

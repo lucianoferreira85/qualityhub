@@ -5,6 +5,7 @@ import {
   sendDocumentReviewEmail,
   sendRiskCriticalEmail,
   sendActionAssignedEmail,
+  sendActionPlanDueEmail,
 } from "@/lib/email";
 
 /**
@@ -263,6 +264,57 @@ export function triggerRiskCritical({
       }
     } catch (err) {
       console.error("[Trigger] Risk critical failed:", err);
+    }
+  })();
+}
+
+export function triggerActionPlanDue({
+  tenantId,
+  tenantSlug,
+  responsibleId,
+  actionId,
+  actionCode,
+  actionTitle,
+  dueDate,
+}: {
+  tenantId: string;
+  tenantSlug: string;
+  responsibleId: string;
+  actionId: string;
+  actionCode: string;
+  actionTitle: string;
+  dueDate: string;
+}) {
+  void (async () => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: responsibleId },
+        select: { email: true },
+      });
+      if (!user) return;
+
+      await prisma.notification.create({
+        data: {
+          tenantId,
+          userId: responsibleId,
+          type: "action_plan_due",
+          title: `Ação Vencendo: ${actionCode}`,
+          message: `O plano de ação "${actionTitle}" vence em ${dueDate}.`,
+          entityType: "actionPlan",
+          entityId: actionId,
+        },
+      });
+
+      await sendActionPlanDueEmail({
+        to: user.email,
+        apCode: actionCode,
+        apTitle: actionTitle,
+        dueDate,
+        tenantSlug,
+        apId: actionId,
+      });
+    } catch (err) {
+      console.error("[Trigger] Action plan due failed:", err);
     }
   })();
 }

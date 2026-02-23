@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   ShieldAlert,
   CheckCircle2,
+  Download,
 } from "lucide-react";
+import { generateActionPlanReport } from "@/lib/pdf-reports/action-plan-report";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -223,6 +225,10 @@ export default function ActionPlanDetailPage() {
             </>
           ) : (
             <>
+              <Button variant="outline" size="sm" onClick={() => generateActionPlanReport(ap, tenant.name)}>
+                <Download className="h-4 w-4" />
+                PDF
+              </Button>
               {can("actionPlan", "update") && (
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                   <Pencil className="h-4 w-4" />

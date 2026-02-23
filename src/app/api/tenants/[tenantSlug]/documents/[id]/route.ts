@@ -4,6 +4,7 @@ import { getRequestContext, handleApiError, successResponse, requirePermission, 
 import { updateDocumentSchema } from "@/lib/validations";
 import { logActivity, getClientIp } from "@/lib/audit-log";
 import { triggerDocumentReview } from "@/lib/email-triggers";
+import { deleteFile } from "@/lib/storage";
 
 export async function GET(
   _request: Request,
@@ -130,6 +131,11 @@ export async function DELETE(
     const document = await ctx.db.document.findFirst({ where: { id } });
     if (!document) throw new NotFoundError("Documento");
 
+    const versions = await ctx.db.documentVersion.findMany({
+      where: { documentId: id },
+      select: { fileUrl: true },
+    });
+
     await ctx.db.document.delete({ where: { id } });
 
     void logActivity({
@@ -141,6 +147,24 @@ export async function DELETE(
       metadata: { code: document.code, title: document.title },
       ipAddress: getClientIp(_request),
     });
+
+    // Cleanup storage files (fire-and-forget)
+    void (async () => {
+      try {
+        const filePaths: string[] = [];
+        if (document.fileUrl) filePaths.push(document.fileUrl);
+        for (const v of versions) {
+          if (v.fileUrl) filePaths.push(v.fileUrl);
+        }
+        for (const p of filePaths) {
+          await deleteFile(p).catch((err) =>
+            console.error(`[Storage] Failed to delete ${p}:`, err)
+          );
+        }
+      } catch (err) {
+        console.error("[Storage] Cleanup failed for document:", id, err);
+      }
+    })();
 
     return successResponse({ deleted: true });
   } catch (error) {

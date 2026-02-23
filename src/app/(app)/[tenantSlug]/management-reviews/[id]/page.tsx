@@ -12,7 +12,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit2, Trash2, Save, X, Plus } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Save, X, Plus, Download } from "lucide-react";
+import { generateManagementReviewReport } from "@/lib/pdf-reports/management-review-report";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -181,6 +182,12 @@ export default function ManagementReviewDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!editing && (
+            <Button variant="outline" size="sm" onClick={() => generateManagementReviewReport(review, tenant.name)}>
+              <Download className="h-4 w-4" />
+              PDF
+            </Button>
+          )}
           {!editing && can("managementReview", "update") && (
             <Button variant="outline" onClick={startEdit}>
               <Edit2 className="h-4 w-4" />
