@@ -89,7 +89,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-title-1 text-foreground-primary">Configurações</h1>
         <p className="text-body-1 text-foreground-secondary mt-1">
