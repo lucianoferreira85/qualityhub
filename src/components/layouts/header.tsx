@@ -14,6 +14,7 @@ import {
   Settings,
   Menu,
   Search,
+  User,
 } from "lucide-react";
 import { AutoBreadcrumb } from "./auto-breadcrumb";
 import { NotificationPopover } from "./notification-popover";
@@ -103,6 +104,16 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
                   {user?.email}
                 </p>
               </div>
+
+              <DropdownMenu.Item asChild>
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary transition-colors outline-none data-[highlighted]:bg-surface-tertiary"
+                >
+                  <User className="h-4 w-4" />
+                  Meu Perfil
+                </Link>
+              </DropdownMenu.Item>
 
               <DropdownMenu.Item asChild>
                 <button

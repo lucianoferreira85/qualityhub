@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -45,8 +45,10 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchNotifications = async (p = page) => {
-    setLoading(true);
+  const isFirstLoad = useRef(true);
+
+  const fetchNotifications = useCallback(async (p: number, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch(
         `/api/tenants/${tenant.slug}/notifications?page=${p}&pageSize=20`
@@ -57,20 +59,28 @@ export default function NotificationsPage() {
     } catch {
       /* ignore */
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [tenant.slug]);
 
   useEffect(() => {
     fetchNotifications(1);
     setPage(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenant.slug]);
+    isFirstLoad.current = false;
+  }, [fetchNotifications]);
 
   useEffect(() => {
-    fetchNotifications(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    if (!isFirstLoad.current) {
+      fetchNotifications(page);
+    }
+  }, [page, fetchNotifications]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchNotifications(page, true);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [page, fetchNotifications]);
 
   const markAllRead = async () => {
     setMarking(true);

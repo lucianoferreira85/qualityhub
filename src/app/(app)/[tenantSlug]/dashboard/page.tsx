@@ -152,14 +152,24 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [period, setPeriod] = useState("6m");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  useEffect(() => {
+  const fetchDashboard = useCallback(() => {
     fetch(`/api/tenants/${tenant.slug}/dashboard`)
       .then((res) => res.json())
-      .then((res) => setData(res.data))
+      .then((res) => {
+        setData(res.data);
+        setLastUpdated(new Date());
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tenant.slug]);
+
+  useEffect(() => {
+    fetchDashboard();
+    const interval = setInterval(fetchDashboard, 60000);
+    return () => clearInterval(interval);
+  }, [fetchDashboard]);
 
   const fetchAnalytics = useCallback(
     (p: string) => {
@@ -237,6 +247,11 @@ export default function DashboardPage() {
           <h1 className="text-title-1 text-foreground-primary">Dashboard</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
             Visao geral do Sistema de Gestao da Qualidade
+            {lastUpdated && (
+              <span className="text-caption-1 text-foreground-tertiary ml-2">
+                &middot; Atualizado {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">

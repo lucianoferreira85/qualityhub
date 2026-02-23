@@ -20,8 +20,13 @@ import {
   Plus,
   Moon,
   Sun,
+  Bell,
+  User,
+  LogOut,
+  ExternalLink,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
+import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
 import { useCmdK } from "@/hooks/use-hotkeys";
 
@@ -40,6 +45,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const { tenant } = useTenant();
+  const { signOut } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const basePath = `/${tenant.slug}`;
 
@@ -72,6 +78,7 @@ export function CommandPalette() {
     { label: "Indicadores", icon: TrendingUp, action: () => navigate("/indicators"), keywords: "indicador kpi meta" },
     { label: "Analise Critica", icon: BookOpen, action: () => navigate("/management-reviews"), keywords: "analise critica direcao" },
     { label: "Configuracoes", icon: Settings, action: () => navigate("/settings"), keywords: "config preferencia" },
+    { label: "Notificacoes", icon: Bell, action: () => navigate("/notifications"), keywords: "notificacao alerta aviso" },
   ];
 
   const quickActions: CommandItem[] = [
@@ -79,6 +86,23 @@ export function CommandPalette() {
     { label: "Nova Nao Conformidade", icon: Plus, action: () => navigate("/nonconformities/new"), keywords: "criar nc nova" },
     { label: "Novo Risco", icon: Plus, action: () => navigate("/risks/new"), keywords: "criar risco novo" },
     { label: "Nova Auditoria", icon: Plus, action: () => navigate("/audits/new"), keywords: "criar auditoria nova" },
+    { label: "Novo Plano de Acao", icon: Plus, action: () => navigate("/action-plans/new"), keywords: "criar plano acao novo" },
+    { label: "Novo Documento", icon: Plus, action: () => navigate("/documents/new"), keywords: "criar documento novo" },
+    { label: "Novo Indicador", icon: Plus, action: () => navigate("/indicators/new"), keywords: "criar indicador novo kpi" },
+    { label: "Novo Cliente", icon: Plus, action: () => navigate("/clients/new"), keywords: "criar cliente novo" },
+    { label: "Novo Processo", icon: Plus, action: () => navigate("/processes/new"), keywords: "criar processo novo" },
+    { label: "Nova Analise Critica", icon: Plus, action: () => navigate("/management-reviews/new"), keywords: "criar analise critica nova" },
+  ];
+
+  const utilActions: CommandItem[] = [
+    { label: "Meu Perfil", icon: User, action: () => { router.push("/profile"); setOpen(false); }, keywords: "perfil conta usuario" },
+    { label: "Trocar Empresa", icon: ExternalLink, action: () => { router.push("/organizations"); setOpen(false); }, keywords: "trocar empresa organizacao tenant" },
+    {
+      label: "Sair",
+      icon: LogOut,
+      action: () => { signOut(); setOpen(false); },
+      keywords: "sair logout desconectar",
+    },
   ];
 
   return (
@@ -130,6 +154,25 @@ export function CommandPalette() {
                 className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-foreground-tertiary [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
               >
                 {quickActions.map((item) => (
+                  <Command.Item
+                    key={item.label}
+                    value={`${item.label} ${item.keywords || ""}`}
+                    onSelect={item.action}
+                    className="flex items-center gap-3 px-2 py-2 rounded-button text-body-2 text-foreground-secondary cursor-pointer data-[selected=true]:bg-surface-tertiary data-[selected=true]:text-foreground-primary transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+
+              <Command.Separator className="my-1.5 h-px bg-stroke-secondary" />
+
+              <Command.Group
+                heading="Conta"
+                className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-caption-1 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-foreground-tertiary [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+              >
+                {utilActions.map((item) => (
                   <Command.Item
                     key={item.label}
                     value={`${item.label} ${item.keywords || ""}`}
