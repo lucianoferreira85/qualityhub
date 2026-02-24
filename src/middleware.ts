@@ -80,15 +80,21 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(NextResponse.next());
   }
 
-  const { response, user } = await createMiddlewareClient(request);
+  try {
+    const { response, user } = await createMiddlewareClient(request);
 
-  if (!user) {
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    }
+
+    return addSecurityHeaders(response);
+  } catch {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return addSecurityHeaders(NextResponse.redirect(loginUrl));
   }
-
-  return addSecurityHeaders(response);
 }
 
 export const config = {

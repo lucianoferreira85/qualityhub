@@ -4,9 +4,18 @@ import { cookies } from "next/headers";
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables"
+    );
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() {
@@ -18,7 +27,7 @@ export async function createSupabaseServerClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // Server Component - ignore
+            // Server Component context - cookie writes not supported
           }
         },
       },

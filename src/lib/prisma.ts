@@ -6,9 +6,16 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 
 function getPrismaClient(): PrismaClient {
   if (!globalForPrisma.prisma) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL environment variable is not set");
+    }
     const pool = new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       ssl: { rejectUnauthorized: false },
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
     const adapter = new PrismaPg(pool);
     globalForPrisma.prisma = new PrismaClient({ adapter });

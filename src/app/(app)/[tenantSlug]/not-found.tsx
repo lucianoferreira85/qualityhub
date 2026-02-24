@@ -1,3 +1,5 @@
+"use client";
+
 import { Shield, ArrowLeft } from "lucide-react";
 
 export default function TenantNotFound() {
