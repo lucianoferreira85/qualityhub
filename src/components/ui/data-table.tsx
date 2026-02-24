@@ -108,6 +108,9 @@ function DataTable<T extends { id?: string }>({
                   col.className
                 )}
                 onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
+                onKeyDown={col.sortable && onSort ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSort(col.key); } } : undefined}
+                tabIndex={col.sortable && onSort ? 0 : undefined}
+                aria-sort={col.sortable && sortKey === col.key ? (sortDirection === "asc" ? "ascending" : "descending") : undefined}
               >
                 <span className="inline-flex items-center gap-1">
                   {col.label}
@@ -122,11 +125,14 @@ function DataTable<T extends { id?: string }>({
             <tr
               key={item.id ?? index}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
+              onKeyDown={onRowClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onRowClick(item); } } : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? "button" : undefined}
               className={cn(
                 "border-b border-stroke-secondary last:border-b-0 transition-colors",
                 index % 2 === 1 && "bg-surface-secondary/30",
                 onRowClick
-                  ? "cursor-pointer hover:bg-brand-light/40 dark:hover:bg-brand-light/10"
+                  ? "cursor-pointer hover:bg-brand-light/40 dark:hover:bg-brand-light/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
                   : "hover:bg-surface-secondary/50"
               )}
             >

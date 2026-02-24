@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,8 +63,12 @@ export default function NewNonconformityPage() {
   const { tenant } = useTenant();
 
   const [form, setForm] = useState<NcFormData>(INITIAL_FORM);
-  const updateForm = (field: keyof NcFormData, value: string) =>
+  const [formTouched, setFormTouched] = useState(false);
+  useUnsavedChanges(formTouched);
+  const updateForm = (field: keyof NcFormData, value: string) => {
+    setFormTouched(true);
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -113,6 +118,7 @@ export default function NewNonconformityPage() {
       }
       const data = await res.json();
       toast.success("Não conformidade criada com sucesso");
+      setFormTouched(false);
       router.push(`/${tenant.slug}/nonconformities/${data.data.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao criar";

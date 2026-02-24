@@ -500,6 +500,43 @@ export default function ProjectDetailPage() {
     );
   }
 
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateProjectReport(
+        {
+          name: project.name,
+          description: project.description || null,
+          status: project.status,
+          progress: Number(project.progress),
+          targetMaturity: project.targetMaturity || 3,
+          startDate: project.startDate,
+          endDate: project.endDate,
+          createdAt: project.createdAt,
+          client: project.client,
+          standards: (project.standards || []).map((ps) => ({
+            standard: {
+              code: ps.standard?.code || "",
+              name: ps.standard?.name || "",
+            },
+          })),
+          members: (project.members || []).map((m) => ({
+            role: m.role,
+            user: {
+              name: m.user?.name || "",
+              email: m.user?.email || "",
+            },
+          })),
+          _count: counts,
+        },
+        tenant.name
+      );
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   const standards = project.standards || [];
   const members = project.members || [];
 
@@ -562,36 +599,7 @@ export default function ProjectDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  generateProjectReport(
-                    {
-                      name: project.name,
-                      description: project.description || null,
-                      status: project.status,
-                      progress: Number(project.progress),
-                      targetMaturity: project.targetMaturity || 3,
-                      startDate: project.startDate,
-                      endDate: project.endDate,
-                      createdAt: project.createdAt,
-                      client: project.client,
-                      standards: standards.map((ps) => ({
-                        standard: {
-                          code: ps.standard?.code || "",
-                          name: ps.standard?.name || "",
-                        },
-                      })),
-                      members: members.map((m) => ({
-                        role: m.role,
-                        user: {
-                          name: m.user?.name || "",
-                          email: m.user?.email || "",
-                        },
-                      })),
-                      _count: counts,
-                    },
-                    tenant.name
-                  )
-                }
+                onClick={handleExportPdf}
               >
                 <Download className="h-4 w-4" />
                 Relatório PDF

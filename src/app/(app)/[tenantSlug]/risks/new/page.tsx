@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,8 +92,12 @@ export default function NewRiskPage() {
   const { tenant } = useTenant();
 
   const [form, setForm] = useState<RiskFormData>(INITIAL_FORM);
-  const updateForm = (field: keyof RiskFormData, value: string | number) =>
+  const [formTouched, setFormTouched] = useState(false);
+  useUnsavedChanges(formTouched);
+  const updateForm = (field: keyof RiskFormData, value: string | number) => {
+    setFormTouched(true);
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -143,6 +148,7 @@ export default function NewRiskPage() {
       }
       const data = await res.json();
       toast.success("Risco criado com sucesso");
+      setFormTouched(false);
       router.push(`/${tenant.slug}/risks/${data.data.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao criar";

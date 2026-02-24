@@ -278,6 +278,16 @@ export default function RisksPage() {
     }
   };
 
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateRiskReport({ projectName: projectName || projectId, risks }, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   // Risk matrix counts
   const matrixCounts: Record<string, number> = {};
   risks.forEach((r) => {
@@ -312,7 +322,7 @@ export default function RisksPage() {
         </div>
         <div className="flex items-center gap-2">
           {risks.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => generateRiskReport({ projectName: projectName || projectId, risks }, tenant.name)}>
+            <Button variant="outline" size="sm" onClick={handleExportPdf}>
               <Download className="h-4 w-4" /> Exportar PDF
             </Button>
           )}

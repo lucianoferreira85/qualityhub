@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { generateSoaReport } from "@/lib/pdf-reports/soa-report";
+import { toast } from "sonner";
 
 interface StandardControl {
   id: string;
@@ -173,6 +174,20 @@ export default function SoaPage() {
     }
   };
 
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      const std = projectStandards.find((s) => s.id === selectedStandardId);
+      await generateSoaReport({
+        standardName: std ? `${std.code} - ${std.name}` : "Norma",
+        entries,
+      }, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   const stats = {
     total: entries.length,
     applicable: entries.filter((e) => e.applicable).length,
@@ -210,13 +225,7 @@ export default function SoaPage() {
         </div>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => {
-              const std = projectStandards.find((s) => s.id === selectedStandardId);
-              generateSoaReport({
-                standardName: std ? `${std.code} - ${std.name}` : "Norma",
-                entries,
-              }, tenant.name);
-            }}>
+            <Button variant="outline" size="sm" onClick={handleExportPdf}>
               <Download className="h-4 w-4" /> Exportar PDF
             </Button>
           )}

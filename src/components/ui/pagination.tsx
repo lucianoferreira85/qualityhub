@@ -23,8 +23,8 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   const pages = getVisiblePages(page, totalPages);
 
   return (
-    <div className="flex items-center justify-between pt-4">
-      <p className="text-body-2 text-foreground-secondary">
+    <div className="flex items-center justify-between pt-4" role="navigation" aria-label="Paginacao">
+      <p className="text-body-2 text-foreground-secondary" aria-live="polite">
         Pagina {page} de {totalPages}
       </p>
       <div className="flex items-center gap-1">

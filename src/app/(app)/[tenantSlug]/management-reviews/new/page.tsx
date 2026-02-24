@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -33,11 +34,15 @@ export default function NewManagementReviewPage() {
   const { tenant } = useTenant();
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [form, setForm] = useState<ReviewFormData>(INITIAL_FORM);
+  const [formTouched, setFormTouched] = useState(false);
+  useUnsavedChanges(formTouched);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const updateForm = (field: keyof ReviewFormData, value: string) =>
+  const updateForm = (field: keyof ReviewFormData, value: string) => {
+    setFormTouched(true);
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   useEffect(() => {
     fetch(`/api/tenants/${tenant.slug}/projects`)
@@ -74,6 +79,7 @@ export default function NewManagementReviewPage() {
         throw new Error(err.error || "Erro ao criar");
       }
       toast.success("Análise crítica criada com sucesso");
+      setFormTouched(false);
       router.push(`/${tenant.slug}/management-reviews`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao criar";

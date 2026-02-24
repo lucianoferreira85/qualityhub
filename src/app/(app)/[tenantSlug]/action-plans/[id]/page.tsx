@@ -149,6 +149,7 @@ export default function ActionPlanDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
+    const toastId = toast.loading("Excluindo...");
     try {
       const res = await fetch(
         `/api/tenants/${tenant.slug}/action-plans/${apId}`,
@@ -158,12 +159,12 @@ export default function ActionPlanDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir plano");
       }
-      toast.success("Plano de ação excluído com sucesso");
+      toast.success("Plano de ação excluído com sucesso", { id: toastId });
       router.push(`/${tenant.slug}/action-plans`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao excluir";
       setError(message);
-      toast.error(message);
+      toast.error(message, { id: toastId });
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -186,6 +187,16 @@ export default function ActionPlanDetailPage() {
       </div>
     );
   }
+
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateActionPlanReport(ap, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
 
   const statusIndex = STATUSES.findIndex((s) => s.value === ap.status);
 
@@ -225,7 +236,7 @@ export default function ActionPlanDetailPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={() => generateActionPlanReport(ap, tenant.name)}>
+              <Button variant="outline" size="sm" onClick={handleExportPdf}>
                 <Download className="h-4 w-4" />
                 PDF
               </Button>

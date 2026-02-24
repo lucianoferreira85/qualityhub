@@ -121,14 +121,26 @@ export default function ManagementReviewDetailPage() {
   };
 
   const handleDelete = async () => {
+    const toastId = toast.loading("Excluindo...");
     try {
       await fetch(`/api/tenants/${tenant.slug}/management-reviews/${reviewId}`, {
         method: "DELETE",
       });
-      toast.success("Análise crítica excluída com sucesso");
+      toast.success("Análise crítica excluída com sucesso", { id: toastId });
       router.push(`/${tenant.slug}/management-reviews`);
     } catch {
-      toast.error("Erro ao excluir análise crítica");
+      toast.error("Erro ao excluir análise crítica", { id: toastId });
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!review) return;
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateManagementReviewReport(review, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
     }
   };
 
@@ -183,7 +195,7 @@ export default function ManagementReviewDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {!editing && (
-            <Button variant="outline" size="sm" onClick={() => generateManagementReviewReport(review, tenant.name)}>
+            <Button variant="outline" size="sm" onClick={handleExportPdf}>
               <Download className="h-4 w-4" />
               PDF
             </Button>

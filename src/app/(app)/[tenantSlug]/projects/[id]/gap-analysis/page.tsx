@@ -10,6 +10,7 @@ import { CardSkeleton } from "@/components/ui/skeleton";
 import { BarChart3, Target, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateGapAnalysisReport } from "@/lib/pdf-reports/gap-analysis-report";
+import { toast } from "sonner";
 import { MaturityRadar } from "@/components/charts/maturity-radar";
 
 interface GapItem {
@@ -102,6 +103,32 @@ export default function GapAnalysisPage() {
     });
   };
 
+  const handleExportPdf = async () => {
+    if (!data) return;
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateGapAnalysisReport(
+        {
+          projectName: projectName,
+          targetMaturity: data.targetMaturity,
+          overall: data.overall,
+          byStandard: data.byStandard.map((s) => ({
+            standardCode: s.standardCode,
+            standardName: s.standardName,
+            avgMaturity: s.avgMaturity,
+            byDomain: s.byDomain,
+          })),
+          maturityDistribution: data.maturityDistribution,
+          topGaps: data.topGaps,
+        },
+        tenant.name
+      );
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   // Gather all domains across all standards for radar
   const allDomains = data?.byStandard?.flatMap((s) => s.byDomain) || [];
 
@@ -129,24 +156,7 @@ export default function GapAnalysisPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                generateGapAnalysisReport(
-                  {
-                    projectName: projectName,
-                    targetMaturity: data.targetMaturity,
-                    overall: data.overall,
-                    byStandard: data.byStandard.map((s) => ({
-                      standardCode: s.standardCode,
-                      standardName: s.standardName,
-                      avgMaturity: s.avgMaturity,
-                      byDomain: s.byDomain,
-                    })),
-                    maturityDistribution: data.maturityDistribution,
-                    topGaps: data.topGaps,
-                  },
-                  tenant.name
-                )
-              }
+              onClick={handleExportPdf}
             >
               <Download className="h-4 w-4" /> Exportar PDF
             </Button>

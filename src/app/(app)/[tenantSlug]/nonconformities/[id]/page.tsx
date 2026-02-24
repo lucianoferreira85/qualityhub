@@ -167,6 +167,7 @@ export default function NonconformityDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
+    const toastId = toast.loading("Excluindo...");
     try {
       const res = await fetch(
         `/api/tenants/${tenant.slug}/nonconformities/${ncId}`,
@@ -176,12 +177,12 @@ export default function NonconformityDetailPage() {
         const data = await res.json();
         throw new Error(data.error || "Erro ao excluir NC");
       }
-      toast.success("Não conformidade excluída com sucesso");
+      toast.success("Não conformidade excluída com sucesso", { id: toastId });
       router.push(`/${tenant.slug}/nonconformities`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao excluir";
       setError(message);
-      toast.error(message);
+      toast.error(message, { id: toastId });
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -290,6 +291,16 @@ export default function NonconformityDetailPage() {
     );
   }
 
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateNcReport(nc, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   const actionPlans = nc.actionPlans || [];
   const statusIndex = STATUSES.findIndex((s) => s.value === nc.status);
 
@@ -331,7 +342,7 @@ export default function NonconformityDetailPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={() => generateNcReport(nc, tenant.name)}>
+              <Button variant="outline" size="sm" onClick={handleExportPdf}>
                 <Download className="h-4 w-4" /> Exportar PDF
               </Button>
               {can("nonconformity", "update") && (

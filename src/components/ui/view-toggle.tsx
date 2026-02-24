@@ -10,7 +10,7 @@ interface ViewToggleProps {
 
 function ViewToggle({ view, onChange }: ViewToggleProps) {
   return (
-    <div className="border border-stroke-secondary rounded-lg p-0.5 flex">
+    <div className="border border-stroke-secondary rounded-lg p-0.5 flex" role="group" aria-label="Modo de visualizacao">
       <button
         onClick={() => onChange("cards")}
         className={cn(

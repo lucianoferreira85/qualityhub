@@ -168,15 +168,16 @@ export default function AuditDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
+    const toastId = toast.loading("Excluindo...");
     try {
       const res = await fetch(`/api/tenants/${tenant.slug}/audits/${auditId}`, { method: "DELETE" });
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || "Erro ao excluir"); }
-      toast.success("Auditoria excluída com sucesso");
+      toast.success("Auditoria excluída com sucesso", { id: toastId });
       router.push(`/${tenant.slug}/audits`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao excluir";
       setError(message);
-      toast.error(message);
+      toast.error(message, { id: toastId });
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -261,6 +262,16 @@ export default function AuditDetailPage() {
     </div>
   );
 
+  const handleExportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF...");
+    try {
+      await generateAuditReport(audit, tenant.name);
+      toast.success("PDF gerado com sucesso", { id: toastId });
+    } catch {
+      toast.error("Erro ao gerar PDF", { id: toastId });
+    }
+  };
+
   const findings = audit.findings || [];
   const statusIndex = STATUSES.findIndex((s) => s.value === audit.status);
 
@@ -290,7 +301,7 @@ export default function AuditDetailPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" onClick={() => generateAuditReport(audit, tenant.name)}>
+              <Button variant="outline" size="sm" onClick={handleExportPdf}>
                 <Download className="h-4 w-4" /> Exportar PDF
               </Button>
               {can("audit", "update") && (

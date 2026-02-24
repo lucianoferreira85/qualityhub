@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/hooks/use-tenant";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,8 @@ export default function NewClientPage() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [sector, setSector] = useState("");
+  const [formTouched, setFormTouched] = useState(false);
+  useUnsavedChanges(formTouched);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -62,6 +65,7 @@ export default function NewClientPage() {
 
       const data = await res.json();
       toast.success("Cliente criado com sucesso");
+      setFormTouched(false);
       router.push(`/${tenant.slug}/clients/${data.data.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao criar cliente";
@@ -98,7 +102,7 @@ export default function NewClientPage() {
               </label>
               <Input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setFormTouched(true); setName(e.target.value); }}
                 placeholder="Ex: Empresa ABC Ltda"
                 required
               />
@@ -110,7 +114,7 @@ export default function NewClientPage() {
               </label>
               <Input
                 value={cnpj}
-                onChange={(e) => setCnpj(e.target.value)}
+                onChange={(e) => { setFormTouched(true); setCnpj(e.target.value); }}
                 placeholder="00.000.000/0001-00"
               />
             </div>
@@ -121,7 +125,7 @@ export default function NewClientPage() {
               </label>
               <Select
                 value={sector}
-                onChange={(e) => setSector(e.target.value)}
+                onChange={(e) => { setFormTouched(true); setSector(e.target.value); }}
                 options={SECTORS}
                 placeholder="Selecione o setor"
               />
@@ -142,7 +146,7 @@ export default function NewClientPage() {
               </label>
               <Input
                 value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
+                onChange={(e) => { setFormTouched(true); setContactName(e.target.value); }}
                 placeholder="Ex: João Silva"
               />
             </div>
@@ -154,7 +158,7 @@ export default function NewClientPage() {
               <Input
                 type="email"
                 value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
+                onChange={(e) => { setFormTouched(true); setContactEmail(e.target.value); }}
                 placeholder="joao@empresa.com"
               />
             </div>

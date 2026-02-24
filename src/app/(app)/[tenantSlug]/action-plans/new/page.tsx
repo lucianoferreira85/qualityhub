@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTenant } from "@/hooks/use-tenant";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,8 +59,12 @@ export default function NewActionPlanPage() {
   const { tenant } = useTenant();
 
   const [form, setForm] = useState<ActionPlanFormData>(INITIAL_FORM);
-  const updateForm = (field: keyof ActionPlanFormData, value: string) =>
+  const [formTouched, setFormTouched] = useState(false);
+  useUnsavedChanges(formTouched);
+  const updateForm = (field: keyof ActionPlanFormData, value: string) => {
+    setFormTouched(true);
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -115,6 +120,7 @@ export default function NewActionPlanPage() {
       }
       const data = await res.json();
       toast.success("Plano de ação criado com sucesso");
+      setFormTouched(false);
       router.push(`/${tenant.slug}/action-plans/${data.data.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao criar";
