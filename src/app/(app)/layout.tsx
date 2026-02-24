@@ -12,7 +12,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     if (!loading && !user) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+  }, [user, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

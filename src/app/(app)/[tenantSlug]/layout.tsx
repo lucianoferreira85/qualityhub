@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, useRef, useCallback, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { AppShell } from "@/components/layouts/app-shell";
@@ -18,6 +18,39 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
   const [tenantCtx, setTenantCtx] = useState<TenantContextValue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchedRef = useRef<string | null>(null);
+
+  const loadTenant = useCallback(async (slug: string, signal: AbortSignal) => {
+    try {
+      const res = await fetch(`/api/tenants/${slug}`, { signal });
+      if (!res.ok) {
+        if (res.status === 403 || res.status === 404) {
+          router.push("/organizations");
+          return;
+        }
+        throw new Error("Erro ao carregar empresa");
+      }
+      const data = await res.json();
+      const ctx = createTenantContextValue(
+        data.data.tenant,
+        data.data.membership,
+        data.data.plan
+      );
+      if (!signal.aborted) {
+        setTenantCtx(ctx);
+        setError(null);
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (!signal.aborted) {
+        setError(err instanceof Error ? err.message : "Erro ao carregar empresa");
+      }
+    } finally {
+      if (!signal.aborted) {
+        setLoading(false);
+      }
+    }
+  }, [router]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -26,26 +59,18 @@ export default function TenantLayout({ children }: { children: ReactNode }) {
       return;
     }
 
-    fetch(`/api/tenants/${tenantSlug}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          if (res.status === 403 || res.status === 404) {
-            router.push("/organizations");
-            return;
-          }
-          throw new Error("Erro ao carregar empresa");
-        }
-        const data = await res.json();
-        const ctx = createTenantContextValue(
-          data.data.tenant,
-          data.data.membership,
-          data.data.plan
-        );
-        setTenantCtx(ctx);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [tenantSlug, user, authLoading, router]);
+    // Avoid re-fetching if slug hasn't changed
+    if (fetchedRef.current === tenantSlug && tenantCtx) return;
+
+    setLoading(true);
+    fetchedRef.current = tenantSlug;
+
+    const controller = new AbortController();
+    loadTenant(tenantSlug, controller.signal);
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantSlug, user?.id, authLoading]);
 
   if (authLoading || loading) {
     return (

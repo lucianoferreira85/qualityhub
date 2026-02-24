@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,6 +22,7 @@ export default function TenantSelectorPage() {
   const router = useRouter();
   const [tenants, setTenants] = useState<TenantInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -29,6 +30,8 @@ export default function TenantSelectorPage() {
       router.push("/login");
       return;
     }
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
     fetch("/api/user/tenants")
       .then((res) => res.json())
@@ -37,7 +40,7 @@ export default function TenantSelectorPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [user, authLoading, router]);
+  }, [user, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (authLoading || loading) {
     return (
