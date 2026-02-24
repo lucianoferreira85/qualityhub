@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function ProfilePage() {
   usePageTitle("Meu Perfil");
   useAuth();
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tenants, setTenants] = useState<UserTenant[]>([]);
   const [name, setName] = useState("");
@@ -137,12 +139,12 @@ export default function ProfilePage() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6 animate-page-enter">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/organizations"
+        <button
+          onClick={() => router.back()}
           className="h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-        </Link>
+        </button>
         <h1 className="text-title-1 text-foreground-primary">Meu Perfil</h1>
       </div>
 
