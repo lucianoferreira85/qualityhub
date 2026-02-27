@@ -31,7 +31,9 @@ function ExpirationsWidget({ data }: ExpirationsWidgetProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Timer className="h-5 w-5 text-warning" />
+          <div className="h-8 w-8 rounded-lg bg-warning-bg flex items-center justify-center">
+            <Timer className="h-4 w-4 text-warning-fg" />
+          </div>
           <h2 className="text-title-3 text-foreground-primary">Vencimentos Proximos (30 dias)</h2>
         </div>
       </CardHeader>
@@ -43,12 +45,12 @@ function ExpirationsWidget({ data }: ExpirationsWidgetProps) {
             return (
               <div
                 key={`${exp.type}-${exp.id}`}
-                className={`flex items-center gap-3 p-3 rounded-button border transition-colors ${
+                className={`flex items-center gap-3 p-3 rounded-button border transition-all duration-120 ${
                   isOverdue
-                    ? "border-danger/30 bg-danger-bg/30"
+                    ? "border-danger/20 bg-danger-bg/40"
                     : isUrgent
-                    ? "border-warning/30 bg-warning-bg/30"
-                    : "border-stroke-secondary hover:bg-surface-secondary"
+                    ? "border-warning/20 bg-warning-bg/40"
+                    : "border-stroke-secondary hover:bg-surface-tertiary"
                 }`}
               >
                 <Badge
@@ -59,7 +61,7 @@ function ExpirationsWidget({ data }: ExpirationsWidgetProps) {
                       ? "bg-info-bg text-info-fg"
                       : exp.type === "review"
                       ? "bg-warning-bg text-warning-fg"
-                      : "bg-gray-100 text-gray-800"
+                      : "bg-surface-tertiary text-foreground-secondary"
                   }
                   className="text-caption-2 w-28 justify-center flex-shrink-0"
                 >
@@ -74,7 +76,7 @@ function ExpirationsWidget({ data }: ExpirationsWidgetProps) {
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <Calendar className="h-3.5 w-3.5" />
                   <span
-                    className={`text-caption-1 font-medium ${
+                    className={`text-caption-1 font-medium tabular-nums ${
                       isOverdue ? "text-danger-fg" : isUrgent ? "text-warning-fg" : "text-foreground-tertiary"
                     }`}
                   >

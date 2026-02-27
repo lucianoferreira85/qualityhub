@@ -8,7 +8,10 @@ interface SkeletonProps {
 function Skeleton({ className }: SkeletonProps) {
   return (
     <div
-      className={cn("animate-pulse bg-surface-tertiary rounded", className)}
+      className={cn(
+        "rounded-badge bg-surface-tertiary bg-shimmer bg-[length:200%_100%] animate-shimmer",
+        className
+      )}
     />
   );
 }
@@ -43,10 +46,10 @@ function CardSkeleton({ lines = 3, className }: CardSkeletonProps) {
 
 function TableSkeleton({ columns = 5, rows = 6 }: { columns?: number; rows?: number }) {
   return (
-    <div className="border border-stroke-secondary rounded-lg overflow-hidden">
+    <div className="border border-stroke-secondary rounded-card overflow-hidden bg-surface-primary shadow-xs">
       <table className="w-full">
         <thead>
-          <tr className="bg-surface-secondary border-b border-stroke-secondary">
+          <tr className="border-b border-stroke-secondary">
             {Array.from({ length: columns }).map((_, i) => (
               <th key={i} className="px-4 py-3">
                 <Skeleton className={cn("h-3", i === 0 ? "w-16" : "w-20")} />
@@ -58,7 +61,7 @@ function TableSkeleton({ columns = 5, rows = 6 }: { columns?: number; rows?: num
           {Array.from({ length: rows }).map((_, i) => (
             <tr key={i} className="border-b border-stroke-secondary last:border-b-0">
               {Array.from({ length: columns }).map((_, j) => (
-                <td key={j} className="px-4 py-3">
+                <td key={j} className="px-4 py-3.5">
                   <Skeleton className={cn("h-4", j === 0 ? "w-20" : i % 2 === 0 ? "w-3/4" : "w-1/2")} />
                 </td>
               ))}
@@ -73,7 +76,6 @@ function TableSkeleton({ columns = 5, rows = 6 }: { columns?: number; rows?: num
 function ListPageSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-7 w-48" />
@@ -81,13 +83,11 @@ function ListPageSkeleton() {
         </div>
         <Skeleton className="h-9 w-32 rounded-button" />
       </div>
-      {/* Filter bar */}
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-64 rounded-input" />
         <Skeleton className="h-9 w-36 rounded-input" />
         <Skeleton className="h-9 w-36 rounded-input" />
       </div>
-      {/* Table */}
       <TableSkeleton />
     </div>
   );
@@ -96,7 +96,6 @@ function ListPageSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-7 w-36" />
@@ -107,7 +106,6 @@ function DashboardSkeleton() {
           <Skeleton className="h-9 w-32 rounded-button" />
         </div>
       </div>
-      {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i}>
@@ -121,7 +119,6 @@ function DashboardSkeleton() {
           </Card>
         ))}
       </div>
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <CardSkeleton key={i} lines={5} />
@@ -134,7 +131,6 @@ function DashboardSkeleton() {
 function DetailPageSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Back button + title */}
       <div className="flex items-center gap-4">
         <Skeleton className="h-9 w-9 rounded-lg" />
         <div className="space-y-2 flex-1">
@@ -147,7 +143,6 @@ function DetailPageSkeleton() {
           <Skeleton className="h-9 w-9 rounded-lg" />
         </div>
       </div>
-      {/* Info cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
@@ -160,7 +155,6 @@ function DetailPageSkeleton() {
           </Card>
         ))}
       </div>
-      {/* Main content card */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -171,7 +165,6 @@ function DetailPageSkeleton() {
           </div>
         </CardContent>
       </Card>
-      {/* Secondary content */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -198,16 +191,13 @@ function DetailPageSkeleton() {
 function FormPageSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Back button + title */}
       <div className="flex items-center gap-4">
         <Skeleton className="h-9 w-9 rounded-lg" />
         <Skeleton className="h-7 w-56" />
       </div>
-      {/* Form card */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-6">
-            {/* Two-column fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="space-y-2">
@@ -216,7 +206,6 @@ function FormPageSkeleton() {
                 </div>
               ))}
             </div>
-            {/* Full-width textarea */}
             <div className="space-y-2">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-24 w-full rounded-input" />
@@ -224,7 +213,6 @@ function FormPageSkeleton() {
           </div>
         </CardContent>
       </Card>
-      {/* Action bar */}
       <div className="flex justify-end gap-3">
         <Skeleton className="h-10 w-24 rounded-button" />
         <Skeleton className="h-10 w-32 rounded-button" />
@@ -236,18 +224,15 @@ function FormPageSkeleton() {
 function SettingsPageSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Title */}
       <div className="space-y-2">
         <Skeleton className="h-7 w-40" />
         <Skeleton className="h-4 w-72" />
       </div>
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-stroke-secondary pb-2">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-9 w-28 rounded-button" />
         ))}
       </div>
-      {/* Settings content */}
       <Card>
         <CardContent className="p-6">
           <div className="space-y-6">
@@ -267,7 +252,6 @@ function SettingsPageSkeleton() {
 function NotificationsPageSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-7 w-40" />
@@ -275,7 +259,6 @@ function NotificationsPageSkeleton() {
         </div>
         <Skeleton className="h-9 w-44 rounded-button" />
       </div>
-      {/* Notification list */}
       <div className="space-y-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i}>

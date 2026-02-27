@@ -31,12 +31,12 @@ function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 animate-in fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-card bg-surface-primary border border-stroke-secondary shadow-dialog animate-in fade-in-0 zoom-in-95 p-6">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl bg-surface-elevated border border-stroke-secondary shadow-dialog animate-scale-in p-6">
           <div className="flex items-start gap-4">
             <div
               className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0",
+                "flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0",
                 variant === "danger"
                   ? "bg-danger-bg text-danger"
                   : "bg-warning-bg text-warning"
@@ -58,7 +58,7 @@ function ConfirmDialog({
 
             <Dialog.Close asChild>
               <button
-                className="h-8 w-8 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+                className="h-8 w-8 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary hover:text-foreground-secondary transition-all duration-120 flex-shrink-0"
                 aria-label="Fechar"
               >
                 <X className="h-4 w-4" />

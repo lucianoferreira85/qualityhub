@@ -16,12 +16,12 @@ function Avatar({ name, size = "md", className }: AvatarProps) {
   return (
     <div
       className={cn(
-        "rounded-full gradient-brand flex items-center justify-center flex-shrink-0",
+        "rounded-full gradient-brand flex items-center justify-center flex-shrink-0 shadow-xs ring-2 ring-surface-primary",
         sizeClasses[size],
         className
       )}
     >
-      <span className="text-white font-medium leading-none">
+      <span className="text-white font-semibold leading-none">
         {getInitials(name)}
       </span>
     </div>

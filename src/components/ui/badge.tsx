@@ -9,7 +9,7 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-caption-1 font-medium transition-colors",
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-caption-1 font-medium transition-colors border border-transparent shadow-xs",
         variant || "bg-brand-light text-brand",
         className
       )}

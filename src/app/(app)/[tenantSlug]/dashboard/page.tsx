@@ -242,9 +242,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-title-1 text-foreground-primary">Dashboard</h1>
+          <h1 className="text-title-1 text-foreground-primary tracking-tight-2">Dashboard</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
             Visao geral do Sistema de Gestao da Qualidade
             {lastUpdated && (
@@ -255,15 +255,15 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 bg-surface-secondary rounded-button border border-stroke-secondary p-0.5">
+          <div className="flex items-center gap-1 bg-surface-primary rounded-button border border-stroke-secondary p-1 shadow-xs">
             {PERIOD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setPeriod(opt.value)}
-                className={`px-3 py-1.5 text-caption-1 rounded-button transition-colors ${
+                className={`px-3 py-1.5 text-caption-1 rounded-[6px] transition-all duration-150 ${
                   period === opt.value
-                    ? "bg-brand text-white font-medium"
-                    : "text-foreground-secondary hover:text-foreground-primary"
+                    ? "btn-primary-gradient text-white font-medium shadow-sm"
+                    : "text-foreground-secondary hover:text-foreground-primary hover:bg-surface-tertiary"
                 }`}
               >
                 {opt.label}
@@ -320,10 +320,12 @@ export default function DashboardPage() {
           ) : analytics && (
             <>
               {analytics.trends.length > 0 && (
-                <Card>
+                <Card className="overflow-hidden">
                   <div className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <BarChart3 className="h-5 w-5 text-brand" />
+                    <div className="flex items-center gap-2.5 mb-5">
+                      <div className="h-8 w-8 rounded-lg bg-brand-light flex items-center justify-center">
+                        <BarChart3 className="h-4 w-4 text-brand" />
+                      </div>
                       <h2 className="text-title-3 text-foreground-primary">
                         Tendencias ({PERIOD_OPTIONS.find((o) => o.value === period)?.label})
                       </h2>
@@ -335,10 +337,12 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {analytics.projectComparison.length > 1 && (
-                  <Card>
+                  <Card className="overflow-hidden">
                     <div className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <BarChart3 className="h-5 w-5 text-brand" />
+                      <div className="flex items-center gap-2.5 mb-5">
+                        <div className="h-8 w-8 rounded-lg bg-brand-light flex items-center justify-center">
+                          <BarChart3 className="h-4 w-4 text-brand" />
+                        </div>
                         <h2 className="text-title-3 text-foreground-primary">
                           Comparativo de Projetos
                         </h2>
@@ -351,10 +355,12 @@ export default function DashboardPage() {
               </div>
 
               {analytics.certificationReadiness.length > 0 && (
-                <Card>
+                <Card className="overflow-hidden">
                   <div className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Target className="h-5 w-5 text-brand" />
+                    <div className="flex items-center gap-2.5 mb-5">
+                      <div className="h-8 w-8 rounded-lg bg-brand-light flex items-center justify-center">
+                        <Target className="h-4 w-4 text-brand" />
+                      </div>
                       <h2 className="text-title-3 text-foreground-primary">
                         Prontidao para Certificacao
                       </h2>

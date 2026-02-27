@@ -29,30 +29,30 @@ function ProjectsOverview({ data, tenantSlug }: ProjectsOverviewProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-title-3 text-foreground-primary">Projetos</h2>
           <Link href={`/${tenantSlug}/projects`}>
-            <span className="text-caption-1 text-brand hover:underline flex items-center gap-1">
+            <span className="text-caption-1 text-brand hover:text-brand-hover flex items-center gap-1 font-medium transition-colors duration-120">
               Ver todos <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {data.map((p) => (
             <Link
               key={p.id}
               href={`/${tenantSlug}/projects/${p.id}`}
-              className="block p-3 rounded-button border border-stroke-secondary hover:bg-surface-secondary transition-colors"
+              className="block p-3 rounded-button border border-stroke-secondary hover:border-brand/20 hover:bg-brand-subtle transition-all duration-120 group"
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-body-1 font-medium text-foreground-primary truncate">{p.name}</p>
+                <p className="text-body-1 font-medium text-foreground-primary truncate group-hover:text-brand transition-colors duration-120">{p.name}</p>
                 <StatusBadge status={p.status} />
               </div>
               <div className="flex items-center gap-4 text-caption-1 text-foreground-tertiary">
-                <span>{p.controls} controle{p.controls !== 1 ? "s" : ""}</span>
-                <span>{p.requirements} requisito{p.requirements !== 1 ? "s" : ""}</span>
-                <span>{p.risks} risco{p.risks !== 1 ? "s" : ""}</span>
+                <span className="tabular-nums">{p.controls} controle{p.controls !== 1 ? "s" : ""}</span>
+                <span className="tabular-nums">{p.requirements} requisito{p.requirements !== 1 ? "s" : ""}</span>
+                <span className="tabular-nums">{p.risks} risco{p.risks !== 1 ? "s" : ""}</span>
                 {p.ncs > 0 && (
-                  <span className="text-warning">{p.ncs} NC{p.ncs !== 1 ? "s" : ""}</span>
+                  <span className="text-warning font-medium tabular-nums">{p.ncs} NC{p.ncs !== 1 ? "s" : ""}</span>
                 )}
               </div>
             </Link>

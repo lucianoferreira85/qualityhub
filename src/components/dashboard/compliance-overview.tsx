@@ -23,14 +23,14 @@ function ComplianceOverview({ data }: ComplianceOverviewProps) {
         <h2 className="text-title-3 text-foreground-primary">Compliance</h2>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-5">
           <div className="flex-shrink-0">
-            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${
+            <div className={`h-16 w-16 rounded-2xl flex items-center justify-center ${
               data.compliancePercentage >= 70 ? "bg-success-bg" :
               data.compliancePercentage >= 40 ? "bg-warning-bg" :
               "bg-danger-bg"
             }`}>
-              <span className={`text-title-lg font-semibold ${
+              <span className={`text-title-lg font-bold tracking-tight-2 ${
                 data.compliancePercentage >= 70 ? "text-success-fg" :
                 data.compliancePercentage >= 40 ? "text-warning-fg" :
                 "text-danger-fg"
@@ -48,23 +48,29 @@ function ComplianceOverview({ data }: ComplianceOverviewProps) {
             </p>
           </div>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-body-2 text-foreground-secondary">Requisitos</span>
-              <span className="text-body-2 font-medium text-foreground-primary">{data.avgRequirementMaturity}/4</span>
+              <span className="text-body-2 font-semibold text-foreground-primary">{data.avgRequirementMaturity}/4</span>
             </div>
             <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
-              <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${(data.avgRequirementMaturity / 4) * 100}%` }} />
+              <div
+                className="h-full bg-brand rounded-full transition-all duration-400 ease-spring"
+                style={{ width: `${(data.avgRequirementMaturity / 4) * 100}%` }}
+              />
             </div>
           </div>
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <span className="text-body-2 text-foreground-secondary">Controles</span>
-              <span className="text-body-2 font-medium text-foreground-primary">{data.avgControlMaturity}/4</span>
+              <span className="text-body-2 font-semibold text-foreground-primary">{data.avgControlMaturity}/4</span>
             </div>
             <div className="h-2 bg-surface-tertiary rounded-full overflow-hidden">
-              <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${(data.avgControlMaturity / 4) * 100}%` }} />
+              <div
+                className="h-full bg-brand rounded-full transition-all duration-400 ease-spring"
+                style={{ width: `${(data.avgControlMaturity / 4) * 100}%` }}
+              />
             </div>
           </div>
         </div>

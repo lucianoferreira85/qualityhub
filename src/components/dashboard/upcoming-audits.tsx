@@ -27,7 +27,7 @@ function UpcomingAudits({ data, tenantSlug }: UpcomingAuditsProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-title-3 text-foreground-primary">Proximas Auditorias</h2>
           <Link href={`/${tenantSlug}/audits`}>
-            <span className="text-caption-1 text-brand hover:underline flex items-center gap-1">
+            <span className="text-caption-1 text-brand hover:text-brand-hover flex items-center gap-1 font-medium transition-colors duration-120">
               Ver todas <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
@@ -39,17 +39,17 @@ function UpcomingAudits({ data, tenantSlug }: UpcomingAuditsProps) {
             <Link
               key={audit.id}
               href={`/${tenantSlug}/audits/${audit.id}`}
-              className="flex items-center justify-between p-3 rounded-button border border-stroke-secondary hover:bg-surface-secondary transition-colors"
+              className="flex items-center justify-between p-3 rounded-button border border-stroke-secondary hover:border-brand/20 hover:bg-brand-subtle transition-all duration-120 group"
             >
               <div>
-                <p className="text-body-1 font-medium text-foreground-primary">{audit.title}</p>
+                <p className="text-body-1 font-medium text-foreground-primary group-hover:text-brand transition-colors duration-120">{audit.title}</p>
                 <p className="text-caption-1 text-foreground-tertiary">
                   {audit.type === "internal" ? "Interna" : audit.type === "external" ? "Externa" : audit.type}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-body-2 text-foreground-secondary">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>{formatDate(audit.startDate)}</span>
+                <span className="tabular-nums">{formatDate(audit.startDate)}</span>
               </div>
             </Link>
           ))}

@@ -89,12 +89,12 @@ export function NotificationPopover() {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
-          className="relative h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary transition-colors"
+          className="relative h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120"
           aria-label={`Notificacoes${unreadCount > 0 ? `, ${unreadCount} nao lidas` : ""}`}
         >
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger text-[10px] font-medium text-white px-1">
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger text-[10px] font-semibold text-white px-1 animate-scale-in">
               {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
@@ -103,7 +103,7 @@ export function NotificationPopover() {
 
       <Popover.Portal>
         <Popover.Content
-          className="z-50 w-80 rounded-card bg-surface-primary border border-stroke-secondary shadow-dialog animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+          className="z-50 w-80 rounded-card bg-surface-elevated border border-stroke-secondary shadow-dialog animate-fade-in-down"
           sideOffset={8}
           align="end"
         >
@@ -112,7 +112,7 @@ export function NotificationPopover() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="flex items-center gap-1 text-caption-1 text-brand hover:text-brand/80 transition-colors"
+                className="flex items-center gap-1 text-caption-1 text-brand hover:text-brand-hover transition-colors duration-120"
               >
                 <Check className="h-3 w-3" />
                 Marcar todas como lidas
@@ -122,8 +122,10 @@ export function NotificationPopover() {
 
           <div className="max-h-[320px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <Bell className="h-8 w-8 mx-auto mb-2 text-foreground-tertiary" />
+              <div className="px-4 py-10 text-center">
+                <div className="h-12 w-12 rounded-xl bg-surface-tertiary flex items-center justify-center mx-auto mb-3">
+                  <Bell className="h-6 w-6 text-foreground-tertiary" />
+                </div>
                 <p className="text-body-2 text-foreground-secondary">Nenhuma notificacao</p>
               </div>
             ) : (
@@ -135,12 +137,12 @@ export function NotificationPopover() {
                   <div
                     key={notification.id}
                     className={cn(
-                      "flex items-start gap-3 px-4 py-3 border-b border-stroke-secondary last:border-b-0 transition-colors",
-                      isUnread ? "bg-brand-light/30" : "hover:bg-surface-tertiary"
+                      "flex items-start gap-3 px-4 py-3 border-b border-stroke-secondary last:border-b-0 transition-all duration-120",
+                      isUnread ? "bg-brand-subtle" : "hover:bg-surface-tertiary"
                     )}
                   >
                     <div className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0",
+                      "flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0",
                       isUnread ? "bg-brand-light text-brand" : "bg-surface-tertiary text-foreground-tertiary"
                     )}>
                       <Icon className="h-4 w-4" />
@@ -168,7 +170,7 @@ export function NotificationPopover() {
           <div className="border-t border-stroke-secondary px-4 py-2.5">
             <Link
               href={`/${tenant.slug}/notifications`}
-              className="block text-center text-caption-1 text-brand hover:text-brand/80 transition-colors font-medium"
+              className="block text-center text-caption-1 text-brand hover:text-brand-hover transition-colors duration-120 font-medium"
               onClick={() => setOpen(false)}
             >
               Ver todas as notificacoes

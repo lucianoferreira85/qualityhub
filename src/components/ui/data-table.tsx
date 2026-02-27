@@ -42,15 +42,15 @@ function DataTable<T extends { id?: string }>({
 }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div className="border border-stroke-secondary rounded-lg overflow-hidden">
+      <div className="border border-stroke-secondary rounded-card overflow-hidden bg-surface-primary shadow-premium-card">
         <table className="w-full">
           <thead>
-            <tr className="bg-surface-secondary border-b border-stroke-secondary">
+            <tr className="border-b border-stroke-secondary bg-surface-secondary">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-left text-caption-1 font-medium text-foreground-secondary",
+                    "px-4 py-3 text-left text-caption-1 font-semibold text-foreground-tertiary uppercase tracking-wider",
                     col.className
                   )}
                 >
@@ -63,7 +63,7 @@ function DataTable<T extends { id?: string }>({
             {Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="border-b border-stroke-secondary last:border-b-0">
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3">
+                  <td key={col.key} className="px-4 py-3.5">
                     <Skeleton className={cn("h-4", i % 2 === 0 ? "w-3/4" : "w-1/2")} />
                   </td>
                 ))}
@@ -86,25 +86,25 @@ function DataTable<T extends { id?: string }>({
   }
 
   const getSortIcon = (colKey: string) => {
-    if (sortKey !== colKey) return <ArrowUpDown className="h-3.5 w-3.5" />;
+    if (sortKey !== colKey) return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-3.5 w-3.5" />
+      <ArrowUp className="h-3.5 w-3.5 text-brand" />
     ) : (
-      <ArrowDown className="h-3.5 w-3.5" />
+      <ArrowDown className="h-3.5 w-3.5 text-brand" />
     );
   };
 
   return (
-    <div className="border border-stroke-secondary rounded-lg overflow-hidden overflow-x-auto">
+    <div className="border border-stroke-secondary rounded-card overflow-hidden overflow-x-auto bg-surface-primary shadow-premium-card">
       <table className="w-full min-w-[640px]">
         <thead>
-          <tr className="bg-surface-secondary border-b border-stroke-secondary">
+          <tr className="border-b border-stroke-secondary bg-surface-secondary">
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={cn(
-                  "px-4 py-3 text-left text-caption-1 font-medium text-foreground-secondary",
-                  col.sortable && "cursor-pointer select-none hover:text-foreground-primary",
+                  "px-4 py-3 text-left text-caption-1 font-semibold text-foreground-tertiary uppercase tracking-wider",
+                  col.sortable && "cursor-pointer select-none hover:text-foreground-secondary transition-colors duration-120",
                   col.className
                 )}
                 onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
@@ -112,7 +112,7 @@ function DataTable<T extends { id?: string }>({
                 tabIndex={col.sortable && onSort ? 0 : undefined}
                 aria-sort={col.sortable && sortKey === col.key ? (sortDirection === "asc" ? "ascending" : "descending") : undefined}
               >
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1.5">
                   {col.label}
                   {col.sortable && onSort && getSortIcon(col.key)}
                 </span>
@@ -129,18 +129,17 @@ function DataTable<T extends { id?: string }>({
               tabIndex={onRowClick ? 0 : undefined}
               role={onRowClick ? "button" : undefined}
               className={cn(
-                "border-b border-stroke-secondary last:border-b-0 transition-colors",
-                index % 2 === 1 && "bg-surface-secondary/30",
+                "border-b border-stroke-secondary last:border-b-0 transition-all duration-120",
                 onRowClick
-                  ? "cursor-pointer hover:bg-brand-light/40 dark:hover:bg-brand-light/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
-                  : "hover:bg-surface-secondary/50"
+                  ? "cursor-pointer hover:bg-brand-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
+                  : "hover:bg-surface-secondary/60"
               )}
             >
               {columns.map((col) => (
                 <td
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-body-2 text-foreground-primary",
+                    "px-4 py-3.5 text-body-2 text-foreground-primary",
                     col.className
                   )}
                 >

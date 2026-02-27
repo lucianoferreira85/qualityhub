@@ -3,11 +3,11 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 const MATURITY_COLORS: Record<number, string> = {
-  0: "bg-gray-200 text-gray-600",
-  1: "bg-red-200 text-red-800",
-  2: "bg-yellow-200 text-yellow-800",
-  3: "bg-blue-200 text-blue-800",
-  4: "bg-green-200 text-green-800",
+  0: "bg-surface-tertiary text-foreground-tertiary",
+  1: "bg-danger-bg text-danger-fg",
+  2: "bg-warning-bg text-warning-fg",
+  3: "bg-info-bg text-info-fg",
+  4: "bg-success-bg text-success-fg",
 };
 
 interface HeatmapEntry {
@@ -39,9 +39,9 @@ function MaturityHeatmap({ data }: MaturityHeatmapProps) {
           <table className="w-full text-caption-1">
             <thead>
               <tr>
-                <th className="text-left p-2 text-foreground-secondary font-medium">Dominio</th>
+                <th className="text-left p-2 text-foreground-tertiary font-medium">Dominio</th>
                 {projectNames.map((pn) => (
-                  <th key={pn} className="text-center p-2 text-foreground-secondary font-medium truncate max-w-[120px]">
+                  <th key={pn} className="text-center p-2 text-foreground-tertiary font-medium truncate max-w-[120px]">
                     {pn}
                   </th>
                 ))}
@@ -62,7 +62,7 @@ function MaturityHeatmap({ data }: MaturityHeatmapProps) {
                     return (
                       <td key={pn} className="p-1.5 text-center">
                         <span
-                          className={`inline-block w-10 py-1 rounded text-caption-2 font-medium ${colorClass}`}
+                          className={`inline-block w-10 py-1 rounded-badge text-caption-2 font-semibold ${colorClass}`}
                           title={val !== undefined ? `${val.toFixed(1)}` : "N/A"}
                         >
                           {val !== undefined ? val.toFixed(1) : "-"}

@@ -21,14 +21,14 @@ function NcByStatus({ data, tenantSlug }: NcByStatusProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-title-3 text-foreground-primary">NCs por Status</h2>
           <Link href={`/${tenantSlug}/nonconformities`}>
-            <span className="text-caption-1 text-brand hover:underline flex items-center gap-1">
+            <span className="text-caption-1 text-brand hover:text-brand-hover flex items-center gap-1 font-medium transition-colors duration-120">
               Ver todas <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {data.map((nc) => {
             const pct = total > 0 ? Math.round((nc.count / total) * 100) : 0;
             return (
@@ -36,11 +36,11 @@ function NcByStatus({ data, tenantSlug }: NcByStatusProps) {
                 <StatusBadge status={nc.status} className="w-36 justify-center" />
                 <div className="flex-1 h-5 bg-surface-tertiary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-brand rounded-full transition-all"
+                    className="h-full bg-brand rounded-full transition-all duration-400 ease-spring"
                     style={{ width: `${Math.max(pct, 4)}%` }}
                   />
                 </div>
-                <span className="text-body-2 text-foreground-primary font-medium w-8 text-right">{nc.count}</span>
+                <span className="text-body-2 text-foreground-primary font-semibold w-8 text-right tabular-nums">{nc.count}</span>
               </div>
             );
           })}

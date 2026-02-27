@@ -37,35 +37,36 @@ export function ProjectComparisonBar({ data }: ProjectComparisonBarProps) {
     name: p.name.length > 20 ? p.name.slice(0, 20) + "..." : p.name,
     "Compliance (%)": p.compliance,
     "NCs Abertas": p.openNCs,
-    "Ações Pendentes": p.pendingActions,
+    "Acoes Pendentes": p.pendingActions,
   }));
 
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-stroke-secondary)" />
         <XAxis
           dataKey="name"
-          tick={{ fill: "#616161", fontSize: 11 }}
-          axisLine={{ stroke: "#d1d1d1" }}
+          tick={{ fill: "var(--color-fg-secondary)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--color-stroke-primary)" }}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "#8a8886", fontSize: 11 }}
-          axisLine={{ stroke: "#d1d1d1" }}
+          tick={{ fill: "var(--color-fg-tertiary)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--color-stroke-primary)" }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-stroke-secondary)",
+            borderRadius: 12,
             fontSize: 12,
+            boxShadow: "var(--shadow-lg)",
           }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="Compliance (%)" fill="#0078D4" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="NCs Abertas" fill="#FFB900" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="Ações Pendentes" fill="#C4314B" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Compliance (%)" fill="#7C3AED" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="NCs Abertas" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Acoes Pendentes" fill="#EF4444" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

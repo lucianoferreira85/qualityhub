@@ -43,9 +43,11 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
-      <div className="bg-surface-primary rounded-card shadow-card border border-stroke-secondary p-8">
+      <div className="bg-surface-primary rounded-xl shadow-lg border border-stroke-secondary p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] gradient-brand" />
+
         <div className="mb-8">
-          <h1 className="text-title-1 text-foreground-primary">Recuperar senha</h1>
+          <h1 className="text-title-1 text-foreground-primary tracking-tight-1">Recuperar senha</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
             Enviaremos um link para redefinir sua senha
           </p>
@@ -87,7 +89,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
+              <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button border border-danger/20">
                 {error}
               </div>
             )}

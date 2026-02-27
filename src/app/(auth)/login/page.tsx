@@ -37,24 +37,25 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md">
-      {/* Mobile logo (hidden on desktop where left panel shows it) */}
       <div className="flex flex-col items-center mb-8 lg:hidden">
         <div className="h-14 w-14 rounded-2xl gradient-brand flex items-center justify-center mb-4 shadow-card-glow">
           <Shield className="h-7 w-7 text-white" />
         </div>
       </div>
 
-      <div className="bg-surface-primary rounded-card shadow-card border border-stroke-secondary p-8">
+      <div className="bg-surface-primary rounded-xl shadow-lg border border-stroke-secondary p-8 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] gradient-brand" />
+
         <div className="mb-8">
-          <h1 className="text-title-1 text-foreground-primary">Bem-vindo de volta</h1>
+          <h1 className="text-title-1 text-foreground-primary tracking-tight-1">Bem-vindo de volta</h1>
           <p className="text-body-1 text-foreground-secondary mt-1">
             Acesse sua conta no QualityHub
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-body-1 font-medium text-foreground-primary mb-1.5">
+            <label className="block text-body-2 font-medium text-foreground-primary mb-1.5">
               E-mail
             </label>
             <Input
@@ -69,12 +70,12 @@ export default function LoginPage() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-body-1 font-medium text-foreground-primary">
+              <label className="block text-body-2 font-medium text-foreground-primary">
                 Senha
               </label>
               <Link
                 href="/forgot-password"
-                className="text-body-2 text-brand hover:text-brand-hover transition-colors"
+                className="text-caption-1 text-brand hover:text-brand-hover transition-colors"
               >
                 Esqueceu?
               </Link>
@@ -90,7 +91,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button">
+            <div className="bg-danger-bg text-danger-fg text-body-2 p-3 rounded-button border border-danger/20">
               {error}
             </div>
           )}

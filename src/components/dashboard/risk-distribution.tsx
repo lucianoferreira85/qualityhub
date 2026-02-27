@@ -29,7 +29,7 @@ function RiskDistribution({ data }: RiskDistributionProps) {
         <h2 className="text-title-3 text-foreground-primary">Distribuicao de Riscos</h2>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-3.5">
           {sorted.map((r) => {
             const cfg = RISK_LEVEL_CONFIG[r.level] || RISK_LEVEL_CONFIG.low;
             const pct = totalRisks > 0 ? Math.round((r.count / totalRisks) * 100) : 0;
@@ -38,13 +38,13 @@ function RiskDistribution({ data }: RiskDistributionProps) {
                 <span className="text-body-2 text-foreground-secondary w-24 flex-shrink-0">{cfg.label}</span>
                 <div className="flex-1 h-6 bg-surface-tertiary rounded-full overflow-hidden">
                   <div
-                    className={`h-full ${cfg.bg} rounded-full transition-all flex items-center justify-end pr-2`}
+                    className={`h-full ${cfg.bg} rounded-full transition-all duration-400 ease-spring flex items-center justify-end pr-2`}
                     style={{ width: `${Math.max(pct, 8)}%` }}
                   >
-                    <span className={`text-caption-2 font-medium ${cfg.color}`}>{r.count}</span>
+                    <span className={`text-caption-2 font-semibold ${cfg.color}`}>{r.count}</span>
                   </div>
                 </div>
-                <span className="text-caption-1 text-foreground-tertiary w-10 text-right">{pct}%</span>
+                <span className="text-caption-1 text-foreground-tertiary w-10 text-right tabular-nums">{pct}%</span>
               </div>
             );
           })}

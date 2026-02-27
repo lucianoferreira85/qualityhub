@@ -20,7 +20,7 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
           <AlertTriangle className="h-8 w-8 text-danger" />
         </div>
 
-        <h1 className="text-title-1 text-foreground-primary mb-3">
+        <h1 className="text-title-1 text-foreground-primary mb-3 tracking-tight-1">
           Algo deu errado
         </h1>
         <p className="text-body-1 text-foreground-secondary mb-2">
@@ -28,7 +28,7 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
           volte para a pagina anterior.
         </p>
         {error.digest && (
-          <p className="text-caption-1 text-foreground-tertiary mb-6">
+          <p className="text-caption-1 text-foreground-tertiary mb-6 font-mono">
             Codigo: {error.digest}
           </p>
         )}
@@ -36,7 +36,7 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
         <div className="flex items-center justify-center gap-3 mt-6">
           <button
             onClick={reset}
-            className="inline-flex items-center justify-center gap-2 h-10 px-5 bg-brand text-white rounded-button font-medium hover:bg-brand-hover transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-10 px-5 bg-brand text-white rounded-button font-medium hover:bg-brand-hover hover:shadow-brand transition-all duration-120 active:scale-[0.98]"
           >
             <RotateCcw className="h-4 w-4" />
             Tentar novamente
@@ -45,7 +45,7 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
             onClick={() =>
               typeof window !== "undefined" && window.history.back()
             }
-            className="inline-flex items-center justify-center gap-2 h-10 px-5 border border-stroke-primary text-foreground-secondary rounded-button font-medium hover:bg-surface-secondary transition-colors"
+            className="inline-flex items-center justify-center gap-2 h-10 px-5 border border-stroke-primary text-foreground-secondary rounded-button font-medium hover:bg-surface-tertiary transition-all duration-120 active:scale-[0.98]"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar

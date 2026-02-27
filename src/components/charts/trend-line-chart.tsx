@@ -24,10 +24,10 @@ interface TrendLineChartProps {
 }
 
 const SERIES = [
-  { key: "risks", name: "Riscos", color: "#C4314B" },
-  { key: "ncs", name: "NCs", color: "#FFB900" },
-  { key: "actions", name: "Ações", color: "#0078D4" },
-  { key: "incidents", name: "Incidentes", color: "#8764B8" },
+  { key: "risks", name: "Riscos", color: "#EF4444" },
+  { key: "ncs", name: "NCs", color: "#F59E0B" },
+  { key: "actions", name: "Acoes", color: "#7C3AED" },
+  { key: "incidents", name: "Incidentes", color: "#6366F1" },
 ] as const;
 
 function formatMonth(month: string): string {
@@ -40,7 +40,7 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-[300px] text-body-2 text-foreground-tertiary">
-        Sem dados de tendência para o período selecionado
+        Sem dados de tendencia para o periodo selecionado
       </div>
     );
   }
@@ -53,23 +53,24 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
   return (
     <ResponsiveContainer width="100%" height={320}>
       <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-stroke-secondary)" />
         <XAxis
           dataKey="label"
-          tick={{ fill: "#616161", fontSize: 11 }}
-          axisLine={{ stroke: "#d1d1d1" }}
+          tick={{ fill: "var(--color-fg-secondary)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--color-stroke-primary)" }}
         />
         <YAxis
           allowDecimals={false}
-          tick={{ fill: "#8a8886", fontSize: 11 }}
-          axisLine={{ stroke: "#d1d1d1" }}
+          tick={{ fill: "var(--color-fg-tertiary)", fontSize: 11 }}
+          axisLine={{ stroke: "var(--color-stroke-primary)" }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: "#fff",
-            border: "1px solid #e0e0e0",
-            borderRadius: 8,
+            backgroundColor: "var(--color-bg-elevated)",
+            border: "1px solid var(--color-stroke-secondary)",
+            borderRadius: 12,
             fontSize: 12,
+            boxShadow: "var(--shadow-lg)",
           }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -81,8 +82,8 @@ export function TrendLineChart({ data }: TrendLineChartProps) {
             name={s.name}
             stroke={s.color}
             strokeWidth={2}
-            dot={{ r: 3, fill: s.color }}
-            activeDot={{ r: 5 }}
+            dot={{ r: 3, fill: s.color, strokeWidth: 0 }}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
           />
         ))}
       </LineChart>

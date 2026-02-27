@@ -40,7 +40,7 @@ export function FileUpload({
   const handleUpload = useCallback(
     async (file: File) => {
       if (file.size > maxSizeMB * 1024 * 1024) {
-        toast.error(`Arquivo excede o tamanho máximo de ${maxSizeMB}MB`);
+        toast.error(`Arquivo excede o tamanho maximo de ${maxSizeMB}MB`);
         return;
       }
 
@@ -91,16 +91,17 @@ export function FileUpload({
   };
 
   if (uploadedFile) {
-    // If the url is a storage path (not a full URL), use the proxy route
     const viewUrl = uploadedFile.url.startsWith("http")
       ? uploadedFile.url
       : `/api/tenants/${tenantSlug}/files/${uploadedFile.url}`;
 
     return (
-      <div className="flex items-center gap-3 p-3 rounded-card border border-stroke-secondary bg-surface-secondary">
-        <FileText className="h-5 w-5 text-brand flex-shrink-0" />
+      <div className="flex items-center gap-3 p-3 rounded-card border border-stroke-secondary bg-surface-secondary shadow-xs">
+        <div className="h-9 w-9 rounded-lg bg-brand-light flex items-center justify-center flex-shrink-0">
+          <FileText className="h-4 w-4 text-brand" />
+        </div>
         <div className="flex-1 min-w-0">
-          <p className="text-body-2 text-foreground-primary truncate">
+          <p className="text-body-2 text-foreground-primary truncate font-medium">
             {uploadedFile.fileName}
           </p>
         </div>
@@ -110,7 +111,7 @@ export function FileUpload({
               href={viewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-caption-1 text-brand hover:underline"
+              className="text-caption-1 text-brand hover:text-brand-hover transition-colors duration-120 font-medium"
             >
               Visualizar
             </a>
@@ -118,7 +119,7 @@ export function FileUpload({
           <button
             type="button"
             onClick={handleRemove}
-            className="text-foreground-tertiary hover:text-danger-fg transition-colors"
+            className="h-7 w-7 flex items-center justify-center rounded-button text-foreground-tertiary hover:text-danger hover:bg-danger-bg transition-all duration-120"
           >
             <X className="h-4 w-4" />
           </button>
@@ -136,16 +137,20 @@ export function FileUpload({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
-      className={`flex flex-col items-center justify-center gap-2 p-6 rounded-card border-2 border-dashed cursor-pointer transition-colors ${
+      className={`flex flex-col items-center justify-center gap-2 p-8 rounded-card border-2 border-dashed cursor-pointer transition-all duration-200 ${
         dragOver
-          ? "border-brand bg-brand-light/10"
-          : "border-stroke-secondary hover:border-brand/50 hover:bg-surface-secondary"
+          ? "border-brand bg-brand-subtle scale-[1.01]"
+          : "border-stroke-secondary hover:border-brand/40 hover:bg-surface-secondary"
       }`}
     >
       {uploading ? (
-        <Loader2 className="h-8 w-8 text-brand animate-spin" />
+        <div className="h-12 w-12 rounded-xl bg-brand-light flex items-center justify-center">
+          <Loader2 className="h-6 w-6 text-brand animate-spin" />
+        </div>
       ) : (
-        <Upload className="h-8 w-8 text-foreground-tertiary" />
+        <div className="h-12 w-12 rounded-xl bg-surface-tertiary flex items-center justify-center">
+          <Upload className="h-6 w-6 text-foreground-tertiary" />
+        </div>
       )}
       <p className="text-body-2 text-foreground-secondary text-center">
         {uploading
@@ -153,7 +158,7 @@ export function FileUpload({
           : "Arraste um arquivo ou clique para selecionar"}
       </p>
       <p className="text-caption-2 text-foreground-tertiary">
-        Máx. {maxSizeMB}MB — PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT
+        Max. {maxSizeMB}MB — PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT
       </p>
       <input
         ref={inputRef}

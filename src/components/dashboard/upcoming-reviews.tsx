@@ -26,7 +26,7 @@ function UpcomingReviews({ data, tenantSlug }: UpcomingReviewsProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-title-3 text-foreground-primary">Revisoes Pendentes</h2>
           <Link href={`/${tenantSlug}/documents`}>
-            <span className="text-caption-1 text-brand hover:underline flex items-center gap-1">
+            <span className="text-caption-1 text-brand hover:text-brand-hover flex items-center gap-1 font-medium transition-colors duration-120">
               Ver docs <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
@@ -40,8 +40,8 @@ function UpcomingReviews({ data, tenantSlug }: UpcomingReviewsProps) {
             return (
               <div
                 key={doc.id}
-                className={`flex items-center justify-between p-3 rounded-button border transition-colors ${
-                  isUrgent ? "border-danger/30 bg-danger-bg/30" : "border-stroke-secondary hover:bg-surface-secondary"
+                className={`flex items-center justify-between p-3 rounded-button border transition-all duration-120 ${
+                  isUrgent ? "border-danger/20 bg-danger-bg/30" : "border-stroke-secondary hover:bg-surface-tertiary"
                 }`}
               >
                 <div className="min-w-0 flex-1">
@@ -52,7 +52,7 @@ function UpcomingReviews({ data, tenantSlug }: UpcomingReviewsProps) {
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span className={`text-caption-1 ${isUrgent ? "text-danger-fg font-medium" : "text-foreground-tertiary"}`}>
+                  <span className={`text-caption-1 tabular-nums ${isUrgent ? "text-danger-fg font-medium" : "text-foreground-tertiary"}`}>
                     {daysUntil <= 0 ? "Vencido" : `${daysUntil}d`}
                   </span>
                 </div>

@@ -24,8 +24,8 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
 
   return (
     <div className="flex items-center justify-between pt-4" role="navigation" aria-label="Paginacao">
-      <p className="text-body-2 text-foreground-secondary" aria-live="polite">
-        Pagina {page} de {totalPages}
+      <p className="text-body-2 text-foreground-tertiary" aria-live="polite">
+        Pagina <span className="font-medium text-foreground-secondary">{page}</span> de <span className="font-medium text-foreground-secondary">{totalPages}</span>
       </p>
       <div className="flex items-center gap-1">
         <Button
@@ -40,7 +40,7 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
           p === "..." ? (
             <span
               key={`ellipsis-${i}`}
-              className="px-2 text-foreground-tertiary"
+              className="px-2 text-foreground-tertiary select-none"
             >
               ...
             </span>

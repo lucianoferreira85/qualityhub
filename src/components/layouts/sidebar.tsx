@@ -99,29 +99,30 @@ export function Sidebar({ collapsed, onToggle, mobile, onClose }: SidebarProps) 
   const sidebarContent = (
     <aside
       className={cn(
-        "flex flex-col bg-surface-primary border-r border-stroke-secondary h-full transition-all duration-200",
-        mobile ? "w-[280px]" : collapsed ? "w-[48px]" : "w-[250px]"
+        "flex flex-col h-full sidebar-gradient transition-all duration-250 ease-spring relative",
+        "shadow-sidebar",
+        mobile ? "w-[280px]" : collapsed ? "w-[56px]" : "w-[260px]"
       )}
     >
-      {/* Header: Logo + Tenant Name */}
       <div
         className={cn(
-          "flex items-center h-14 border-b border-stroke-secondary px-3 flex-shrink-0",
+          "flex items-center h-14 px-3 flex-shrink-0",
+          "border-b border-sidebar-border",
           collapsed && !mobile ? "justify-center" : "gap-3"
         )}
       >
-        <div className="h-8 w-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0">
+        <div className="h-8 w-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 shadow-sidebar-glow">
           <Shield className="h-4 w-4 text-white" />
         </div>
         {(!collapsed || mobile) && (
-          <span className="text-title-3 text-foreground-primary truncate flex-1">
+          <span className="text-title-3 text-sidebar-fg-active truncate flex-1 tracking-tight-1">
             {tenant.name}
           </span>
         )}
         {mobile && (
           <button
             onClick={onClose}
-            className="h-8 w-8 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-button text-sidebar-fg-muted hover:text-sidebar-fg-active hover:bg-sidebar-hover transition-all duration-120"
             aria-label="Fechar menu"
           >
             <X className="h-4 w-4" />
@@ -130,7 +131,7 @@ export function Sidebar({ collapsed, onToggle, mobile, onClose }: SidebarProps) 
         {!mobile && !collapsed && (
           <button
             onClick={onToggle}
-            className="h-7 w-7 flex items-center justify-center rounded-button text-foreground-tertiary hover:bg-surface-tertiary transition-colors flex-shrink-0"
+            className="h-7 w-7 flex items-center justify-center rounded-button text-sidebar-fg-muted hover:text-sidebar-fg-active hover:bg-sidebar-hover transition-all duration-120 flex-shrink-0"
             aria-label="Recolher menu"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -138,85 +139,86 @@ export function Sidebar({ collapsed, onToggle, mobile, onClose }: SidebarProps) 
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2" aria-label="Menu principal">
+      <nav className="flex-1 overflow-y-auto py-3 px-2" aria-label="Menu principal">
         {filteredSections.map((section, sIdx) => (
-          <div key={section.title} className={cn(sIdx > 0 && "mt-2")}>
-            {/* Section header */}
+          <div key={section.title} className={cn(sIdx > 0 && "mt-4")}>
             {(!collapsed || mobile) && (
-              <div className="px-4 py-1.5">
-                <span className="text-[11px] font-semibold text-foreground-tertiary uppercase tracking-wider">
+              <div className="px-2 pb-1.5">
+                <span className="sidebar-section-title">
                   {section.title}
                 </span>
               </div>
             )}
             {collapsed && !mobile && sIdx > 0 && (
-              <hr className="mx-2 my-1 border-stroke-secondary" />
+              <hr className="mx-1.5 my-2 sidebar-divider" />
             )}
 
-            {/* Section items */}
-            {section.items.map((item) => {
-              const fullHref = `${basePath}${item.href}`;
-              const isActive = pathname === fullHref || pathname.startsWith(`${fullHref}/`);
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const fullHref = `${basePath}${item.href}`;
+                const isActive = pathname === fullHref || pathname.startsWith(`${fullHref}/`);
 
-              return (
-                <Link
-                  key={item.href}
-                  href={fullHref}
-                  onClick={handleLinkClick}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "flex items-center gap-3 mx-2 px-3 py-2 rounded-button text-body-2 transition-colors group",
-                    isActive
-                      ? "bg-brand-light text-brand font-medium"
-                      : "text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary",
-                    collapsed && !mobile && "justify-center px-0"
-                  )}
-                  title={collapsed && !mobile ? item.label : undefined}
-                >
-                  <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
-                  {(!collapsed || mobile) && (
-                    <span className="truncate flex-1">{item.label}</span>
-                  )}
-                  {(!collapsed || mobile) && item.badge !== undefined && item.badge > 0 && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger text-[10px] font-medium text-white px-1.5">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={fullHref}
+                    onClick={handleLinkClick}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "sidebar-nav-item flex items-center gap-2.5 px-2.5 py-[7px] rounded-button text-body-2",
+                      isActive && "sidebar-nav-item-active font-medium",
+                      collapsed && !mobile && "justify-center px-0"
+                    )}
+                    title={collapsed && !mobile ? item.label : undefined}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-[18px] w-[18px] flex-shrink-0 sidebar-icon",
+                        isActive && "!text-sidebar-accent"
+                      )}
+                    />
+                    {(!collapsed || mobile) && (
+                      <span className="truncate flex-1">{item.label}</span>
+                    )}
+                    {(!collapsed || mobile) && item.badge !== undefined && item.badge > 0 && (
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger text-[10px] font-semibold text-white px-1.5">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ))}
       </nav>
 
-      {/* Footer: Settings */}
       {isAdmin && (
-        <div className="border-t border-stroke-secondary py-2 flex-shrink-0">
+        <div className="border-t border-sidebar-border py-2 px-2 flex-shrink-0">
           <Link
             href={`${basePath}/settings`}
             onClick={handleLinkClick}
             aria-current={pathname.startsWith(`${basePath}/settings`) ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 mx-2 px-3 py-2 rounded-button text-body-2 transition-colors",
-              pathname.startsWith(`${basePath}/settings`)
-                ? "bg-brand-light text-brand font-medium"
-                : "text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary",
+              "sidebar-nav-item flex items-center gap-2.5 px-2.5 py-[7px] rounded-button text-body-2",
+              pathname.startsWith(`${basePath}/settings`) && "sidebar-nav-item-active font-medium",
               collapsed && !mobile && "justify-center px-0"
             )}
             title={collapsed && !mobile ? "Configuracoes" : undefined}
           >
-            <Settings className="h-[18px] w-[18px] flex-shrink-0" />
+            <Settings className={cn(
+              "h-[18px] w-[18px] flex-shrink-0 sidebar-icon",
+              pathname.startsWith(`${basePath}/settings`) && "!text-sidebar-accent"
+            )} />
             {(!collapsed || mobile) && <span>Configuracoes</span>}
           </Link>
         </div>
       )}
 
-      {/* Collapse toggle (desktop only) */}
       {!mobile && collapsed && (
         <button
           onClick={onToggle}
-          className="flex items-center justify-center h-10 border-t border-stroke-secondary text-foreground-tertiary hover:text-foreground-primary transition-colors flex-shrink-0"
+          className="flex items-center justify-center h-10 border-t border-sidebar-border text-sidebar-fg-muted hover:text-sidebar-fg-active hover:bg-sidebar-hover transition-all duration-120 flex-shrink-0"
           aria-label="Expandir menu"
         >
           <ChevronRight className="h-4 w-4" />

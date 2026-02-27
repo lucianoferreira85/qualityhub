@@ -28,9 +28,9 @@ function Tooltip({
         <TooltipPrimitive.Portal>
           <TooltipPrimitive.Content
             side={side}
-            sideOffset={4}
+            sideOffset={6}
             className={cn(
-              "z-50 whitespace-nowrap bg-foreground-primary text-white text-caption-2 rounded px-2 py-1 shadow-lg",
+              "z-50 whitespace-nowrap bg-foreground-primary text-white text-caption-2 rounded-badge px-2.5 py-1 shadow-lg",
               "animate-fade-in select-none",
               className
             )}

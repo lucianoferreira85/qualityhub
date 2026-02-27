@@ -17,7 +17,6 @@ export function AppShell({ children }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // Load sidebar preference from localStorage
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
     if (stored !== null) {
@@ -36,7 +35,6 @@ export function AppShell({ children }: AppShellProps) {
   const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
   const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
-  // Close mobile sidebar on escape
   useEffect(() => {
     if (!mobileSidebarOpen) return;
 
@@ -50,7 +48,6 @@ export function AppShell({ children }: AppShellProps) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [mobileSidebarOpen]);
 
-  // Prevent scroll when mobile sidebar is open
   useEffect(() => {
     if (mobileSidebarOpen) {
       document.body.style.overflow = "hidden";
@@ -64,7 +61,6 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface-tertiary">
-      {/* Desktop sidebar */}
       {!isMobile && (
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -72,17 +68,14 @@ export function AppShell({ children }: AppShellProps) {
         />
       )}
 
-      {/* Mobile sidebar overlay */}
       {isMobile && mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 animate-in fade-in-0"
+            className="fixed inset-0 modal-glass-overlay animate-fade-in"
             onClick={closeMobileSidebar}
             aria-hidden="true"
           />
-          {/* Sidebar panel */}
-          <div className="relative z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative z-10 animate-slide-in-left">
             <Sidebar
               collapsed={false}
               onToggle={toggleSidebar}
@@ -93,7 +86,6 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0">
         <Header
           showHamburger={isMobile}
@@ -102,13 +94,12 @@ export function AppShell({ children }: AppShellProps) {
         />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="page-enter">
+          <div className="page-enter max-w-[1440px] mx-auto">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Command Palette (always mounted, toggled via Cmd+K or button) */}
       <CommandPalette />
     </div>
   );

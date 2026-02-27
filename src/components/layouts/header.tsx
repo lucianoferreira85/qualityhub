@@ -35,13 +35,12 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
     user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Usuario";
 
   return (
-    <header className="flex items-center justify-between h-14 px-4 bg-surface-primary border-b border-stroke-secondary gap-4">
-      {/* Left side: hamburger (mobile) + breadcrumbs */}
+    <header className="header-refined flex items-center justify-between h-14 px-4 gap-4 flex-shrink-0">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {showHamburger && (
           <button
             onClick={onOpenSidebar}
-            className="h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary transition-colors flex-shrink-0 md:hidden"
+            className="h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120 flex-shrink-0 md:hidden"
             aria-label="Abrir menu"
           >
             <Menu className="h-5 w-5" />
@@ -50,37 +49,32 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
         <AutoBreadcrumb />
       </div>
 
-      {/* Right side: search hint + notifications + user menu */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {/* Search / Cmd+K hint */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-button border border-stroke-secondary text-foreground-tertiary hover:bg-surface-tertiary hover:text-foreground-secondary transition-colors text-caption-1"
+          className="hidden sm:flex items-center gap-2 h-8 px-3 rounded-button bg-surface-secondary border border-stroke-secondary text-foreground-tertiary hover:bg-surface-tertiary hover:text-foreground-secondary hover:border-stroke-primary transition-all duration-150 text-caption-1"
           aria-label="Buscar"
         >
           <Search className="h-3.5 w-3.5" />
           <span>Buscar...</span>
-          <kbd className="ml-1 flex items-center gap-0.5 rounded border border-stroke-secondary bg-surface-tertiary px-1 py-0.5 text-[10px] font-medium">
+          <kbd className="ml-1.5 inline-flex items-center gap-0.5 rounded-badge border border-stroke-secondary bg-surface-primary px-1.5 py-0.5 text-[10px] font-medium text-foreground-tertiary">
             <span className="text-[11px]">&#8984;</span>K
           </kbd>
         </button>
 
-        {/* Mobile search button */}
         <button
           onClick={onOpenCommandPalette}
-          className="sm:hidden h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary transition-colors"
+          className="sm:hidden h-9 w-9 flex items-center justify-center rounded-button text-foreground-secondary hover:bg-surface-tertiary transition-all duration-120"
           aria-label="Buscar"
         >
           <Search className="h-4 w-4" />
         </button>
 
-        {/* Notifications */}
         <NotificationPopover />
 
-        {/* User menu */}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="flex items-center gap-2 h-9 px-2 rounded-button text-foreground-primary hover:bg-surface-tertiary transition-colors">
+            <button className="flex items-center gap-2 h-9 px-2 rounded-button text-foreground-primary hover:bg-surface-tertiary transition-all duration-120">
               <Avatar name={userName} size="sm" />
               <span className="text-body-2 hidden sm:block max-w-[120px] truncate">
                 {userName}
@@ -91,11 +85,10 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
 
           <DropdownMenu.Portal>
             <DropdownMenu.Content
-              className="z-50 w-52 bg-surface-primary border border-stroke-secondary rounded-card shadow-dialog animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 py-1"
+              className="z-50 w-56 bg-surface-elevated border border-stroke-secondary rounded-card shadow-dialog py-1 animate-fade-in-down"
               sideOffset={8}
               align="end"
             >
-              {/* User info */}
               <div className="px-3 py-2.5 border-b border-stroke-secondary">
                 <p className="text-body-2 font-medium text-foreground-primary truncate">
                   {userName}
@@ -105,57 +98,63 @@ export function Header({ onOpenSidebar, onOpenCommandPalette, showHamburger }: H
                 </p>
               </div>
 
-              <DropdownMenu.Item asChild>
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-2 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary transition-colors outline-none data-[highlighted]:bg-surface-tertiary"
-                >
-                  <User className="h-4 w-4" />
-                  Meu Perfil
-                </Link>
-              </DropdownMenu.Item>
+              <div className="py-1">
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href="/profile"
+                    className="flex items-center gap-2.5 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120 outline-none data-[highlighted]:bg-surface-tertiary data-[highlighted]:text-foreground-primary rounded-sm mx-1"
+                  >
+                    <User className="h-4 w-4 text-foreground-tertiary" />
+                    Meu Perfil
+                  </Link>
+                </DropdownMenu.Item>
 
-              <DropdownMenu.Item asChild>
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary transition-colors outline-none cursor-pointer data-[highlighted]:bg-surface-tertiary"
-                >
-                  {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  {isDark ? "Modo Claro" : "Modo Escuro"}
-                </button>
-              </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <button
+                    onClick={toggleTheme}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120 outline-none cursor-pointer data-[highlighted]:bg-surface-tertiary data-[highlighted]:text-foreground-primary rounded-sm mx-1"
+                    style={{ width: "calc(100% - 8px)" }}
+                  >
+                    {isDark ? <Sun className="h-4 w-4 text-foreground-tertiary" /> : <Moon className="h-4 w-4 text-foreground-tertiary" />}
+                    {isDark ? "Modo Claro" : "Modo Escuro"}
+                  </button>
+                </DropdownMenu.Item>
 
-              <DropdownMenu.Item asChild>
-                <Link
-                  href="/organizations"
-                  className="flex items-center gap-2 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary transition-colors outline-none data-[highlighted]:bg-surface-tertiary"
-                >
-                  <Building2 className="h-4 w-4" />
-                  Trocar empresa
-                </Link>
-              </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href="/organizations"
+                    className="flex items-center gap-2.5 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120 outline-none data-[highlighted]:bg-surface-tertiary data-[highlighted]:text-foreground-primary rounded-sm mx-1"
+                  >
+                    <Building2 className="h-4 w-4 text-foreground-tertiary" />
+                    Trocar empresa
+                  </Link>
+                </DropdownMenu.Item>
 
-              <DropdownMenu.Item asChild>
-                <Link
-                  href={`/${tenant.slug}/settings`}
-                  className="flex items-center gap-2 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary transition-colors outline-none data-[highlighted]:bg-surface-tertiary"
-                >
-                  <Settings className="h-4 w-4" />
-                  Configuracoes
-                </Link>
-              </DropdownMenu.Item>
+                <DropdownMenu.Item asChild>
+                  <Link
+                    href={`/${tenant.slug}/settings`}
+                    className="flex items-center gap-2.5 px-3 py-2 text-body-2 text-foreground-secondary hover:bg-surface-tertiary hover:text-foreground-primary transition-all duration-120 outline-none data-[highlighted]:bg-surface-tertiary data-[highlighted]:text-foreground-primary rounded-sm mx-1"
+                  >
+                    <Settings className="h-4 w-4 text-foreground-tertiary" />
+                    Configuracoes
+                  </Link>
+                </DropdownMenu.Item>
+              </div>
 
               <DropdownMenu.Separator className="my-1 h-px bg-stroke-secondary" />
 
-              <DropdownMenu.Item asChild>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-body-2 text-danger hover:bg-danger-bg transition-colors outline-none cursor-pointer data-[highlighted]:bg-danger-bg"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sair
-                </button>
-              </DropdownMenu.Item>
+              <div className="py-1">
+                <DropdownMenu.Item asChild>
+                  <button
+                    onClick={signOut}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-body-2 text-danger hover:bg-danger-bg transition-all duration-120 outline-none cursor-pointer data-[highlighted]:bg-danger-bg rounded-sm mx-1"
+                    style={{ width: "calc(100% - 8px)" }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </button>
+                </DropdownMenu.Item>
+              </div>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>

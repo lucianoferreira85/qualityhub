@@ -17,7 +17,7 @@ export function MaturityRadar({ data, targetMaturity }: MaturityRadarProps) {
   if (chartData.length < 3) {
     return (
       <div className="flex items-center justify-center h-[300px] text-body-2 text-foreground-tertiary">
-        Mínimo 3 domínios necessários para o gráfico radar
+        Minimo 3 dominios necessarios para o grafico radar
       </div>
     );
   }
@@ -25,29 +25,29 @@ export function MaturityRadar({ data, targetMaturity }: MaturityRadarProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <RadarChart data={chartData} cx="50%" cy="50%" outerRadius="70%">
-        <PolarGrid stroke="#e0e0e0" />
+        <PolarGrid stroke="var(--color-stroke-secondary)" />
         <PolarAngleAxis
           dataKey="domain"
-          tick={{ fill: "#616161", fontSize: 11 }}
+          tick={{ fill: "var(--color-fg-secondary)", fontSize: 11 }}
         />
         <PolarRadiusAxis
           angle={90}
           domain={[0, 4]}
-          tick={{ fill: "#8a8886", fontSize: 10 }}
+          tick={{ fill: "var(--color-fg-tertiary)", fontSize: 10 }}
           tickCount={5}
         />
         <Radar
           name="Maturidade Atual"
           dataKey="maturity"
-          stroke="#0078D4"
-          fill="#0078D4"
-          fillOpacity={0.3}
+          stroke="#7C3AED"
+          fill="#7C3AED"
+          fillOpacity={0.15}
           strokeWidth={2}
         />
         <Radar
           name="Meta"
           dataKey="target"
-          stroke="#C4314B"
+          stroke="#EF4444"
           fill="none"
           strokeWidth={2}
           strokeDasharray="5 5"

@@ -10,13 +10,13 @@ interface ViewToggleProps {
 
 function ViewToggle({ view, onChange }: ViewToggleProps) {
   return (
-    <div className="border border-stroke-secondary rounded-lg p-0.5 flex" role="group" aria-label="Modo de visualizacao">
+    <div className="border border-stroke-secondary rounded-button p-0.5 flex bg-surface-secondary" role="group" aria-label="Modo de visualizacao">
       <button
         onClick={() => onChange("cards")}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-1.5 rounded-badge transition-all duration-120",
           view === "cards"
-            ? "bg-surface-secondary text-foreground-primary"
+            ? "bg-surface-primary text-foreground-primary shadow-xs"
             : "text-foreground-tertiary hover:text-foreground-secondary"
         )}
         aria-label="Visualizar como cards"
@@ -27,9 +27,9 @@ function ViewToggle({ view, onChange }: ViewToggleProps) {
       <button
         onClick={() => onChange("table")}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-1.5 rounded-badge transition-all duration-120",
           view === "table"
-            ? "bg-surface-secondary text-foreground-primary"
+            ? "bg-surface-primary text-foreground-primary shadow-xs"
             : "text-foreground-tertiary hover:text-foreground-secondary"
         )}
         aria-label="Visualizar como tabela"

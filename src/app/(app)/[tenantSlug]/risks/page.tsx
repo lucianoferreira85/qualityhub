@@ -192,7 +192,7 @@ export default function RisksPage() {
         </div>
         {can("risk", "create") && (
           <Link href={`/${tenant.slug}/risks/new`}>
-            <Button size="sm">
+            <Button>
               <Plus className="h-4 w-4" />
               Novo Risco
             </Button>
